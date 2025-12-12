@@ -7,6 +7,8 @@ requires-python = ">=3.12"
 dependencies = [
     "dotenv>=0.9.9",
     "fastapi>=0.124.2",
+    "google-api-python-client>=2.187.0",
+    "google-auth>=2.43.0",
     "mixedbread>=0.41.0",
     "openai>=2.9.0",
     "parse>=1.20.2",

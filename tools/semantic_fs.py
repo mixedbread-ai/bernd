@@ -86,9 +86,14 @@ class SemanticFS:
         meta["created_at"] = created_at
         meta["updated_at"] = now
 
+        filename = path.split("/")[-1]
+        mime_type = (
+            "application/json" if filename.endswith(".json") else "text/markdown"
+        )
+
         self.mixedbread.stores.files.upload(
             store_identifier=self.store_name,
-            file=(path.split("/")[-1], content, "text/markdown"),
+            file=(filename, content, mime_type),
             metadata=meta,
             external_id=file_id,
             overwrite=True,
@@ -100,18 +105,22 @@ class SemanticFS:
         file_id = self._path_to_id(path)
 
         try:
+            # Get file metadata
             resp = self.mixedbread.stores.files.retrieve(
                 file_identifier=file_id,
                 store_identifier=self.store_name,
             )
+            # Download actual content
+            content_resp = self.mixedbread.files.content(file_id=resp.id)
+            content = content_resp.read().decode("utf-8")
 
             return {
                 "path": path,
-                "content": resp.text if hasattr(resp, "text") else "",
+                "content": content,
                 "metadata": resp.metadata if hasattr(resp, "metadata") else {},
             }
-        except Exception:
-            print(f"Not found: {path}")
+        except Exception as e:
+            print(f"[SemanticFS] Error reading {path}: {e}")
             return {"error": f"Not found: {path}"}
 
     def delete(self, path: str) -> dict:
@@ -166,12 +175,16 @@ class SemanticFS:
                 "value": prefix,
             }
 
-        resp = self.mixedbread.stores.search(
-            store_identifiers=[self.store_name],
-            query=query,
-            top_k=top_k,
-            filters=metadata_filter,
-        )
+        try:
+            resp = self.mixedbread.stores.search(
+                store_identifiers=[self.store_name],
+                query=query,
+                top_k=top_k,
+                filters=metadata_filter,
+            )
+        except Exception as e:
+            print(f"[SemanticFS] Search error: {e}")
+            return []
 
         results = []
         for item in resp.data:

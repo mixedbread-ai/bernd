@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 
 interface Todo {
+  id: string;
   title: string;
   due_date: string;
   priority: "low" | "medium" | "high";
@@ -31,27 +32,27 @@ export default function TodosPage() {
   const [filter, setFilter] = useState<"all" | "pending" | "in_progress" | "completed">("pending");
   const [expanded, setExpanded] = useState<string | null>(null);
 
-  const toggleExpand = async (title: string) => {
-    if (expanded === title) {
+  const toggleExpand = async (id: string) => {
+    if (expanded === id) {
       setExpanded(null);
       return;
     }
 
-    setExpanded(title);
+    setExpanded(id);
 
     // Fetch content if not already loaded
-    const todo = todos.find(t => t.title === title);
+    const todo = todos.find(t => t.id === id);
     if (todo && todo.content === undefined) {
       try {
-        const res = await fetch(`http://localhost:8000/todos/${encodeURIComponent(title)}`);
+        const res = await fetch(`http://localhost:8000/todos/by-id/${id}`);
         const data = await res.json();
         setTodos(prev => prev.map(t =>
-          t.title === title ? { ...t, content: data.content || "(no description)" } : t
+          t.id === id ? { ...t, content: data.content || "(no description)" } : t
         ));
       } catch (e) {
         console.error("Failed to fetch todo details", e);
         setTodos(prev => prev.map(t =>
-          t.title === title ? { ...t, content: "(failed to load)" } : t
+          t.id === id ? { ...t, content: "(failed to load)" } : t
         ));
       }
     }
@@ -104,14 +105,14 @@ export default function TodosPage() {
           <ul className="space-y-4">
             {filtered.map((todo) => (
               <li
-                key={todo.title}
+                key={todo.id}
                 className={`group ${
                   todo.status === "completed" ? "opacity-40" : ""
                 }`}
               >
                 <div
                   className="flex items-start gap-4 cursor-pointer hover:bg-[#f5f4f2] -mx-3 px-3 py-2 rounded transition-colors"
-                  onClick={() => toggleExpand(todo.title)}
+                  onClick={() => toggleExpand(todo.id)}
                 >
                   <span
                     className={`mt-1.5 h-2 w-2 shrink-0 rounded-full ${
@@ -138,7 +139,7 @@ export default function TodosPage() {
                     {formatDate(todo.due_date)}
                   </span>
                 </div>
-                {expanded === todo.title && (
+                {expanded === todo.id && (
                   <div className="ml-6 mt-2 pl-4 border-l-2 border-[#e8e8e6] text-sm text-[#666]">
                     {todo.content !== undefined ? (
                       <div className="whitespace-pre-wrap">

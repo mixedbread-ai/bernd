@@ -1,8 +1,10 @@
 from datetime import datetime
 from openai import OpenAI
 import json
+import os
 from dotenv import load_dotenv
 from tools.semantic_fs import SemanticFS
+from tools.google_calendar import GoogleCalendar
 from rich.console import Console
 from rich.panel import Panel
 from rich.markdown import Markdown
@@ -24,6 +26,10 @@ token_usage = {"input": 0, "output": 0}
 # Initialize semantic filesystem
 fs = SemanticFS(api_key=MXB_API_KEY, store_name="bernd")
 
+# Initialize Google Calendar (if configured)
+gcal_email = os.getenv("GOOGLE_CALENDAR_EMAIL")
+gcal = GoogleCalendar(gcal_email) if gcal_email else None
+
 
 # ─────────────────────────────────────────────────────────────
 # Tool handlers
@@ -32,18 +38,36 @@ fs = SemanticFS(api_key=MXB_API_KEY, store_name="bernd")
 
 def add_todo(args):
     title = args["title"]
-    content = f"# {title}\n\n{args.get('description', '')}"
-    return fs.write(
-        f"/todos/{title}.md",
-        content,
-        {
-            "type": "todo",
-            "due_date": args.get("due_date", ""),
-            "priority": args.get("priority", "medium"),
-            "status": args.get("status", "pending"),
-            "tags": args.get("tags", []),
-        },
-    )
+    description = args.get("description", "")
+    due_date = args.get("due_date", "")
+    content = f"# {title}\n\n{description}"
+
+    metadata = {
+        "type": "todo",
+        "due_date": due_date,
+        "priority": args.get("priority", "medium"),
+        "status": args.get("status", "pending"),
+        "tags": args.get("tags", []),
+    }
+
+    # Create calendar event if due_date is set and gcal is configured
+    cal_result = None
+    if gcal and due_date:
+        cal_result = gcal.create_event(
+            title=title,
+            description=description,
+            due_date=due_date,
+        )
+        if cal_result.get("event_id"):
+            metadata["calendar_event_id"] = cal_result["event_id"]
+
+    # Save to semantic filesystem
+    result = fs.write(f"/todos/{title}.md", content, metadata)
+
+    if cal_result:
+        result["calendar"] = cal_result
+
+    return result
 
 
 def get_todos(args):
@@ -59,28 +83,74 @@ def search_todos(args):
 
 
 def remove_todo(args):
-    return fs.delete(f"/todos/{args['title']}.md")
+    title = args["title"]
+
+    # Get existing todo to check for calendar event
+    existing = fs.read(f"/todos/{title}.md")
+    event_id = existing.get("metadata", {}).get("calendar_event_id")
+
+    # Delete calendar event if exists
+    if gcal and event_id:
+        gcal.delete_event(event_id)
+
+    return fs.delete(f"/todos/{title}.md")
 
 
 def update_todo(args):
     title = args["title"]
     new_title = args.get("new_title", title)
-    content = f"# {new_title}\n\n{args.get('description', '')}"
+    description = args.get("description", "")
+    due_date = args.get("due_date", "")
+    status = args.get("status", "pending")
+    content = f"# {new_title}\n\n{description}"
+
+    # Get existing todo metadata
+    existing = fs.read(f"/todos/{title}.md")
+    existing_meta = existing.get("metadata", {})
+    event_id = existing_meta.get("calendar_event_id")
+
+    metadata = {
+        "type": "todo",
+        "due_date": due_date,
+        "priority": args.get("priority", "medium"),
+        "status": status,
+        "tags": args.get("tags", []),
+    }
+
+    # Handle calendar event
+    cal_result = None
+    if gcal:
+        if status == "completed" and event_id:
+            # Delete calendar event when todo is completed
+            cal_result = gcal.delete_event(event_id)
+        elif event_id and due_date:
+            # Update existing event
+            cal_result = gcal.update_event(
+                event_id=event_id,
+                title=new_title,
+                description=description,
+                due_date=due_date,
+            )
+            metadata["calendar_event_id"] = event_id
+        elif not event_id and due_date and status != "completed":
+            # Create new event if todo didn't have one but now has due_date
+            cal_result = gcal.create_event(
+                title=new_title,
+                description=description,
+                due_date=due_date,
+            )
+            if cal_result.get("event_id"):
+                metadata["calendar_event_id"] = cal_result["event_id"]
 
     if new_title != title:
         fs.delete(f"/todos/{title}.md")
 
-    return fs.write(
-        f"/todos/{new_title}.md",
-        content,
-        {
-            "type": "todo",
-            "due_date": args.get("due_date", ""),
-            "priority": args.get("priority", "medium"),
-            "status": args.get("status", "pending"),
-            "tags": args.get("tags", []),
-        },
-    )
+    result = fs.write(f"/todos/{new_title}.md", content, metadata)
+
+    if cal_result:
+        result["calendar"] = cal_result
+
+    return result
 
 
 def memory(args):
@@ -319,11 +389,26 @@ Commands:
                 },
                 "content": {"type": "string", "description": "Content to write"},
                 "metadata": {"type": "object", "description": "Optional metadata dict"},
-                "query": {"type": "string", "description": "Natural language search query"},
-                "old_str": {"type": "string", "description": "String to replace (for update)"},
-                "new_str": {"type": "string", "description": "Replacement string (for update)"},
-                "limit": {"type": "integer", "description": "Max files to list (default: 100)"},
-                "top_k": {"type": "integer", "description": "Max search results (default: 10)"},
+                "query": {
+                    "type": "string",
+                    "description": "Natural language search query",
+                },
+                "old_str": {
+                    "type": "string",
+                    "description": "String to replace (for update)",
+                },
+                "new_str": {
+                    "type": "string",
+                    "description": "Replacement string (for update)",
+                },
+                "limit": {
+                    "type": "integer",
+                    "description": "Max files to list (default: 100)",
+                },
+                "top_k": {
+                    "type": "integer",
+                    "description": "Max search results (default: 10)",
+                },
             },
             "required": ["command"],
         },
@@ -352,22 +437,27 @@ def get_system_prompt() -> str:
 {user_profile}
 """
 
-    return f"""You are Bernd, a personal chief of staff. Today is {datetime.now().strftime("%Y-%m-%d")}.
+    return f"""You are Bernd, a personal chief of staff. Today is {datetime.now().strftime("%A, %Y-%m-%d")}.
 
 You help your principal stay organized and productive.
 
 ## CRITICAL: Always Search First
 
-When the user asks about ANYTHING specific to them - "my project", "my case", "my meeting", a person's name, etc. - you MUST search before responding:
-1. Use `files(command="search", query="...")` to search ALL stored files
-2. Or use `memory(command="search", query="...")` for memories specifically
-NEVER give a generic answer when the user asks about their own stuff. Search first.
+When the user asks about ANYTHING specific to them – "my project", "my case", "my meeting", a person's name, their company, etc. – you MUST search before responding:
+
+1. Use `files(command="search", query="...")` to search ALL stored files under /memories/.
+2. Optionally use `memory(command="search", query="...")` if legacy memory files exist.
+
+Read the most relevant files (e.g. user.md, entities/*, projects/*, people/*) before answering.
+
+NEVER give a generic answer when the user asks about their own stuff. Search first, then answer using that context.
 
 ## Tools Available
 - Todos: add_todo, get_todos, search_todos, update_todo, remove_todo
 - Memory: memory tool for /memories/* (search, view, create, update, delete)
 - Files: files tool for any path (search, read, write, list, update, delete)
 - Web: web_search for current information
+
 {profile_section}
 ## User Profile
 
@@ -375,11 +465,50 @@ The user profile at {USER_PROFILE_PATH} is automatically loaded above.
 - Update it when you learn important facts (name, role, preferences, key contacts)
 - Use xml format: <name>...</name>, <role>...</role>, <contacts>...</contacts>
 
-## Storing Information
+## Memory Usage
 
-- Store important facts in /memories/* or other paths via the files tool
-- Keep info concise and factual, not conversation history
-- No need to mention what you're storing unless asked
+You have access to a semantic memory store under /memories/.
+
+Core files:
+- /memories/user.md
+  - User identity, role, key contacts, and stable preferences.
+
+You may also create and use:
+- /memories/entities/<name>_org.md
+  - For organizations the user is closely involved with (e.g. their company, a major client).
+- /memories/projects/<name>.md
+  - For long-running projects or initiatives.
+- /memories/people/<name>.md
+  - For important recurring people (team members, investors, key clients, etc).
+
+### When to Store
+
+Store information when:
+- It is likely to remain relevant for weeks or months.
+- It concerns the user’s identity, preferences, ongoing work, organizations, projects, or key relationships.
+- It is not trivial small talk or one-off logistics.
+
+Do NOT store:
+- Ephemeral feelings ("I'm tired today").
+- One-off details that will not matter later, unless the user explicitly asks.
+
+### Where to Store (Routing)
+
+When deciding where to write:
+
+1. If it’s about who the user is, how they like to work, or their close network in general:
+   - Update /memories/user.md.
+
+2. If it’s about an organization (e.g. the user’s company or a major client):
+   - Create or update /memories/entities/<org_name>_org.md.
+
+3. If it’s about a specific ongoing project or initiative:
+   - Create or update /memories/projects/<project_name>.md.
+
+4. If it’s about a recurring person (collaborator, investor, key customer):
+   - Create or update /memories/people/<person_name>.md.
+
+Keep entries concise and factual (bullets or short paragraphs), not raw conversation transcripts.
 
 Be concise, direct, and action-oriented."""
 
@@ -391,7 +520,9 @@ def execute_function(name: str, args: dict):
     return {"error": f"Unknown function: {name}"}
 
 
-def run_agent(input_list: list, max_iterations: int = 15, return_tool_calls: bool = False):
+def run_agent(
+    input_list: list, max_iterations: int = 15, return_tool_calls: bool = False
+):
     """Run the agent. If return_tool_calls=True, returns dict with response and tool_calls."""
     global token_usage
     tool_calls_log = []
@@ -402,6 +533,7 @@ def run_agent(input_list: list, max_iterations: int = 15, return_tool_calls: boo
             instructions=get_system_prompt(),
             tools=tools,
             input=input_list,
+            reasoning={"effort": "medium"},
         )
 
         if hasattr(response, "usage") and response.usage:
@@ -421,10 +553,12 @@ def run_agent(input_list: list, max_iterations: int = 15, return_tool_calls: boo
                 result = execute_function(item.name, args)
 
                 # Log tool call
-                tool_calls_log.append({
-                    "name": item.name,
-                    "args": args,
-                })
+                tool_calls_log.append(
+                    {
+                        "name": item.name,
+                        "args": args,
+                    }
+                )
 
                 input_list.append(
                     {
@@ -460,6 +594,7 @@ def run_agent_stream(input_list: list, max_iterations: int = 15):
             instructions=get_system_prompt(),
             tools=tools,
             input=input_list,
+            reasoning={"effort": "medium"},
         ) as stream:
             for event in stream:
                 # Handle text deltas - stream them immediately
@@ -476,7 +611,10 @@ def run_agent_stream(input_list: list, max_iterations: int = 15):
 
                 # Handle function call output item added (get the function name)
                 elif event.type == "response.output_item.added":
-                    if hasattr(event.item, "type") and event.item.type == "function_call":
+                    if (
+                        hasattr(event.item, "type")
+                        and event.item.type == "function_call"
+                    ):
                         has_function_calls = True
                         call_id = event.item.id
                         function_calls[call_id] = {
@@ -526,7 +664,9 @@ def show_cost():
     table.add_column(justify="right")
     table.add_row("Input tokens", f"{token_usage['input']:,}")
     table.add_row("Output tokens", f"{token_usage['output']:,}")
-    table.add_row("Total", f"[bold]{token_usage['input'] + token_usage['output']:,}[/bold]")
+    table.add_row(
+        "Total", f"[bold]{token_usage['input'] + token_usage['output']:,}[/bold]"
+    )
     console.print()
     console.print(Panel(table, title="Token Usage", border_style="dim"))
 

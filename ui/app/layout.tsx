@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { Navbar } from "./components/Navbar";
+import { FloatingChat } from "./components/FloatingChat";
 
 const geistMono = Geist_Mono({
   variable: "--font-geist-mono",
@@ -24,6 +25,7 @@ export default function RootLayout({
         <div className="min-h-screen bg-[#faf9f7]">
           <Navbar />
           <main className="ml-44">{children}</main>
+          <FloatingChat />
         </div>
       </body>
     </html>

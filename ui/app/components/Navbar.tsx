@@ -16,9 +16,13 @@ export function Navbar() {
 
   useEffect(() => {
     function handleKeyDown(e: KeyboardEvent) {
+      // Ignore if in input, or if modifier keys are pressed
       if (
         e.target instanceof HTMLInputElement ||
-        e.target instanceof HTMLTextAreaElement
+        e.target instanceof HTMLTextAreaElement ||
+        e.metaKey ||
+        e.ctrlKey ||
+        e.altKey
       ) {
         return;
       }
