@@ -87,9 +87,7 @@ class SemanticFS:
         meta["updated_at"] = now
 
         filename = path.split("/")[-1]
-        mime_type = (
-            "application/json" if filename.endswith(".json") else "text/markdown"
-        )
+        mime_type = "text/plain" if filename.endswith(".json") else "text/markdown"
 
         self.mixedbread.stores.files.upload(
             store_identifier=self.store_name,
