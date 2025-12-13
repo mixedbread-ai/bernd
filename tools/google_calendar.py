@@ -93,7 +93,7 @@ class GoogleCalendar:
         title: str = None,
         description: str = None,
         due_date: str = None,
-        duration_hours: int = 1,
+        duration_minutes: int = 10,
         calendar_id: str = "primary",
     ) -> dict:
         """Update an existing calendar event."""
@@ -113,7 +113,7 @@ class GoogleCalendar:
                     start_dt = datetime.fromisoformat(due_date.replace("Z", ""))
                 else:
                     start_dt = datetime.strptime(due_date, "%Y-%m-%d").replace(hour=9)
-                end_dt = start_dt + timedelta(hours=duration_hours)
+                end_dt = start_dt + timedelta(minutes=duration_minutes)
                 event["start"] = {"dateTime": start_dt.isoformat(), "timeZone": "Europe/Berlin"}
                 event["end"] = {"dateTime": end_dt.isoformat(), "timeZone": "Europe/Berlin"}
 

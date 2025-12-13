@@ -18,7 +18,7 @@ load_dotenv()
 
 client = OpenAI()
 
-MXB_API_KEY = "mxb_1vSxuB164YolnL3weMAdLoHsc7tS"
+MXB_API_KEY = os.getenv("MIXEDBREAD_API_KEY")
 
 # Token tracking
 token_usage = {"input": 0, "output": 0}

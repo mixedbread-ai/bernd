@@ -5,6 +5,7 @@ from pydantic import BaseModel
 from dotenv import load_dotenv
 from tools.semantic_fs import SemanticFS
 import json
+import os
 
 load_dotenv()
 
@@ -21,7 +22,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-fs = SemanticFS(api_key="mxb_1vSxuB164YolnL3weMAdLoHsc7tS", store_name="bernd")
+fs = SemanticFS(api_key=os.getenv("MIXEDBREAD_API_KEY"), store_name="bernd")
 
 
 def _path_to_id(path: str) -> str:
