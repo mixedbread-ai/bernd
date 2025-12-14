@@ -76,31 +76,28 @@ export default function TodosPage() {
   };
 
   return (
-    <div className="min-h-screen bg-[#faf9f7] p-12 text-[#1a1a1a]">
+    <div className="min-h-screen p-12" style={{ background: 'var(--background)', color: 'var(--foreground)' }}>
       <div className="mx-auto max-w-xl">
         <div className="mb-10 flex items-baseline gap-6 text-sm">
           {(["all", "pending", "in_progress", "completed"] as const).map((f) => (
             <button
               key={f}
               onClick={() => setFilter(f)}
-              className={`transition-colors ${
-                filter === f
-                  ? "text-[#1a1a1a]"
-                  : "text-[#c4c4c4] hover:text-[#888]"
-              }`}
+              className="transition-colors"
+              style={{ color: filter === f ? 'var(--foreground)' : 'var(--muted)' }}
             >
               {f === "in_progress" ? "active" : f}
               {filter === f && (
-                <span className="ml-1 text-[#c45d3a]">{counts[f]}</span>
+                <span className="ml-1" style={{ color: 'var(--accent)' }}>{counts[f]}</span>
               )}
             </button>
           ))}
         </div>
 
         {loading ? (
-          <div className="text-[#a8a8a8]">...</div>
+          <div style={{ color: 'var(--muted)' }}>...</div>
         ) : filtered.length === 0 ? (
-          <div className="text-[#c4c4c4]">nothing here</div>
+          <div style={{ color: 'var(--muted)' }}>nothing here</div>
         ) : (
           <ul className="space-y-4">
             {filtered.map((todo) => (
@@ -111,19 +108,23 @@ export default function TodosPage() {
                 }`}
               >
                 <div
-                  className="flex items-start gap-4 cursor-pointer hover:bg-[#f5f4f2] -mx-3 px-3 py-2 rounded transition-colors"
+                  className="flex items-start gap-4 cursor-pointer -mx-3 px-3 py-2 rounded transition-colors"
+                  style={{ background: 'transparent' }}
+                  onMouseEnter={(e) => e.currentTarget.style.background = 'var(--surface-hover)'}
+                  onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
                   onClick={() => toggleExpand(todo.id)}
                 >
                   <span
-                    className={`mt-1.5 h-2 w-2 shrink-0 rounded-full ${
-                      todo.status === "completed"
-                        ? "bg-[#d4d4d4]"
+                    className="mt-1.5 h-2 w-2 shrink-0 rounded-full"
+                    style={{
+                      background: todo.status === "completed"
+                        ? 'var(--muted)'
                         : todo.priority === "high"
-                          ? "bg-[#c45d3a]"
+                          ? 'var(--accent)'
                           : todo.priority === "medium"
-                            ? "bg-[#1a1a1a]"
-                            : "bg-[#c4c4c4]"
-                    }`}
+                            ? 'var(--foreground)'
+                            : 'var(--muted)'
+                    }}
                   />
                   <div className="flex-1">
                     <span
@@ -132,26 +133,26 @@ export default function TodosPage() {
                       {todo.title}
                     </span>
                     {todo.tags && todo.tags.length > 0 && (
-                      <span className="ml-3 text-sm text-[#a8a8a8]">
+                      <span className="ml-3 text-sm" style={{ color: 'var(--muted)' }}>
                         {todo.tags.join(", ")}
                       </span>
                     )}
                   </div>
-                  <span className="shrink-0 text-sm text-[#c4c4c4]">
+                  <span className="shrink-0 text-sm" style={{ color: 'var(--muted)' }}>
                     {formatDate(todo.due_date || "")}
                   </span>
                 </div>
                 {expanded === todo.id && (
-                  <div className="ml-6 mt-2 pl-4 border-l-2 border-[#e8e8e6] text-sm text-[#666]">
+                  <div className="ml-6 mt-2 pl-4 border-l-2 text-sm" style={{ borderColor: 'var(--border)', color: 'var(--muted)' }}>
                     {todo.content !== undefined ? (
                       <div className="whitespace-pre-wrap">
                         {todo.content.replace(/^# .+\n\n?/, "") ||
                           "(no description)"}
                       </div>
                     ) : (
-                      <div className="text-[#c4c4c4]">loading...</div>
+                      <div style={{ color: 'var(--muted)' }}>loading...</div>
                     )}
-                    <div className="mt-3 flex gap-4 text-xs text-[#a8a8a8]">
+                    <div className="mt-3 flex gap-4 text-xs" style={{ color: 'var(--muted)' }}>
                       <span>priority: {todo.priority}</span>
                       <span>status: {todo.status}</span>
                       {todo.due_date && <span>due: {todo.due_date}</span>}

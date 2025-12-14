@@ -3,6 +3,7 @@ import { Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { Navbar } from "./components/Navbar";
 import { FloatingChat } from "./components/FloatingChat";
+import { ThemeProvider } from "./context/ThemeContext";
 
 const geistMono = Geist_Mono({
   variable: "--font-geist-mono",
@@ -20,13 +21,15 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
+    <html lang="en" suppressHydrationWarning>
       <body className={`${geistMono.variable} font-mono antialiased`}>
-        <div className="min-h-screen bg-[#faf9f7]">
-          <Navbar />
-          <main className="ml-44">{children}</main>
-          <FloatingChat />
-        </div>
+        <ThemeProvider>
+          <div className="min-h-screen" style={{ background: 'var(--background)' }}>
+            <Navbar />
+            <main className="ml-44">{children}</main>
+            <FloatingChat />
+          </div>
+        </ThemeProvider>
       </body>
     </html>
   );

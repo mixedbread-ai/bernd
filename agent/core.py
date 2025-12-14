@@ -24,7 +24,7 @@ def run_agent(
 
     for _ in range(max_iterations):
         response = client.responses.create(
-            model="gpt-5.1",
+            model="gpt-5.2",
             instructions=get_system_prompt(fs),
             tools=tools,
             input=input_list,
@@ -95,7 +95,7 @@ def run_agent_stream(
         has_function_calls = False
 
         with client.responses.stream(
-            model="gpt-5.1",
+            model="gpt-5.2",
             instructions=get_system_prompt(fs),
             tools=tools,
             input=input_list,

@@ -5,9 +5,16 @@ export interface ToolCall {
   args: Record<string, unknown>;
 }
 
+export interface ImageAttachment {
+  type: "image";
+  data: string; // base64 data URL
+  mimeType: string;
+}
+
 export interface Message {
   role: "user" | "assistant";
   content: string;
+  images?: ImageAttachment[];
   toolCalls?: ToolCall[];
 }
 

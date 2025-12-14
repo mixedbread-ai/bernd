@@ -28,7 +28,8 @@ def create_handlers(fs: SemanticFS, gcal: GoogleCalendar | None, mxb_api_key: st
             cal_result = gcal.create_event(
                 title=title,
                 description=description,
-                due_date=due_date,
+                start_time=due_date,
+                duration_minutes=30,
             )
             if cal_result.get("event_id"):
                 metadata["calendar_event_id"] = cal_result["event_id"]
@@ -97,7 +98,8 @@ def create_handlers(fs: SemanticFS, gcal: GoogleCalendar | None, mxb_api_key: st
                     event_id=event_id,
                     title=new_title,
                     description=description,
-                    due_date=due_date,
+                    start_time=due_date,
+                    duration_minutes=30,
                 )
                 metadata["calendar_event_id"] = event_id
             elif not event_id and due_date and status != TodoStatus.COMPLETED.value:
@@ -105,7 +107,8 @@ def create_handlers(fs: SemanticFS, gcal: GoogleCalendar | None, mxb_api_key: st
                 cal_result = gcal.create_event(
                     title=new_title,
                     description=description,
-                    due_date=due_date,
+                    start_time=due_date,
+                    duration_minutes=30,
                 )
                 if cal_result.get("event_id"):
                     metadata["calendar_event_id"] = cal_result["event_id"]
@@ -162,6 +165,54 @@ def create_handlers(fs: SemanticFS, gcal: GoogleCalendar | None, mxb_api_key: st
         ws = WebSearch(api_key=mxb_api_key)
         return ws.search(args["query"], args.get("top_k", 10))
 
+    def calendar(args):
+        if not gcal:
+            return {"error": "Google Calendar not configured"}
+
+        cmd = args.get("command", "list")
+
+        if cmd == "list":
+            return gcal.list_events(
+                max_results=args.get("max_results", 10),
+                time_min=args.get("time_min"),
+                time_max=args.get("time_max"),
+            )
+        elif cmd == "create":
+            if not args.get("title"):
+                return {"error": "title is required for create"}
+            if not args.get("start_time"):
+                return {"error": "start_time is required for create"}
+            return gcal.create_event(
+                title=args["title"],
+                description=args.get("description", ""),
+                start_time=args["start_time"],
+                end_time=args.get("end_time"),
+                duration_minutes=args.get("duration_minutes", 60),
+                location=args.get("location", ""),
+                attendees=args.get("attendees"),
+                send_notifications=args.get("send_notifications", True),
+            )
+        elif cmd == "update":
+            if not args.get("event_id"):
+                return {"error": "event_id is required for update"}
+            return gcal.update_event(
+                event_id=args["event_id"],
+                title=args.get("title"),
+                description=args.get("description"),
+                start_time=args.get("start_time"),
+                end_time=args.get("end_time"),
+                duration_minutes=args.get("duration_minutes", 60),
+                location=args.get("location"),
+                attendees=args.get("attendees"),
+                send_notifications=args.get("send_notifications", True),
+            )
+        elif cmd == "delete":
+            if not args.get("event_id"):
+                return {"error": "event_id is required for delete"}
+            return gcal.delete_event(event_id=args["event_id"])
+
+        return {"error": f"Unknown command: {cmd}"}
+
     def files(args):
         cmd = args["command"]
         path = args.get("path", "/")
@@ -195,5 +246,6 @@ def create_handlers(fs: SemanticFS, gcal: GoogleCalendar | None, mxb_api_key: st
         "update_todo": update_todo,
         "memory": memory,
         "web_search": web_search,
+        "calendar": calendar,
         "files": files,
     }

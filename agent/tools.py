@@ -145,6 +145,76 @@ Commands:
     },
     {
         "type": "function",
+        "name": "calendar",
+        "description": """Manage the user's Google Calendar.
+Commands:
+- list: List upcoming events (use time_min/time_max to filter by date range)
+- create: Create a new event (can invite attendees via email)
+- update: Update an existing event by event_id
+- delete: Delete an event by event_id""",
+        "parameters": {
+            "type": "object",
+            "properties": {
+                "command": {
+                    "type": "string",
+                    "enum": ["list", "create", "update", "delete"],
+                    "description": "The calendar operation to perform",
+                },
+                "event_id": {
+                    "type": "string",
+                    "description": "Event ID (required for update/delete)",
+                },
+                "title": {
+                    "type": "string",
+                    "description": "Event title (required for create)",
+                },
+                "description": {
+                    "type": "string",
+                    "description": "Event description",
+                },
+                "start_time": {
+                    "type": "string",
+                    "description": "Start time in ISO format (YYYY-MM-DDTHH:MM:SS) or date (YYYY-MM-DD)",
+                },
+                "end_time": {
+                    "type": "string",
+                    "description": "End time in ISO format (optional, uses duration if not set)",
+                },
+                "duration_minutes": {
+                    "type": "integer",
+                    "description": "Duration in minutes (default: 60, ignored if end_time provided)",
+                },
+                "location": {
+                    "type": "string",
+                    "description": "Event location",
+                },
+                "attendees": {
+                    "type": "array",
+                    "items": {"type": "string"},
+                    "description": "List of email addresses to invite",
+                },
+                "send_notifications": {
+                    "type": "boolean",
+                    "description": "Send email invites to attendees (default: true)",
+                },
+                "max_results": {
+                    "type": "integer",
+                    "description": "Max events to return for list (default: 10)",
+                },
+                "time_min": {
+                    "type": "string",
+                    "description": "Start of time range for list (ISO format, default: now)",
+                },
+                "time_max": {
+                    "type": "string",
+                    "description": "End of time range for list (ISO format)",
+                },
+            },
+            "required": ["command"],
+        },
+    },
+    {
+        "type": "function",
         "name": "files",
         "description": """Semantic filesystem for storing and retrieving any data.
 Commands:

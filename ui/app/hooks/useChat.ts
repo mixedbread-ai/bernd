@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useCallback } from "react";
-import { Message, ToolCall, StreamEvent } from "../types";
+import { Message, ToolCall, StreamEvent, ImageAttachment } from "../types";
 import { API_ENDPOINTS } from "../config";
 
 interface UseChatOptions {
@@ -13,6 +13,10 @@ interface UseChatReturn {
   setMessages: React.Dispatch<React.SetStateAction<Message[]>>;
   input: string;
   setInput: React.Dispatch<React.SetStateAction<string>>;
+  images: ImageAttachment[];
+  addImage: (image: ImageAttachment) => void;
+  removeImage: (index: number) => void;
+  clearImages: () => void;
   loading: boolean;
   streamingToolCalls: ToolCall[];
   streamingContent: string;
@@ -23,24 +27,43 @@ interface UseChatReturn {
 export function useChat(options: UseChatOptions = {}): UseChatReturn {
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
+  const [images, setImages] = useState<ImageAttachment[]>([]);
   const [loading, setLoading] = useState(false);
   const [streamingToolCalls, setStreamingToolCalls] = useState<ToolCall[]>([]);
   const [streamingContent, setStreamingContent] = useState("");
+
+  const addImage = useCallback((image: ImageAttachment) => {
+    setImages((prev) => [...prev, image]);
+  }, []);
+
+  const removeImage = useCallback((index: number) => {
+    setImages((prev) => prev.filter((_, i) => i !== index));
+  }, []);
+
+  const clearImages = useCallback(() => {
+    setImages([]);
+  }, []);
 
   const clearChat = useCallback(() => {
     setMessages([]);
     setStreamingContent("");
     setStreamingToolCalls([]);
+    setImages([]);
   }, []);
 
   const sendMessage = useCallback(
     async (chatId?: string | null) => {
-      if (!input.trim() || loading) return;
+      if ((!input.trim() && images.length === 0) || loading) return;
 
-      const userMessage: Message = { role: "user", content: input.trim() };
+      const userMessage: Message = {
+        role: "user",
+        content: input.trim(),
+        images: images.length > 0 ? [...images] : undefined,
+      };
       const newMessages = [...messages, userMessage];
       setMessages(newMessages);
       setInput("");
+      setImages([]);
       setLoading(true);
       setStreamingToolCalls([]);
       setStreamingContent("");
@@ -105,7 +128,7 @@ export function useChat(options: UseChatOptions = {}): UseChatReturn {
         setLoading(false);
       }
     },
-    [input, loading, messages, options]
+    [input, images, loading, messages, options]
   );
 
   return {
@@ -113,6 +136,10 @@ export function useChat(options: UseChatOptions = {}): UseChatReturn {
     setMessages,
     input,
     setInput,
+    images,
+    addImage,
+    removeImage,
+    clearImages,
     loading,
     streamingToolCalls,
     streamingContent,
@@ -147,4 +174,50 @@ export function handleChatKeyDown(
     e.preventDefault();
     sendMessage();
   }
+}
+
+// Utility for converting File to ImageAttachment
+export async function fileToImageAttachment(
+  file: File
+): Promise<ImageAttachment | null> {
+  if (!file.type.startsWith("image/")) {
+    return null;
+  }
+
+  return new Promise((resolve) => {
+    const reader = new FileReader();
+    reader.onload = () => {
+      resolve({
+        type: "image",
+        data: reader.result as string,
+        mimeType: file.type,
+      });
+    };
+    reader.onerror = () => resolve(null);
+    reader.readAsDataURL(file);
+  });
+}
+
+// Utility for handling paste events with images
+export async function handlePasteWithImages(
+  e: React.ClipboardEvent,
+  addImage: (image: ImageAttachment) => void
+): Promise<boolean> {
+  const items = e.clipboardData?.items;
+  if (!items) return false;
+
+  let hasImage = false;
+  for (const item of items) {
+    if (item.type.startsWith("image/")) {
+      const file = item.getAsFile();
+      if (file) {
+        const attachment = await fileToImageAttachment(file);
+        if (attachment) {
+          addImage(attachment);
+          hasImage = true;
+        }
+      }
+    }
+  }
+  return hasImage;
 }

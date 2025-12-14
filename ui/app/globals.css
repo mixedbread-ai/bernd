@@ -7,6 +7,20 @@
   --muted: #a8a8a8;
   --accent: #c45d3a;
   --border: #e8e6e3;
+  --surface: #ffffff;
+  --surface-hover: #f0efed;
+  --user-bubble: #e8e6e3;
+}
+
+.dark {
+  --background: #0f0f0f;
+  --foreground: #e8e6e3;
+  --muted: #6b6b6b;
+  --accent: #e07a5a;
+  --border: #2a2a2a;
+  --surface: #1a1a1a;
+  --surface-hover: #252525;
+  --user-bubble: #2a2a2a;
 }
 
 @theme inline {
@@ -19,6 +33,7 @@ body {
   background: var(--background);
   color: var(--foreground);
   font-family: var(--font-mono), monospace;
+  transition: background-color 0.2s, color 0.2s;
 }
 
 ::selection {
@@ -40,4 +55,35 @@ body {
 
 ::-webkit-scrollbar-thumb:hover {
   background: var(--muted);
+}
+
+/* Prose typography dark mode fixes */
+.dark .prose {
+  --tw-prose-body: var(--foreground);
+  --tw-prose-headings: var(--foreground);
+  --tw-prose-bold: var(--foreground);
+  --tw-prose-links: var(--accent);
+  --tw-prose-code: var(--foreground);
+  --tw-prose-quotes: var(--foreground);
+}
+
+.dark .prose strong {
+  color: var(--foreground);
+}
+
+.dark .prose b {
+  color: var(--foreground);
+}
+
+.dark .prose code {
+  color: var(--foreground);
+  background: var(--surface);
+}
+
+.dark .prose pre {
+  background: var(--surface);
+}
+
+.dark .prose a {
+  color: var(--accent);
 }

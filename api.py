@@ -7,6 +7,8 @@ from openai import OpenAI
 from tools.semantic_fs import SemanticFS
 import json
 import os
+import uuid
+import base64
 
 load_dotenv()
 
@@ -27,6 +29,101 @@ app.add_middleware(
 )
 
 fs = SemanticFS(api_key=os.getenv("MIXEDBREAD_API_KEY"), store_name="bernd")
+
+
+def save_image_to_store(chat_id: str, image_data: str, mime_type: str) -> str:
+    """Save base64 image to mixedbread store and return the path."""
+    # Determine file extension from mime type
+    ext_map = {
+        "image/png": "png",
+        "image/jpeg": "jpg",
+        "image/jpg": "jpg",
+        "image/gif": "gif",
+        "image/webp": "webp",
+    }
+    ext = ext_map.get(mime_type, "png")
+
+    # Generate unique filename
+    filename = f"{uuid.uuid4()}.{ext}"
+    path = f"/chat_assets/{chat_id}/{filename}"
+
+    # Extract base64 data (remove data URL prefix if present)
+    if "," in image_data:
+        image_data = image_data.split(",", 1)[1]
+
+    # Decode and save to store
+    image_bytes = base64.b64decode(image_data)
+    fs.write_binary(path, image_bytes, mime_type)
+
+    return path
+
+
+def load_image_from_store(image_path: str) -> str | None:
+    """Load image from mixedbread store and return as base64 data URL."""
+    result = fs.read_binary(image_path)
+    if "error" in result:
+        return None
+
+    # Determine mime type from extension
+    ext = image_path.split(".")[-1].lower()
+    mime_map = {
+        "png": "image/png",
+        "jpg": "image/jpeg",
+        "jpeg": "image/jpeg",
+        "gif": "image/gif",
+        "webp": "image/webp",
+    }
+    mime_type = mime_map.get(ext, "image/png")
+
+    # Encode to base64
+    b64_data = base64.b64encode(result["data"]).decode("utf-8")
+    return f"data:{mime_type};base64,{b64_data}"
+
+
+def process_images_for_save(chat_id: str, messages: list[dict]) -> list[dict]:
+    """Replace base64 images with file paths before saving."""
+    processed = []
+    for msg in messages:
+        new_msg = {"role": msg["role"], "content": msg["content"]}
+        if msg.get("images"):
+            new_images = []
+            for img in msg["images"]:
+                # Save image to store and keep path instead of base64
+                image_path = save_image_to_store(chat_id, img["data"], img["mimeType"])
+                new_images.append({
+                    "type": "image",
+                    "path": image_path,
+                    "mimeType": img["mimeType"],
+                })
+            new_msg["images"] = new_images
+        processed.append(new_msg)
+    return processed
+
+
+def process_images_for_load(messages: list[dict]) -> list[dict]:
+    """Replace file paths with base64 images after loading."""
+    processed = []
+    for msg in messages:
+        new_msg = {"role": msg["role"], "content": msg["content"]}
+        if msg.get("images"):
+            new_images = []
+            for img in msg["images"]:
+                if "path" in img:
+                    # Load image from store
+                    data = load_image_from_store(img["path"])
+                    if data:
+                        new_images.append({
+                            "type": "image",
+                            "data": data,
+                            "mimeType": img["mimeType"],
+                        })
+                elif "data" in img:
+                    # Already has data (shouldn't happen but handle it)
+                    new_images.append(img)
+            if new_images:
+                new_msg["images"] = new_images
+        processed.append(new_msg)
+    return processed
 
 
 def _path_to_id(path: str) -> str:
@@ -82,14 +179,43 @@ def search_all(q: str, top_k: int = 20):
     return fs.search(q, prefix="/", top_k=top_k)
 
 
+class ImageAttachment(BaseModel):
+    type: str
+    data: str  # base64 data URL
+    mimeType: str
+
+
 class ChatMessage(BaseModel):
     role: str
     content: str
+    images: list[ImageAttachment] | None = None
 
 
 class ChatRequest(BaseModel):
     messages: list[ChatMessage]
     chat_id: str | None = None
+
+
+def convert_message_for_openai(msg: dict) -> dict:
+    """Convert a message with images to OpenAI Responses API format."""
+    if not msg.get("images"):
+        return {"role": msg["role"], "content": msg["content"]}
+
+    # Build content array with text and images for Responses API
+    content = []
+
+    # Add text if present
+    if msg["content"]:
+        content.append({"type": "input_text", "text": msg["content"]})
+
+    # Add images
+    for img in msg["images"]:
+        content.append({
+            "type": "input_image",
+            "image_url": img["data"]
+        })
+
+    return {"role": msg["role"], "content": content}
 
 
 def generate_chat_title(messages: list[dict]) -> str:
@@ -138,7 +264,9 @@ def generate_chat_title(messages: list[dict]) -> str:
 def save_chat(chat_id: str, messages: list[dict]):
     """Save chat to semantic filesystem."""
     title = generate_chat_title(messages)
-    content = json.dumps(messages)
+    # Process images: save to disk and replace with paths
+    processed_messages = process_images_for_save(chat_id, messages)
+    content = json.dumps(processed_messages)
     fs.write(
         f"/chats/{chat_id}.json",
         content,
@@ -169,11 +297,12 @@ def list_chats(n: int = 50):
 def get_chat(chat_id: str):
     """Get a specific chat by ID."""
     result = fs.read(f"/chats/{chat_id}.json")
-    print(f"Loading chat {chat_id}: {result}")
     if "error" in result:
         return {"error": "not found"}
     try:
         messages = json.loads(result.get("content", "[]"))
+        # Load images from disk and convert back to base64
+        messages = process_images_for_load(messages)
     except json.JSONDecodeError:
         messages = []
     return {
@@ -189,14 +318,23 @@ def delete_chat(chat_id: str):
     result = fs.delete(f"/chats/{chat_id}.json")
     if "error" in result:
         return {"error": "not found"}
+
+    # Clean up associated image files from store
+    fs.clear_prefix(f"/chat_assets/{chat_id}")
+
     return {"status": "deleted", "id": chat_id}
 
 
 @app.post("/chat")
 def chat(request: ChatRequest):
     """Send a message to the agent and get a response."""
-    # Convert to the format expected by run_agent
-    conversation = [{"role": m.role, "content": m.content} for m in request.messages]
+    # Convert to the format expected by run_agent (with image support)
+    conversation = []
+    for m in request.messages:
+        msg = {"role": m.role, "content": m.content}
+        if m.images:
+            msg["images"] = [img.model_dump() for img in m.images]
+        conversation.append(convert_message_for_openai(msg))
 
     # Run the agent with tool call tracking
     result = run_agent(conversation, return_tool_calls=True)
@@ -207,9 +345,16 @@ def chat(request: ChatRequest):
 @app.post("/chat/stream")
 def chat_stream(request: ChatRequest):
     """Stream agent response with tool calls via SSE."""
-    # Keep a clean copy for saving (run_agent_stream mutates input_list)
-    messages_to_save = [{"role": m.role, "content": m.content} for m in request.messages]
-    agent_input = [{"role": m.role, "content": m.content} for m in request.messages]
+    # Keep a clean copy for saving (without OpenAI content format)
+    messages_to_save = []
+    for m in request.messages:
+        msg = {"role": m.role, "content": m.content}
+        if m.images:
+            msg["images"] = [img.model_dump() for img in m.images]
+        messages_to_save.append(msg)
+
+    # Convert to OpenAI format for the agent
+    agent_input = [convert_message_for_openai(msg) for msg in messages_to_save]
 
     # Generate chat_id if not provided
     chat_id = request.chat_id

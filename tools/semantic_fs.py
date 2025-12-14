@@ -209,6 +209,57 @@ class SemanticFS:
             deleted += 1
         return {"status": "cleared", "prefix": prefix, "deleted": deleted}
 
+    def write_binary(self, path: str, data: bytes, mime_type: str, metadata: Optional[dict] = None) -> dict:
+        """Write binary data (like images) to a path."""
+        file_id = self._path_to_id(path)
+        now = datetime.now().isoformat()
+
+        # Delete existing file if present
+        try:
+            self.mixedbread.stores.files.delete(
+                file_identifier=file_id,
+                store_identifier=self.store_name,
+            )
+        except Exception:
+            pass
+
+        meta = metadata or {}
+        meta["path"] = path
+        meta["created_at"] = now
+        meta["type"] = "binary"
+
+        filename = path.split("/")[-1]
+
+        self.mixedbread.stores.files.upload(
+            store_identifier=self.store_name,
+            file=(filename, data, mime_type),
+            metadata=meta,
+            external_id=file_id,
+            overwrite=True,
+        )
+        return {"status": "ok", "path": path}
+
+    def read_binary(self, path: str) -> dict:
+        """Read binary data from a path."""
+        file_id = self._path_to_id(path)
+
+        try:
+            resp = self.mixedbread.stores.files.retrieve(
+                file_identifier=file_id,
+                store_identifier=self.store_name,
+            )
+            content_resp = self.mixedbread.files.content(file_id=resp.id)
+            data = content_resp.read()
+
+            return {
+                "path": path,
+                "data": data,
+                "metadata": resp.metadata if hasattr(resp, "metadata") else {},
+            }
+        except Exception as e:
+            print(f"[SemanticFS] Error reading binary {path}: {e}")
+            return {"error": f"Not found: {path}"}
+
     # Toolbox functionality (tools are stored at /tools/*)
 
     def register_tool(
