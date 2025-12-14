@@ -1,0 +1,199 @@
+"""Tool handlers for the agent."""
+
+from constants import FileType, TodoStatus, Priority, Paths
+from tools.semantic_fs import SemanticFS
+from tools.google_calendar import GoogleCalendar
+
+
+def create_handlers(fs: SemanticFS, gcal: GoogleCalendar | None, mxb_api_key: str):
+    """Create handler functions with injected dependencies."""
+
+    def add_todo(args):
+        title = args["title"]
+        description = args.get("description", "")
+        due_date = args.get("due_date", "")
+        content = f"# {title}\n\n{description}"
+
+        metadata = {
+            "type": FileType.TODO.value,
+            "due_date": due_date,
+            "priority": args.get("priority", Priority.MEDIUM.value),
+            "status": args.get("status", TodoStatus.PENDING.value),
+            "tags": args.get("tags", []),
+        }
+
+        # Create calendar event if due_date is set and gcal is configured
+        cal_result = None
+        if gcal and due_date:
+            cal_result = gcal.create_event(
+                title=title,
+                description=description,
+                due_date=due_date,
+            )
+            if cal_result.get("event_id"):
+                metadata["calendar_event_id"] = cal_result["event_id"]
+
+        # Save to semantic filesystem
+        result = fs.write(f"{Paths.TODOS}/{title}.md", content, metadata)
+
+        if cal_result:
+            result["calendar"] = cal_result
+
+        return result
+
+    def get_todos(args):
+        files = fs.list(prefix=Paths.TODOS, limit=args.get("n", 20))
+        return [
+            {"title": f["path"].split("/")[-1].replace(".md", ""), **f["metadata"]}
+            for f in files
+        ]
+
+    def search_todos(args):
+        return fs.search(args["query"], prefix=Paths.TODOS, top_k=args.get("top_k", 10))
+
+    def remove_todo(args):
+        title = args["title"]
+
+        # Get existing todo to check for calendar event
+        existing = fs.read(f"{Paths.TODOS}/{title}.md")
+        event_id = existing.get("metadata", {}).get("calendar_event_id")
+
+        # Delete calendar event if exists
+        if gcal and event_id:
+            gcal.delete_event(event_id)
+
+        return fs.delete(f"{Paths.TODOS}/{title}.md")
+
+    def update_todo(args):
+        title = args["title"]
+        new_title = args.get("new_title", title)
+        description = args.get("description", "")
+        due_date = args.get("due_date", "")
+        status = args.get("status", TodoStatus.PENDING.value)
+        content = f"# {new_title}\n\n{description}"
+
+        # Get existing todo metadata
+        existing = fs.read(f"{Paths.TODOS}/{title}.md")
+        existing_meta = existing.get("metadata", {})
+        event_id = existing_meta.get("calendar_event_id")
+
+        metadata = {
+            "type": FileType.TODO.value,
+            "due_date": due_date,
+            "priority": args.get("priority", Priority.MEDIUM.value),
+            "status": status,
+            "tags": args.get("tags", []),
+        }
+
+        # Handle calendar event
+        cal_result = None
+        if gcal:
+            if status == TodoStatus.COMPLETED.value and event_id:
+                # Delete calendar event when todo is completed
+                cal_result = gcal.delete_event(event_id)
+            elif event_id and due_date:
+                # Update existing event
+                cal_result = gcal.update_event(
+                    event_id=event_id,
+                    title=new_title,
+                    description=description,
+                    due_date=due_date,
+                )
+                metadata["calendar_event_id"] = event_id
+            elif not event_id and due_date and status != TodoStatus.COMPLETED.value:
+                # Create new event if todo didn't have one but now has due_date
+                cal_result = gcal.create_event(
+                    title=new_title,
+                    description=description,
+                    due_date=due_date,
+                )
+                if cal_result.get("event_id"):
+                    metadata["calendar_event_id"] = cal_result["event_id"]
+
+        if new_title != title:
+            fs.delete(f"{Paths.TODOS}/{title}.md")
+
+        result = fs.write(f"{Paths.TODOS}/{new_title}.md", content, metadata)
+
+        if cal_result:
+            result["calendar"] = cal_result
+
+        return result
+
+    def memory(args):
+        cmd = args["command"]
+        path = args.get("path", Paths.MEMORIES)
+
+        if cmd == "view":
+            if path == Paths.MEMORIES or path.endswith("/"):
+                return {"files": fs.list(prefix=path)}
+            return fs.read(path)
+        elif cmd == "create":
+            return fs.write(path, args["content"], {"type": FileType.MEMORY.value})
+        elif cmd == "delete":
+            return fs.delete(path)
+        elif cmd == "search":
+            return fs.search(
+                args["query"], prefix=Paths.MEMORIES, top_k=args.get("top_k", 10)
+            )
+        elif cmd == "str_replace":
+            result = fs.read(path)
+            if "error" in result:
+                return result
+            new_content = result["content"].replace(args["old_str"], args["new_str"], 1)
+            return fs.write(path, new_content, result.get("metadata", {}))
+        elif cmd == "insert":
+            result = fs.read(path)
+            content = result.get("content", "") if "error" not in result else ""
+            lines = content.split("\n")
+            idx = max(0, min(args.get("insert_line", 1) - 1, len(lines)))
+            lines.insert(idx, args["new_str"])
+            return fs.write(
+                path,
+                "\n".join(lines),
+                result.get("metadata", {"type": FileType.MEMORY.value}),
+            )
+
+        return {"error": f"Unknown command: {cmd}"}
+
+    def web_search(args):
+        from tools.websearch import WebSearch
+
+        ws = WebSearch(api_key=mxb_api_key)
+        return ws.search(args["query"], args.get("top_k", 10))
+
+    def files(args):
+        cmd = args["command"]
+        path = args.get("path", "/")
+
+        if cmd == "read":
+            return fs.read(path)
+        elif cmd == "write":
+            metadata = args.get("metadata", {})
+            return fs.write(path, args["content"], metadata)
+        elif cmd == "delete":
+            return fs.delete(path)
+        elif cmd == "list":
+            return {"files": fs.list(prefix=path, limit=args.get("limit", 100))}
+        elif cmd == "search":
+            return fs.search(args["query"], prefix=path, top_k=args.get("top_k", 10))
+        elif cmd == "update":
+            result = fs.read(path)
+            if "error" in result:
+                return result
+            new_content = result["content"].replace(args["old_str"], args["new_str"], 1)
+            return fs.write(path, new_content, result.get("metadata", {}))
+
+        return {"error": f"Unknown command: {cmd}"}
+
+    # Return handlers map
+    return {
+        "add_todo": add_todo,
+        "get_todos": get_todos,
+        "search_todos": search_todos,
+        "remove_todo": remove_todo,
+        "update_todo": update_todo,
+        "memory": memory,
+        "web_search": web_search,
+        "files": files,
+    }

@@ -2,25 +2,90 @@
 
 import { useState, useRef, useEffect, useCallback } from "react";
 import ReactMarkdown from "react-markdown";
+import { useChat, handleChatKeyDown } from "../hooks/useChat";
+import { Message, ToolCall } from "../types";
 
-interface ToolCall {
-  name: string;
-  args: Record<string, unknown>;
+function MessageBubble({
+  msg,
+  onCopy,
+}: {
+  msg: Message;
+  onCopy: (text: string) => void;
+}) {
+  if (msg.role === "user") {
+    return (
+      <div className="bg-[#e8e6e3] text-[#1a1a1a] px-3 py-2 rounded-2xl max-w-[80%] text-sm prose prose-sm prose-neutral max-w-none">
+        <ReactMarkdown>{msg.content}</ReactMarkdown>
+      </div>
+    );
+  }
+
+  return (
+    <div className="max-w-[85%] group">
+      {msg.toolCalls && msg.toolCalls.length > 0 && (
+        <ToolCallsList toolCalls={msg.toolCalls} />
+      )}
+      <div className="prose prose-sm prose-neutral max-w-none">
+        <ReactMarkdown>{msg.content}</ReactMarkdown>
+      </div>
+      <button
+        onClick={() => onCopy(msg.content)}
+        className="mt-1 text-xs text-[#c4c4c4] hover:text-[#888] opacity-0 group-hover:opacity-100 transition-opacity"
+      >
+        copy
+      </button>
+    </div>
+  );
 }
 
-interface Message {
-  role: "user" | "assistant";
+function ToolCallsList({ toolCalls }: { toolCalls: ToolCall[] }) {
+  return (
+    <div className="mb-2 space-y-1">
+      {toolCalls.map((tc, j) => (
+        <div key={j} className="text-xs text-[#a8a8a8] font-mono break-all">
+          <span className="text-[#c45d3a]">→</span> {tc.name}
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function StreamingMessage({
+  toolCalls,
+  content,
+}: {
+  toolCalls: ToolCall[];
   content: string;
-  toolCalls?: ToolCall[];
+}) {
+  return (
+    <div className="flex justify-start">
+      <div className="max-w-[85%]">
+        {toolCalls.length > 0 && <ToolCallsList toolCalls={toolCalls} />}
+        {content ? (
+          <div className="prose prose-sm prose-neutral max-w-none">
+            <ReactMarkdown>{content}</ReactMarkdown>
+          </div>
+        ) : (
+          <div className="text-[#a8a8a8]">...</div>
+        )}
+      </div>
+    </div>
+  );
 }
 
 export function FloatingChat() {
   const [isOpen, setIsOpen] = useState(false);
-  const [messages, setMessages] = useState<Message[]>([]);
-  const [input, setInput] = useState("");
-  const [loading, setLoading] = useState(false);
-  const [streamingToolCalls, setStreamingToolCalls] = useState<ToolCall[]>([]);
-  const [streamingContent, setStreamingContent] = useState("");
+  const {
+    messages,
+    input,
+    setInput,
+    loading,
+    streamingToolCalls,
+    streamingContent,
+    sendMessage,
+    clearChat,
+  } = useChat();
+
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
@@ -31,7 +96,6 @@ export function FloatingChat() {
         e.preventDefault();
         setIsOpen((prev) => !prev);
       }
-      // Escape to close
       if (e.key === "Escape" && isOpen) {
         setIsOpen(false);
       }
@@ -53,93 +117,8 @@ export function FloatingChat() {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages, streamingContent]);
 
-  const sendMessage = async () => {
-    if (!input.trim() || loading) return;
-
-    const userMessage: Message = { role: "user", content: input.trim() };
-    const newMessages = [...messages, userMessage];
-    setMessages(newMessages);
-    setInput("");
-    setLoading(true);
-    setStreamingToolCalls([]);
-    setStreamingContent("");
-
-    try {
-      const res = await fetch("http://localhost:8000/chat/stream", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ messages: newMessages }),
-      });
-
-      const reader = res.body?.getReader();
-      const decoder = new TextDecoder();
-      const toolCalls: ToolCall[] = [];
-      let finalContent = "";
-
-      if (reader) {
-        while (true) {
-          const { done, value } = await reader.read();
-          if (done) break;
-
-          const chunk = decoder.decode(value);
-          const lines = chunk.split("\n");
-
-          for (const line of lines) {
-            if (line.startsWith("data: ")) {
-              try {
-                const data = JSON.parse(line.slice(6));
-                if (data.type === "tool_call") {
-                  toolCalls.push({ name: data.name, args: data.args });
-                  setStreamingToolCalls([...toolCalls]);
-                } else if (data.type === "text_delta") {
-                  finalContent += data.delta;
-                  setStreamingContent(finalContent);
-                } else if (data.type === "response_end") {
-                  finalContent = data.content;
-                  setStreamingContent(finalContent);
-                }
-              } catch {
-                // ignore parse errors
-              }
-            }
-          }
-        }
-      }
-
-      setMessages([
-        ...newMessages,
-        { role: "assistant", content: finalContent, toolCalls },
-      ]);
-      setStreamingToolCalls([]);
-      setStreamingContent("");
-    } catch (e) {
-      console.error("Chat failed", e);
-      setMessages([
-        ...newMessages,
-        { role: "assistant", content: "(failed to get response)" },
-      ]);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
-    if (e.key === "Enter") {
-      if (e.metaKey || e.ctrlKey || e.shiftKey) {
-        e.preventDefault();
-        const target = e.target as HTMLTextAreaElement;
-        const start = target.selectionStart;
-        const end = target.selectionEnd;
-        const newValue = input.slice(0, start) + "\n" + input.slice(end);
-        setInput(newValue);
-        setTimeout(() => {
-          target.selectionStart = target.selectionEnd = start + 1;
-        }, 0);
-        return;
-      }
-      e.preventDefault();
-      sendMessage();
-    }
+  const handleKeyDownLocal = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+    handleChatKeyDown(e, input, setInput, () => sendMessage());
   };
 
   const handleCopy = useCallback(async (text: string) => {
@@ -164,11 +143,7 @@ export function FloatingChat() {
           <div className="flex items-center gap-3">
             {messages.length > 0 && (
               <button
-                onClick={() => {
-                  setMessages([]);
-                  setStreamingContent("");
-                  setStreamingToolCalls([]);
-                }}
+                onClick={clearChat}
                 className="text-xs text-[#a8a8a8] hover:text-[#1a1a1a] transition-colors"
               >
                 clear
@@ -196,56 +171,15 @@ export function FloatingChat() {
               key={i}
               className={`flex ${msg.role === "user" ? "justify-end" : "justify-start"}`}
             >
-              {msg.role === "user" ? (
-                <div className="bg-[#e8e6e3] text-[#1a1a1a] px-3 py-2 rounded-2xl max-w-[80%] text-sm">
-                  {msg.content}
-                </div>
-              ) : (
-                <div className="max-w-[85%] group">
-                  {msg.toolCalls && msg.toolCalls.length > 0 && (
-                    <div className="mb-2 space-y-1">
-                      {msg.toolCalls.map((tc, j) => (
-                        <div key={j} className="text-xs text-[#a8a8a8] font-mono break-all">
-                          <span className="text-[#c45d3a]">→</span> {tc.name}
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                  <div className="prose prose-sm prose-neutral max-w-none">
-                    <ReactMarkdown>{msg.content}</ReactMarkdown>
-                  </div>
-                  <button
-                    onClick={() => handleCopy(msg.content)}
-                    className="mt-1 text-xs text-[#c4c4c4] hover:text-[#888] opacity-0 group-hover:opacity-100 transition-opacity"
-                  >
-                    copy
-                  </button>
-                </div>
-              )}
+              <MessageBubble msg={msg} onCopy={handleCopy} />
             </div>
           ))}
 
           {loading && (
-            <div className="flex justify-start">
-              <div className="max-w-[85%]">
-                {streamingToolCalls.length > 0 && (
-                  <div className="mb-2 space-y-1">
-                    {streamingToolCalls.map((tc, j) => (
-                      <div key={j} className="text-xs text-[#a8a8a8] font-mono">
-                        <span className="text-[#c45d3a]">→</span> {tc.name}
-                      </div>
-                    ))}
-                  </div>
-                )}
-                {streamingContent ? (
-                  <div className="prose prose-sm prose-neutral max-w-none">
-                    <ReactMarkdown>{streamingContent}</ReactMarkdown>
-                  </div>
-                ) : (
-                  <div className="text-[#a8a8a8]">...</div>
-                )}
-              </div>
-            </div>
+            <StreamingMessage
+              toolCalls={streamingToolCalls}
+              content={streamingContent}
+            />
           )}
 
           <div ref={messagesEndRef} />
@@ -257,7 +191,7 @@ export function FloatingChat() {
             ref={inputRef}
             value={input}
             onChange={(e) => setInput(e.target.value)}
-            onKeyDown={handleKeyDown}
+            onKeyDown={handleKeyDownLocal}
             placeholder="message..."
             disabled={loading}
             rows={2}

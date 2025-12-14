@@ -1,13 +1,8 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-
-interface SearchResult {
-  path: string;
-  content: string;
-  score: number;
-  metadata: Record<string, unknown>;
-}
+import { SearchResult } from "../types";
+import { API_ENDPOINTS } from "../config";
 
 function debounce<T extends (...args: Parameters<T>) => void>(
   fn: T,
@@ -56,7 +51,7 @@ export default function SearchPage() {
     setLoading(true);
     try {
       const res = await fetch(
-        `http://localhost:8000/search?q=${encodeURIComponent(q)}&top_k=20`
+        `${API_ENDPOINTS.search}?q=${encodeURIComponent(q)}&top_k=20`
       );
       const data = await res.json();
       setResults(data);
@@ -87,9 +82,7 @@ export default function SearchPage() {
           className="w-full bg-white/50 backdrop-blur border border-[#e8e6e3] rounded-lg shadow-[0_1px_4px_rgba(0,0,0,0.02)] px-4 py-3 text-sm outline-none placeholder:text-[#c4c4c4] focus:border-[#c45d3a] focus:shadow-[0_2px_8px_rgba(196,93,58,0.06)] transition-all mb-8"
         />
 
-        {loading && (
-          <div className="text-[#a8a8a8]">searching...</div>
-        )}
+        {loading && <div className="text-[#a8a8a8]">searching...</div>}
 
         {!loading && searched && results.length === 0 && (
           <div className="text-[#c4c4c4]">no results</div>
@@ -99,8 +92,9 @@ export default function SearchPage() {
           <ul className="space-y-6">
             {results.map((result, i) => {
               const type = getTypeFromPath(result.path);
-              const name = result.path.split("/").pop()?.replace(".md", "") || result.path;
-              const snippet = result.content
+              const name =
+                result.path.split("/").pop()?.replace(".md", "") || result.path;
+              const snippet = (result.content || "")
                 .replace(/^# .+\n\n?/, "")
                 .slice(0, 200)
                 .trim();

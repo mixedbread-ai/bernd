@@ -2,6 +2,9 @@
 
 import { useState, useRef, useEffect, useCallback } from "react";
 import ReactMarkdown from "react-markdown";
+import { useChat, handleChatKeyDown } from "../hooks/useChat";
+import { Message, ToolCall, ChatSummary } from "../types";
+import { API_ENDPOINTS } from "../config";
 
 function CopyButton({ text }: { text: string }) {
   const [copied, setCopied] = useState(false);
@@ -22,35 +25,53 @@ function CopyButton({ text }: { text: string }) {
   );
 }
 
-interface ToolCall {
-  name: string;
-  args: Record<string, unknown>;
-}
-
-interface Message {
-  role: "user" | "assistant";
-  content: string;
-  toolCalls?: ToolCall[];
-}
-
-interface ChatSummary {
-  id: string;
-  title: string;
-  message_count: number;
+function ToolCallsList({
+  toolCalls,
+  showArgs = false,
+}: {
+  toolCalls: ToolCall[];
+  showArgs?: boolean;
+}) {
+  return (
+    <div className="mb-2 space-y-1">
+      {toolCalls.map((tc, j) => (
+        <div key={j} className="text-xs text-[#a8a8a8] font-mono break-all">
+          <span className="text-[#c45d3a]">→</span> {tc.name}
+          {showArgs && (
+            <span className="text-[#c4c4c4] ml-1">
+              ({JSON.stringify(tc.args)})
+            </span>
+          )}
+        </div>
+      ))}
+    </div>
+  );
 }
 
 export default function ChatPage() {
-  const [messages, setMessages] = useState<Message[]>([]);
-  const [input, setInput] = useState("");
-  const [loading, setLoading] = useState(false);
-  const [streamingToolCalls, setStreamingToolCalls] = useState<ToolCall[]>([]);
-  const [streamingContent, setStreamingContent] = useState("");
   const [chatId, setChatId] = useState<string | null>(null);
   const [chats, setChats] = useState<ChatSummary[]>([]);
   const [chatSearch, setChatSearch] = useState("");
-  const messagesEndRef = useRef<HTMLDivElement>(null);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
+  const messagesEndRef = useRef<HTMLDivElement>(null);
   const [userScrolledUp, setUserScrolledUp] = useState(false);
+
+  const {
+    messages,
+    setMessages,
+    input,
+    setInput,
+    loading,
+    streamingToolCalls,
+    streamingContent,
+    sendMessage,
+    clearChat,
+  } = useChat({
+    onChatSaved: (newChatId) => {
+      setChatId(newChatId);
+      fetchChats();
+    },
+  });
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -85,7 +106,7 @@ export default function ChatPage() {
 
   const fetchChats = async () => {
     try {
-      const res = await fetch("http://localhost:8000/chats");
+      const res = await fetch(API_ENDPOINTS.chats);
       const data = await res.json();
       setChats(data);
     } catch (e) {
@@ -95,9 +116,8 @@ export default function ChatPage() {
 
   const loadChat = async (id: string) => {
     try {
-      const res = await fetch(`http://localhost:8000/chats/${id}`);
+      const res = await fetch(API_ENDPOINTS.chatById(id));
       const data = await res.json();
-      console.log("Loaded chat:", data);
       if (data.error) {
         console.error("Chat not found:", data.error);
         return;
@@ -112,106 +132,26 @@ export default function ChatPage() {
   };
 
   const startNewChat = () => {
-    setMessages([]);
+    clearChat();
     setChatId(null);
-    setStreamingContent("");
-    setStreamingToolCalls([]);
   };
 
-  const sendMessage = async () => {
-    if (!input.trim() || loading) return;
-
-    const userMessage: Message = { role: "user", content: input.trim() };
-    const newMessages = [...messages, userMessage];
-    setMessages(newMessages);
-    setInput("");
-    setLoading(true);
-    setStreamingToolCalls([]);
-    setStreamingContent("");
-
+  const deleteChat = async (id: string, e: React.MouseEvent) => {
+    e.stopPropagation(); // Prevent triggering loadChat
     try {
-      const res = await fetch("http://localhost:8000/chat/stream", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ messages: newMessages, chat_id: chatId }),
-      });
-
-      const reader = res.body?.getReader();
-      const decoder = new TextDecoder();
-      const toolCalls: ToolCall[] = [];
-      let finalContent = "";
-
-      if (reader) {
-        while (true) {
-          const { done, value } = await reader.read();
-          if (done) break;
-
-          const chunk = decoder.decode(value);
-          const lines = chunk.split("\n");
-
-          for (const line of lines) {
-            if (line.startsWith("data: ")) {
-              try {
-                const data = JSON.parse(line.slice(6));
-                if (data.type === "tool_call") {
-                  toolCalls.push({ name: data.name, args: data.args });
-                  setStreamingToolCalls([...toolCalls]);
-                } else if (data.type === "text_delta") {
-                  finalContent += data.delta;
-                  setStreamingContent(finalContent);
-                } else if (data.type === "response_end") {
-                  finalContent = data.content;
-                  setStreamingContent(finalContent);
-                } else if (data.type === "chat_saved") {
-                  setChatId(data.chat_id);
-                  fetchChats(); // Refresh chat list
-                }
-              } catch {
-                // ignore parse errors
-              }
-            }
-          }
-        }
+      await fetch(API_ENDPOINTS.chatById(id), { method: "DELETE" });
+      // If we deleted the current chat, start a new one
+      if (chatId === id) {
+        startNewChat();
       }
-
-      // Finalize message
-      setMessages([
-        ...newMessages,
-        { role: "assistant", content: finalContent, toolCalls },
-      ]);
-      setStreamingToolCalls([]);
-      setStreamingContent("");
-    } catch (e) {
-      console.error("Chat failed", e);
-      setMessages([
-        ...newMessages,
-        { role: "assistant", content: "(failed to get response)" },
-      ]);
-    } finally {
-      setLoading(false);
+      fetchChats();
+    } catch (err) {
+      console.error("Failed to delete chat", err);
     }
   };
 
-  const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
-    if (e.key === "Enter") {
-      if (e.metaKey || e.ctrlKey || e.shiftKey) {
-        // Cmd+Enter, Ctrl+Enter, or Shift+Enter = new line
-        e.preventDefault();
-        const target = e.target as HTMLTextAreaElement;
-        const start = target.selectionStart;
-        const end = target.selectionEnd;
-        const newValue = input.slice(0, start) + "\n" + input.slice(end);
-        setInput(newValue);
-        // Set cursor position after the newline
-        setTimeout(() => {
-          target.selectionStart = target.selectionEnd = start + 1;
-        }, 0);
-        return;
-      }
-      // Plain Enter = send
-      e.preventDefault();
-      sendMessage();
-    }
+  const handleKeyDownLocal = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+    handleChatKeyDown(e, input, setInput, () => sendMessage(chatId));
   };
 
   // Filter chats by search
@@ -240,16 +180,35 @@ export default function ChatPage() {
       <div className="flex-1 overflow-y-auto">
         <ul className="space-y-0.5">
           {filteredChats.map((chat) => (
-            <li key={chat.id}>
+            <li key={chat.id} className="group/item relative">
               <button
                 onClick={() => loadChat(chat.id)}
-                className={`w-full text-left px-2 py-1.5 text-xs rounded transition-colors truncate ${
+                className={`w-full text-left px-2 py-1.5 pr-8 text-xs rounded transition-colors truncate ${
                   chatId === chat.id
                     ? "bg-[#e8e6e3] text-[#1a1a1a]"
                     : "text-[#666] hover:text-[#1a1a1a] hover:bg-[#f0efed]"
                 }`}
               >
                 {chat.title}
+              </button>
+              <button
+                onClick={(e) => deleteChat(chat.id, e)}
+                className="absolute right-1 top-1/2 -translate-y-1/2 p-1 text-[#c4c4c4] hover:text-[#c45d3a] opacity-0 group-hover/item:opacity-100 transition-opacity"
+                title="Delete chat"
+              >
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  width="12"
+                  height="12"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                >
+                  <path d="M18 6L6 18M6 6l12 12" />
+                </svg>
               </button>
             </li>
           ))}
@@ -263,14 +222,12 @@ export default function ChatPage() {
     return (
       <div className="min-h-screen bg-[#faf9f7] flex flex-col items-center justify-center text-[#1a1a1a] px-6 mr-64">
         <div className="w-full max-w-lg text-center mb-8">
-          <h1 className="text-3xl font-light text-[#1a1a1a]">
-            Hey Aamir
-          </h1>
+          <h1 className="text-3xl font-light text-[#1a1a1a]">Hey Aamir</h1>
         </div>
         <textarea
           value={input}
           onChange={(e) => setInput(e.target.value)}
-          onKeyDown={handleKeyDown}
+          onKeyDown={handleKeyDownLocal}
           placeholder="How can I help you today?"
           autoFocus
           rows={3}
@@ -291,24 +248,19 @@ export default function ChatPage() {
         className="flex-1 overflow-y-auto flex justify-center"
       >
         <div className="w-full max-w-2xl px-6 py-12 pb-40">
-
           {messages.map((msg, i) => (
-            <div key={i} className={`mb-6 flex ${msg.role === "user" ? "justify-end" : "justify-start"}`}>
+            <div
+              key={i}
+              className={`mb-6 flex ${msg.role === "user" ? "justify-end" : "justify-start"}`}
+            >
               {msg.role === "user" ? (
-                <div className="bg-[#e8e6e3] text-[#1a1a1a] px-4 py-2 rounded-2xl max-w-[80%] text-sm">
-                  {msg.content}
+                <div className="bg-[#e8e6e3] text-[#1a1a1a] px-4 py-2 rounded-2xl max-w-[80%] text-sm prose prose-sm prose-neutral max-w-none">
+                  <ReactMarkdown>{msg.content}</ReactMarkdown>
                 </div>
               ) : (
                 <div className="max-w-[85%] group/msg">
                   {msg.toolCalls && msg.toolCalls.length > 0 && (
-                    <div className="mb-2 space-y-1">
-                      {msg.toolCalls.map((tc, j) => (
-                        <div key={j} className="text-xs text-[#a8a8a8] font-mono break-all">
-                          <span className="text-[#c45d3a]">→</span> {tc.name}
-                          <span className="text-[#c4c4c4] ml-1">({JSON.stringify(tc.args)})</span>
-                        </div>
-                      ))}
-                    </div>
+                    <ToolCallsList toolCalls={msg.toolCalls} showArgs />
                   )}
                   <div className="prose prose-sm prose-neutral max-w-none">
                     <ReactMarkdown>{msg.content}</ReactMarkdown>
@@ -325,14 +277,7 @@ export default function ChatPage() {
             <div className="mb-6 flex justify-start">
               <div className="max-w-[85%]">
                 {streamingToolCalls.length > 0 && (
-                  <div className="mb-2 space-y-1">
-                    {streamingToolCalls.map((tc, j) => (
-                      <div key={j} className="text-xs text-[#a8a8a8] font-mono break-all">
-                        <span className="text-[#c45d3a]">→</span> {tc.name}
-                        <span className="text-[#c4c4c4] ml-1">({JSON.stringify(tc.args)})</span>
-                      </div>
-                    ))}
-                  </div>
+                  <ToolCallsList toolCalls={streamingToolCalls} showArgs />
                 )}
                 {streamingContent ? (
                   <div className="prose prose-sm prose-neutral max-w-none">
@@ -353,7 +298,7 @@ export default function ChatPage() {
         <textarea
           value={input}
           onChange={(e) => setInput(e.target.value)}
-          onKeyDown={handleKeyDown}
+          onKeyDown={handleKeyDownLocal}
           placeholder="message..."
           disabled={loading}
           autoFocus

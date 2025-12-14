@@ -142,7 +142,7 @@ class GoogleCalendar:
     ) -> list[dict]:
         """List upcoming events."""
         try:
-            now = datetime.utcnow().isoformat() + "Z"
+            now = datetime.now().isoformat() + "Z"
             result = self.service.events().list(
                 calendarId=calendar_id,
                 timeMin=now,

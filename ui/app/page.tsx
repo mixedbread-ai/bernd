@@ -1,16 +1,8 @@
 "use client";
 
 import { useEffect, useState } from "react";
-
-interface Todo {
-  id: string;
-  title: string;
-  due_date: string;
-  priority: "low" | "medium" | "high";
-  status: "pending" | "in_progress" | "completed";
-  tags: string[];
-  content?: string;
-}
+import { Todo } from "./types";
+import { API_ENDPOINTS } from "./config";
 
 function formatDate(iso: string): string {
   if (!iso) return "";
@@ -27,9 +19,11 @@ function formatDate(iso: string): string {
 }
 
 export default function TodosPage() {
-  const [todos, setTodos] = useState<Todo[]>([]);
+  const [todos, setTodos] = useState<(Todo & { content?: string })[]>([]);
   const [loading, setLoading] = useState(true);
-  const [filter, setFilter] = useState<"all" | "pending" | "in_progress" | "completed">("pending");
+  const [filter, setFilter] = useState<
+    "all" | "pending" | "in_progress" | "completed"
+  >("pending");
   const [expanded, setExpanded] = useState<string | null>(null);
 
   const toggleExpand = async (id: string) => {
@@ -41,25 +35,29 @@ export default function TodosPage() {
     setExpanded(id);
 
     // Fetch content if not already loaded
-    const todo = todos.find(t => t.id === id);
+    const todo = todos.find((t) => t.id === id);
     if (todo && todo.content === undefined) {
       try {
-        const res = await fetch(`http://localhost:8000/todos/by-id/${id}`);
+        const res = await fetch(API_ENDPOINTS.todoById(id));
         const data = await res.json();
-        setTodos(prev => prev.map(t =>
-          t.id === id ? { ...t, content: data.content || "(no description)" } : t
-        ));
+        setTodos((prev) =>
+          prev.map((t) =>
+            t.id === id ? { ...t, content: data.content || "(no description)" } : t
+          )
+        );
       } catch (e) {
         console.error("Failed to fetch todo details", e);
-        setTodos(prev => prev.map(t =>
-          t.id === id ? { ...t, content: "(failed to load)" } : t
-        ));
+        setTodos((prev) =>
+          prev.map((t) =>
+            t.id === id ? { ...t, content: "(failed to load)" } : t
+          )
+        );
       }
     }
   };
 
   useEffect(() => {
-    fetch("http://localhost:8000/todos")
+    fetch(API_ENDPOINTS.todos)
       .then((res) => res.json())
       .then((data) => {
         setTodos(data);
@@ -92,7 +90,9 @@ export default function TodosPage() {
               }`}
             >
               {f === "in_progress" ? "active" : f}
-              {filter === f && <span className="ml-1 text-[#c45d3a]">{counts[f]}</span>}
+              {filter === f && (
+                <span className="ml-1 text-[#c45d3a]">{counts[f]}</span>
+              )}
             </button>
           ))}
         </div>
@@ -119,14 +119,16 @@ export default function TodosPage() {
                       todo.status === "completed"
                         ? "bg-[#d4d4d4]"
                         : todo.priority === "high"
-                        ? "bg-[#c45d3a]"
-                        : todo.priority === "medium"
-                        ? "bg-[#1a1a1a]"
-                        : "bg-[#c4c4c4]"
+                          ? "bg-[#c45d3a]"
+                          : todo.priority === "medium"
+                            ? "bg-[#1a1a1a]"
+                            : "bg-[#c4c4c4]"
                     }`}
                   />
                   <div className="flex-1">
-                    <span className={todo.status === "completed" ? "line-through" : ""}>
+                    <span
+                      className={todo.status === "completed" ? "line-through" : ""}
+                    >
                       {todo.title}
                     </span>
                     {todo.tags && todo.tags.length > 0 && (
@@ -136,14 +138,15 @@ export default function TodosPage() {
                     )}
                   </div>
                   <span className="shrink-0 text-sm text-[#c4c4c4]">
-                    {formatDate(todo.due_date)}
+                    {formatDate(todo.due_date || "")}
                   </span>
                 </div>
                 {expanded === todo.id && (
                   <div className="ml-6 mt-2 pl-4 border-l-2 border-[#e8e8e6] text-sm text-[#666]">
                     {todo.content !== undefined ? (
                       <div className="whitespace-pre-wrap">
-                        {todo.content.replace(/^# .+\n\n?/, "") || "(no description)"}
+                        {todo.content.replace(/^# .+\n\n?/, "") ||
+                          "(no description)"}
                       </div>
                     ) : (
                       <div className="text-[#c4c4c4]">loading...</div>

@@ -3,6 +3,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
 from dotenv import load_dotenv
+from openai import OpenAI
 from tools.semantic_fs import SemanticFS
 import json
 import os
@@ -11,6 +12,9 @@ load_dotenv()
 
 # Import agent components
 from agent import run_agent, run_agent_stream
+
+# OpenAI client for title generation
+openai_client = OpenAI()
 
 app = FastAPI()
 
@@ -89,14 +93,46 @@ class ChatRequest(BaseModel):
 
 
 def generate_chat_title(messages: list[dict]) -> str:
-    """Generate a title from the first user message."""
-    for msg in messages:
-        if msg["role"] == "user":
-            title = msg["content"][:50]
-            if len(msg["content"]) > 50:
-                title += "..."
-            return title
-    return "New chat"
+    """Generate a title using LLM to summarize the conversation."""
+    if not messages:
+        return "New chat"
+
+    # Build a summary of the conversation for the LLM
+    conversation_text = "\n".join(
+        f"{msg['role'].upper()}: {msg['content'][:500]}"
+        for msg in messages[:6]  # Limit to first 6 messages
+    )
+
+    try:
+        response = openai_client.chat.completions.create(
+            model="gpt-4o-mini",
+            messages=[
+                {
+                    "role": "system",
+                    "content": "Generate a short, descriptive title (3-6 words) for this conversation. Return ONLY the title, no quotes or punctuation at the end."
+                },
+                {
+                    "role": "user",
+                    "content": conversation_text
+                }
+            ],
+            max_tokens=20,
+            temperature=0.7,
+        )
+        title = response.choices[0].message.content.strip()
+        # Clean up any quotes or trailing punctuation
+        title = title.strip('"\'').rstrip('.')
+        return title[:50]  # Ensure max length
+    except Exception as e:
+        print(f"[API] Title generation failed: {e}")
+        # Fallback to first user message
+        for msg in messages:
+            if msg["role"] == "user":
+                title = msg["content"][:50]
+                if len(msg["content"]) > 50:
+                    title += "..."
+                return title
+        return "New chat"
 
 
 def save_chat(chat_id: str, messages: list[dict]):
@@ -145,6 +181,15 @@ def get_chat(chat_id: str):
         "messages": messages,
         "title": result.get("metadata", {}).get("title", "Untitled"),
     }
+
+
+@app.delete("/chats/{chat_id}")
+def delete_chat(chat_id: str):
+    """Delete a chat by ID."""
+    result = fs.delete(f"/chats/{chat_id}.json")
+    if "error" in result:
+        return {"error": "not found"}
+    return {"status": "deleted", "id": chat_id}
 
 
 @app.post("/chat")
