@@ -72,7 +72,7 @@ Start both the API server and the frontend:
 
 ```bash
 # Terminal 1: Start API server
-uv run api.py
+uvicorn api:app --reload
 
 # Terminal 2: Start UI
 cd ui && npm run dev
