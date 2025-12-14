@@ -75,7 +75,7 @@ def run_agent_stream(input_list: list, max_iterations: int = 15):
 
 def main():
     """CLI entry point."""
-    _cli_main(run_agent, token_usage)
+    _cli_main(run_agent, token_usage, fs=fs)
 
 
 # Export for backwards compatibility
