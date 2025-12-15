@@ -38,14 +38,23 @@ def show_cost(token_usage: dict):
     console.print(Panel(table, title="Token Usage", border_style="dim"))
 
 
-def generate_chat_title(messages: list[dict]) -> str:
+def generate_chat_title(messages: list) -> str:
     """Generate a title using LLM to summarize the conversation."""
     if not messages:
         return "New chat"
 
+    # Filter to only include dict messages with role and content
+    valid_messages = [
+        msg for msg in messages
+        if isinstance(msg, dict) and "role" in msg and "content" in msg
+    ]
+
+    if not valid_messages:
+        return "New chat"
+
     conversation_text = "\n".join(
         f"{msg['role'].upper()}: {msg['content'][:500]}"
-        for msg in messages[:6]
+        for msg in valid_messages[:6]
     )
 
     try:
@@ -69,7 +78,7 @@ def generate_chat_title(messages: list[dict]) -> str:
         return title[:50]
     except Exception as e:
         console.print(f"[dim]Title generation failed: {e}[/dim]")
-        for msg in messages:
+        for msg in valid_messages:
             if msg["role"] == "user":
                 title = msg["content"][:50]
                 if len(msg["content"]) > 50:
@@ -78,17 +87,22 @@ def generate_chat_title(messages: list[dict]) -> str:
         return "New chat"
 
 
-def save_chat(fs, chat_id: str, messages: list[dict]):
+def save_chat(fs, chat_id: str, messages: list):
     """Save chat to semantic filesystem."""
-    title = generate_chat_title(messages)
-    content = json.dumps(messages)
+    # Filter to only include serializable dict messages
+    valid_messages = [
+        msg for msg in messages
+        if isinstance(msg, dict) and "role" in msg and "content" in msg
+    ]
+    title = generate_chat_title(valid_messages)
+    content = json.dumps(valid_messages)
     fs.write(
         f"/chats/{chat_id}.json",
         content,
         {
             "type": "chat",
             "title": title,
-            "message_count": len(messages),
+            "message_count": len(valid_messages),
         },
     )
     return title
