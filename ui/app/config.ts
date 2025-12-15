@@ -15,6 +15,10 @@ export const API_ENDPOINTS = {
   chats: `${API_BASE_URL}/chats`,
   chatById: (id: string) => `${API_BASE_URL}/chats/${id}`,
 
+  // Notes
+  notes: `${API_BASE_URL}/notes`,
+  noteById: (id: string) => `${API_BASE_URL}/notes/${id}`,
+
   // Search
   search: `${API_BASE_URL}/search`,
 } as const;

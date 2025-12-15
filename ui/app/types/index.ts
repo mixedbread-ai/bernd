@@ -42,6 +42,13 @@ export interface SearchResult {
   metadata?: Record<string, unknown>;
 }
 
+export interface Note {
+  id: string;
+  title: string;
+  content?: string;
+  updated_at?: string;
+}
+
 // SSE event types from the streaming API
 export type StreamEvent =
   | { type: "tool_call"; name: string; args: Record<string, unknown> }

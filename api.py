@@ -179,6 +179,117 @@ def search_all(q: str, top_k: int = 20):
     return fs.search(q, prefix="/", top_k=top_k)
 
 
+# Notes endpoints
+class NoteCreate(BaseModel):
+    title: str
+    content: str
+
+
+class NoteUpdate(BaseModel):
+    title: str | None = None
+    content: str | None = None
+
+
+@app.get("/notes")
+def get_notes(n: int = 50):
+    """List all notes."""
+    files = fs.list(prefix="/notes", limit=n)
+    notes = []
+    for f in files:
+        path = f["path"]
+        notes.append({
+            "id": _path_to_id(path),
+            "title": f["metadata"].get("title", path.split("/")[-1].replace(".md", "")),
+            "updated_at": f["metadata"].get("updated_at", ""),
+        })
+    return notes
+
+
+@app.get("/notes/{note_id:path}")
+def get_note(note_id: str):
+    """Get a note by ID."""
+    path = _id_to_path(note_id)
+    result = fs.read(path)
+    if "error" in result:
+        return {"error": "not found"}
+    return {
+        "id": note_id,
+        "title": result.get("metadata", {}).get("title", path.split("/")[-1].replace(".md", "")),
+        "content": result.get("content", ""),
+        "updated_at": result.get("metadata", {}).get("updated_at", ""),
+    }
+
+
+@app.post("/notes")
+def create_note(note: NoteCreate):
+    """Create a new note."""
+    from datetime import datetime
+    note_id = datetime.now().strftime("%Y%m%d_%H%M%S")
+    path = f"/notes/{note_id}.md"
+    updated_at = datetime.now().isoformat()
+    # Ensure content is not empty (mixedbread requires valid file content)
+    content = note.content if note.content else " "
+    fs.write(
+        path,
+        content,
+        {
+            "type": "note",
+            "title": note.title,
+            "updated_at": updated_at,
+        },
+    )
+    return {
+        "id": _path_to_id(path),
+        "title": note.title,
+        "content": note.content,
+        "updated_at": updated_at,
+    }
+
+
+@app.put("/notes/{note_id:path}")
+def update_note(note_id: str, note: NoteUpdate):
+    """Update an existing note."""
+    from datetime import datetime
+    path = _id_to_path(note_id)
+    existing = fs.read(path)
+    if "error" in existing:
+        return {"error": "not found"}
+
+    current_content = existing.get("content", "")
+    current_metadata = existing.get("metadata", {})
+
+    new_content = note.content if note.content is not None else current_content
+    new_title = note.title if note.title is not None else current_metadata.get("title", "")
+    updated_at = datetime.now().isoformat()
+
+    # Ensure content is not empty (mixedbread requires valid file content)
+    fs.write(
+        path,
+        new_content if new_content else " ",
+        {
+            "type": "note",
+            "title": new_title,
+            "updated_at": updated_at,
+        },
+    )
+    return {
+        "id": note_id,
+        "title": new_title,
+        "content": new_content,
+        "updated_at": updated_at,
+    }
+
+
+@app.delete("/notes/{note_id:path}")
+def delete_note(note_id: str):
+    """Delete a note by ID."""
+    path = _id_to_path(note_id)
+    result = fs.delete(path)
+    if "error" in result:
+        return {"error": "not found"}
+    return {"status": "deleted", "id": note_id}
+
+
 class ImageAttachment(BaseModel):
     type: str
     data: str  # base64 data URL

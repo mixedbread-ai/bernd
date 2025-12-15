@@ -8,6 +8,7 @@ import { useTheme } from "../context/ThemeContext";
 const navItems = [
   { href: "/", label: "todos", key: "t" },
   { href: "/chat", label: "chat", key: "c" },
+  { href: "/notes", label: "notes", key: "n" },
   { href: "/search", label: "search", key: "s" },
 ];
 
