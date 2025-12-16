@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { API_ENDPOINTS } from "../config";
 import { api } from "../lib/api";
+import ReactMarkdown from "react-markdown";
 
 interface FileItem {
   name: string;
@@ -11,6 +12,13 @@ interface FileItem {
   size?: number;
   mime_type?: string;
   created_at?: string;
+}
+
+interface PreviewData {
+  item: FileItem;
+  content?: string;
+  blobUrl?: string;
+  loading: boolean;
 }
 
 function formatSize(bytes?: number): string {
@@ -29,6 +37,16 @@ function getFileIcon(mimeType?: string): string {
   return "📄";
 }
 
+function canPreview(mimeType?: string): boolean {
+  if (!mimeType) return false;
+  return (
+    mimeType.startsWith("image/") ||
+    mimeType === "application/pdf" ||
+    mimeType === "text/markdown" ||
+    mimeType === "text/plain"
+  );
+}
+
 export default function FilesPage() {
   const [currentPath, setCurrentPath] = useState("/files");
   const [items, setItems] = useState<FileItem[]>([]);
@@ -36,6 +54,8 @@ export default function FilesPage() {
   const [uploading, setUploading] = useState(false);
   const [showNewFolder, setShowNewFolder] = useState(false);
   const [newFolderName, setNewFolderName] = useState("");
+  const [preview, setPreview] = useState<PreviewData | null>(null);
+  const [newFile, setNewFile] = useState<{ name: string; content: string } | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const fetchFiles = useCallback(async (path: string) => {
@@ -56,6 +76,26 @@ export default function FilesPage() {
   useEffect(() => {
     fetchFiles(currentPath);
   }, []);
+
+  // Cleanup blob URLs on unmount
+  useEffect(() => {
+    return () => {
+      if (preview?.blobUrl) {
+        URL.revokeObjectURL(preview.blobUrl);
+      }
+    };
+  }, [preview?.blobUrl]);
+
+  // Close preview with Escape key
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape" && preview) {
+        closePreview();
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [preview]);
 
   const navigateTo = (path: string) => {
     fetchFiles(path);
@@ -130,10 +170,8 @@ export default function FilesPage() {
       const url = API_ENDPOINTS.filesDownload(item.path);
       const res = await api.get(url);
 
-      // Check if it's a binary response
       const contentType = res.headers.get("content-type");
       if (contentType && !contentType.includes("application/json")) {
-        // Binary download
         const blob = await res.blob();
         const downloadUrl = URL.createObjectURL(blob);
         const a = document.createElement("a");
@@ -142,7 +180,6 @@ export default function FilesPage() {
         a.click();
         URL.revokeObjectURL(downloadUrl);
       } else {
-        // Text content
         const data = await res.json();
         const blob = new Blob([data.content], { type: data.mime_type });
         const downloadUrl = URL.createObjectURL(blob);
@@ -158,7 +195,84 @@ export default function FilesPage() {
     }
   };
 
-  // Breadcrumb parts
+  const openPreview = async (item: FileItem) => {
+    if (!canPreview(item.mime_type)) {
+      downloadFile(item);
+      return;
+    }
+
+    setPreview({ item, loading: true });
+
+    try {
+      const url = API_ENDPOINTS.filesDownload(item.path);
+      const res = await api.get(url);
+
+      const contentType = res.headers.get("content-type");
+
+      if (item.mime_type?.startsWith("image/") || item.mime_type === "application/pdf") {
+        // Binary content - create blob URL
+        let blob: Blob;
+        if (contentType && !contentType.includes("application/json")) {
+          blob = await res.blob();
+        } else {
+          // Base64 encoded in JSON
+          const data = await res.json();
+          const binary = atob(data.content);
+          const bytes = new Uint8Array(binary.length);
+          for (let i = 0; i < binary.length; i++) {
+            bytes[i] = binary.charCodeAt(i);
+          }
+          blob = new Blob([bytes], { type: item.mime_type });
+        }
+        const blobUrl = URL.createObjectURL(blob);
+        setPreview({ item, blobUrl, loading: false });
+      } else {
+        // Text content
+        let content: string;
+        if (contentType && !contentType.includes("application/json")) {
+          content = await res.text();
+        } else {
+          const data = await res.json();
+          content = data.content;
+        }
+        setPreview({ item, content, loading: false });
+      }
+    } catch (e) {
+      console.error("Preview failed:", e);
+      setPreview(null);
+      alert("Failed to load preview.");
+    }
+  };
+
+  const closePreview = () => {
+    if (preview?.blobUrl) {
+      URL.revokeObjectURL(preview.blobUrl);
+    }
+    setPreview(null);
+  };
+
+  const createFile = async () => {
+    if (!newFile?.name.trim()) return;
+
+    const fileName = newFile.name.endsWith(".md") ? newFile.name : `${newFile.name}.md`;
+
+    try {
+      const blob = new Blob([newFile.content], { type: "text/markdown" });
+      const file = new File([blob], fileName, { type: "text/markdown" });
+
+      const formData = new FormData();
+      formData.append("file", file);
+      formData.append("path", currentPath);
+
+      await api.upload(API_ENDPOINTS.filesUpload, formData);
+      setNewFile(null);
+      fetchFiles(currentPath);
+    } catch (e) {
+      console.error("Failed to create file:", e);
+      alert("Failed to create file.");
+    }
+  };
+
   const pathParts = currentPath.split("/").filter(Boolean);
 
   return (
@@ -182,6 +296,17 @@ export default function FilesPage() {
           </div>
 
           <div className="flex items-center gap-2">
+            <button
+              onClick={() => setNewFile({ name: "", content: "" })}
+              className="text-xs px-3 py-1.5 rounded-lg transition-colors hover:opacity-80"
+              style={{
+                background: "var(--surface)",
+                border: "1px solid var(--border)",
+                color: "var(--muted)",
+              }}
+            >
+              + file
+            </button>
             <button
               onClick={() => setShowNewFolder(true)}
               className="text-xs px-3 py-1.5 rounded-lg transition-colors hover:opacity-80"
@@ -291,7 +416,10 @@ export default function FilesPage() {
                     </span>
                   </button>
                 ) : (
-                  <div className="flex-1 flex items-center gap-3">
+                  <button
+                    onClick={() => openPreview(item)}
+                    className="flex-1 flex items-center gap-3 text-left"
+                  >
                     <span className="text-lg">{getFileIcon(item.mime_type)}</span>
                     <div className="flex-1 min-w-0">
                       <div className="text-sm truncate" style={{ color: "var(--foreground)" }}>
@@ -301,13 +429,13 @@ export default function FilesPage() {
                         {formatSize(item.size)}
                       </div>
                     </div>
-                  </div>
+                  </button>
                 )}
 
-                <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity">
                   {item.type === "file" && (
                     <button
-                      onClick={() => downloadFile(item)}
+                      onClick={(e) => { e.stopPropagation(); downloadFile(item); }}
                       className="p-1.5 rounded hover:bg-opacity-80"
                       style={{ color: "var(--muted)" }}
                       title="Download"
@@ -320,7 +448,7 @@ export default function FilesPage() {
                     </button>
                   )}
                   <button
-                    onClick={() => deleteItem(item)}
+                    onClick={(e) => { e.stopPropagation(); deleteItem(item); }}
                     className="p-1.5 rounded hover:bg-opacity-80"
                     style={{ color: "var(--accent)" }}
                     title="Delete"
@@ -335,6 +463,159 @@ export default function FilesPage() {
           </div>
         )}
       </div>
+
+      {/* Preview Modal */}
+      {preview && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 md:p-8"
+          style={{ background: "rgba(0, 0, 0, 0.8)" }}
+          onClick={closePreview}
+        >
+          <div
+            className="relative w-full max-w-4xl max-h-[90vh] rounded-xl overflow-hidden flex flex-col"
+            style={{ background: "var(--background)" }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Header */}
+            <div
+              className="flex items-center justify-between p-4 border-b"
+              style={{ borderColor: "var(--border)" }}
+            >
+              <div className="flex items-center gap-3 min-w-0">
+                <span className="text-lg">{getFileIcon(preview.item.mime_type)}</span>
+                <span className="text-sm truncate" style={{ color: "var(--foreground)" }}>
+                  {preview.item.name}
+                </span>
+              </div>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => downloadFile(preview.item)}
+                  className="p-2 rounded-lg hover:opacity-80"
+                  style={{ color: "var(--muted)" }}
+                  title="Download"
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                    <polyline points="7 10 12 15 17 10" />
+                    <line x1="12" y1="15" x2="12" y2="3" />
+                  </svg>
+                </button>
+                <button
+                  onClick={closePreview}
+                  className="p-2 rounded-lg hover:opacity-80"
+                  style={{ color: "var(--muted)" }}
+                  title="Close"
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <line x1="18" y1="6" x2="6" y2="18" />
+                    <line x1="6" y1="6" x2="18" y2="18" />
+                  </svg>
+                </button>
+              </div>
+            </div>
+
+            {/* Content */}
+            <div className="flex-1 overflow-auto p-4">
+              {preview.loading ? (
+                <div className="flex items-center justify-center h-64" style={{ color: "var(--muted)" }}>
+                  loading...
+                </div>
+              ) : preview.item.mime_type?.startsWith("image/") ? (
+                <div className="flex items-center justify-center">
+                  <img
+                    src={preview.blobUrl}
+                    alt={preview.item.name}
+                    className="max-w-full max-h-[70vh] object-contain rounded"
+                  />
+                </div>
+              ) : preview.item.mime_type === "application/pdf" ? (
+                <iframe
+                  src={preview.blobUrl}
+                  className="w-full h-[70vh] rounded"
+                  title={preview.item.name}
+                />
+              ) : preview.item.mime_type === "text/markdown" ? (
+                <div className="prose prose-invert max-w-none" style={{ color: "var(--foreground)" }}>
+                  <ReactMarkdown>{preview.content || ""}</ReactMarkdown>
+                </div>
+              ) : (
+                <pre
+                  className="text-sm whitespace-pre-wrap font-mono p-4 rounded-lg overflow-auto"
+                  style={{ background: "var(--surface)", color: "var(--foreground)" }}
+                >
+                  {preview.content}
+                </pre>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* New File Editor Modal */}
+      {newFile && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 md:p-8"
+          style={{ background: "rgba(0, 0, 0, 0.8)" }}
+          onClick={() => setNewFile(null)}
+        >
+          <div
+            className="relative w-full max-w-3xl max-h-[90vh] rounded-xl overflow-hidden flex flex-col"
+            style={{ background: "var(--background)" }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Header */}
+            <div
+              className="flex items-center justify-between p-4 border-b"
+              style={{ borderColor: "var(--border)" }}
+            >
+              <div className="flex items-center gap-3 flex-1 min-w-0">
+                <span className="text-lg">📝</span>
+                <input
+                  type="text"
+                  value={newFile.name}
+                  onChange={(e) => setNewFile({ ...newFile, name: e.target.value })}
+                  placeholder="filename.md"
+                  autoFocus
+                  className="flex-1 text-sm bg-transparent outline-none"
+                  style={{ color: "var(--foreground)" }}
+                />
+              </div>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={createFile}
+                  disabled={!newFile.name.trim()}
+                  className="text-xs px-3 py-1.5 rounded-lg transition-colors hover:opacity-80 disabled:opacity-50"
+                  style={{ background: "var(--accent)", color: "white" }}
+                >
+                  save
+                </button>
+                <button
+                  onClick={() => setNewFile(null)}
+                  className="p-2 rounded-lg hover:opacity-80"
+                  style={{ color: "var(--muted)" }}
+                  title="Close"
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <line x1="18" y1="6" x2="6" y2="18" />
+                    <line x1="6" y1="6" x2="18" y2="18" />
+                  </svg>
+                </button>
+              </div>
+            </div>
+
+            {/* Editor */}
+            <div className="flex-1 overflow-auto p-4">
+              <textarea
+                value={newFile.content}
+                onChange={(e) => setNewFile({ ...newFile, content: e.target.value })}
+                placeholder="Write your markdown here..."
+                className="w-full h-[60vh] text-sm font-mono bg-transparent outline-none resize-none"
+                style={{ color: "var(--foreground)" }}
+              />
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
