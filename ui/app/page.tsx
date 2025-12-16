@@ -31,13 +31,13 @@ function sortTodos(todos: Todo[], sortBy: SortOption): Todo[] {
         const pB = PRIORITY_ORDER[b.priority || ""] ?? 3;
         if (pA !== pB) return pA - pB;
         // Secondary sort by due date
-        const dA = a.due_date || a.due || "9999";
-        const dB = b.due_date || b.due || "9999";
+        const dA = a.due_date || "9999";
+        const dB = b.due_date || "9999";
         return dA.localeCompare(dB);
       }
       case "due_date": {
-        const dA = a.due_date || a.due || "9999";
-        const dB = b.due_date || b.due || "9999";
+        const dA = a.due_date || "9999";
+        const dB = b.due_date || "9999";
         return dA.localeCompare(dB);
       }
       case "created": {
