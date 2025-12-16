@@ -19,12 +19,47 @@ function formatDate(iso: string): string {
   return d.toLocaleDateString("en-US", { month: "short", day: "numeric" });
 }
 
+type SortOption = "priority" | "due_date" | "created" | "alphabetical";
+
+const PRIORITY_ORDER: Record<string, number> = { high: 0, medium: 1, low: 2 };
+
+function sortTodos(todos: Todo[], sortBy: SortOption): Todo[] {
+  return [...todos].sort((a, b) => {
+    switch (sortBy) {
+      case "priority": {
+        const pA = PRIORITY_ORDER[a.priority || ""] ?? 3;
+        const pB = PRIORITY_ORDER[b.priority || ""] ?? 3;
+        if (pA !== pB) return pA - pB;
+        // Secondary sort by due date
+        const dA = a.due_date || a.due || "9999";
+        const dB = b.due_date || b.due || "9999";
+        return dA.localeCompare(dB);
+      }
+      case "due_date": {
+        const dA = a.due_date || a.due || "9999";
+        const dB = b.due_date || b.due || "9999";
+        return dA.localeCompare(dB);
+      }
+      case "created": {
+        const cA = a.created_at || "0000";
+        const cB = b.created_at || "0000";
+        return cB.localeCompare(cA); // Newest first
+      }
+      case "alphabetical":
+        return a.title.localeCompare(b.title);
+      default:
+        return 0;
+    }
+  });
+}
+
 export default function TodosPage() {
   const [todos, setTodos] = useState<(Todo & { content?: string })[]>([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<
     "all" | "pending" | "in_progress" | "completed"
   >("pending");
+  const [sortBy, setSortBy] = useState<SortOption>("priority");
   const [expanded, setExpanded] = useState<string | null>(null);
 
   const toggleExpand = async (id: string) => {
@@ -67,7 +102,10 @@ export default function TodosPage() {
       .catch(() => setLoading(false));
   }, []);
 
-  const filtered = todos.filter((t) => filter === "all" || t.status === filter);
+  const filtered = sortTodos(
+    todos.filter((t) => filter === "all" || t.status === filter),
+    sortBy
+  );
 
   const counts = {
     all: todos.length,
@@ -79,20 +117,37 @@ export default function TodosPage() {
   return (
     <div className="min-h-screen p-4 md:p-12" style={{ background: 'var(--background)', color: 'var(--foreground)' }}>
       <div className="mx-auto max-w-xl">
-        <div className="mb-6 md:mb-10 flex items-baseline gap-4 md:gap-6 text-sm overflow-x-auto">
-          {(["all", "pending", "in_progress", "completed"] as const).map((f) => (
-            <button
-              key={f}
-              onClick={() => setFilter(f)}
-              className="transition-colors"
-              style={{ color: filter === f ? 'var(--foreground)' : 'var(--muted)' }}
-            >
-              {f === "in_progress" ? "active" : f}
-              {filter === f && (
-                <span className="ml-1" style={{ color: 'var(--accent)' }}>{counts[f]}</span>
-              )}
-            </button>
-          ))}
+        <div className="mb-6 md:mb-10 flex items-center justify-between gap-4">
+          <div className="flex items-baseline gap-4 md:gap-6 text-sm overflow-x-auto">
+            {(["all", "pending", "in_progress", "completed"] as const).map((f) => (
+              <button
+                key={f}
+                onClick={() => setFilter(f)}
+                className="transition-colors whitespace-nowrap"
+                style={{ color: filter === f ? 'var(--foreground)' : 'var(--muted)' }}
+              >
+                {f === "in_progress" ? "active" : f}
+                {filter === f && (
+                  <span className="ml-1" style={{ color: 'var(--accent)' }}>{counts[f]}</span>
+                )}
+              </button>
+            ))}
+          </div>
+          <select
+            value={sortBy}
+            onChange={(e) => setSortBy(e.target.value as SortOption)}
+            className="text-xs px-2 py-1 rounded outline-none cursor-pointer"
+            style={{
+              background: 'var(--surface)',
+              border: '1px solid var(--border)',
+              color: 'var(--muted)',
+            }}
+          >
+            <option value="priority">priority</option>
+            <option value="due_date">due date</option>
+            <option value="created">newest</option>
+            <option value="alphabetical">a-z</option>
+          </select>
         </div>
 
         {loading ? (

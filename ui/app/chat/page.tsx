@@ -175,20 +175,33 @@ export default function ChatPage() {
     },
   });
 
-  const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  const scrollToBottom = (instant = false) => {
+    if (scrollContainerRef.current) {
+      scrollContainerRef.current.scrollTop = scrollContainerRef.current.scrollHeight;
+    }
   };
 
+  // Auto-scroll only when not manually scrolled up
   useEffect(() => {
     if (!userScrolledUp) {
-      scrollToBottom();
+      scrollToBottom(true);
     }
-  }, [messages, streamingContent, streamingToolCalls, userScrolledUp]);
+  }, [messages, streamingContent, streamingToolCalls]);
+
+  // Reset scroll state when new message is sent
+  useEffect(() => {
+    if (messages.length > 0) {
+      const lastMsg = messages[messages.length - 1];
+      if (lastMsg.role === "user") {
+        setUserScrolledUp(false);
+      }
+    }
+  }, [messages]);
 
   const handleScroll = () => {
     if (!scrollContainerRef.current) return;
     const { scrollTop, scrollHeight, clientHeight } = scrollContainerRef.current;
-    const isNearBottom = scrollHeight - scrollTop - clientHeight < 100;
+    const isNearBottom = scrollHeight - scrollTop - clientHeight < 150;
     setUserScrolledUp(!isNearBottom);
   };
 

@@ -26,4 +26,11 @@ export const API_ENDPOINTS = {
 
   // Search
   search: `${API_BASE_URL}/search`,
+
+  // Files
+  files: `${API_BASE_URL}/files`,
+  filesUpload: `${API_BASE_URL}/files/upload`,
+  filesFolder: `${API_BASE_URL}/files/folder`,
+  filesDownload: (path: string) => `${API_BASE_URL}/files/download${path}`,
+  filesDelete: (path: string) => `${API_BASE_URL}/files${path}`,
 } as const;
