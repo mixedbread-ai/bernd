@@ -1,123 +1,48 @@
 "use client";
 
-import { useState, ReactNode } from "react";
+import { useEffect, ReactNode } from "react";
+import { useRouter, usePathname } from "next/navigation";
 import { useAuth } from "../context/AuthContext";
-import { API_ENDPOINTS } from "../config";
 
 export function AuthGate({ children }: { children: ReactNode }) {
-  const { isAuthenticated, setApiKey } = useAuth();
-  const [inputKey, setInputKey] = useState("");
-  const [error, setError] = useState("");
-  const [isValidating, setIsValidating] = useState(false);
+  const { isAuthenticated, isPending } = useAuth();
+  const router = useRouter();
+  const pathname = usePathname();
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    const key = inputKey.trim();
-
-    if (!key) {
-      setError("Please enter your API key");
-      return;
+  useEffect(() => {
+    if (!isPending && !isAuthenticated && pathname !== "/signin") {
+      router.push("/signin");
     }
+  }, [isPending, isAuthenticated, pathname, router]);
 
-    setIsValidating(true);
-    setError("");
+  // Show loading state while checking session
+  if (isPending) {
+    return (
+      <div
+        className="min-h-screen flex items-center justify-center"
+        style={{ background: "var(--background)" }}
+      >
+        <div style={{ color: "var(--muted)" }}>...</div>
+      </div>
+    );
+  }
 
-    try {
-      const res = await fetch(API_ENDPOINTS.validateApiKey, {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${key}`,
-        },
-      });
-
-      const data = await res.json();
-
-      if (data.valid) {
-        setApiKey(key);
-      } else {
-        setError(data.error || "Invalid API key");
-      }
-    } catch {
-      setError("Failed to validate API key. Please try again.");
-    } finally {
-      setIsValidating(false);
-    }
-  };
-
-  if (isAuthenticated) {
+  // Allow access to sign-in page without authentication
+  if (pathname === "/signin") {
     return <>{children}</>;
   }
 
-  return (
-    <div
-      className="min-h-screen flex items-center justify-center p-4"
-      style={{ background: "var(--background)" }}
-    >
-      <div className="w-full max-w-sm">
-        <div className="mb-8 text-center">
-          <h1 className="text-xl font-medium mb-2" style={{ color: "var(--foreground)" }}>
-            bernd
-          </h1>
-          <p className="text-sm" style={{ color: "var(--muted)" }}>
-            Enter your Mixedbread API key to continue
-          </p>
-        </div>
-
-        <form onSubmit={handleSubmit}>
-          <div className="mb-4">
-            <input
-              type="password"
-              value={inputKey}
-              onChange={(e) => setInputKey(e.target.value)}
-              placeholder="mxb-..."
-              className="w-full px-4 py-3 rounded-lg text-sm outline-none transition-colors"
-              style={{
-                background: "var(--surface)",
-                border: "1px solid var(--border)",
-                color: "var(--foreground)",
-              }}
-              autoFocus
-            />
-            {error && (
-              <p className="mt-2 text-xs" style={{ color: "var(--accent)" }}>
-                {error}
-              </p>
-            )}
-          </div>
-
-          <button
-            type="submit"
-            disabled={isValidating}
-            className="w-full px-4 py-3 rounded-lg text-sm font-medium transition-colors hover:opacity-90 disabled:opacity-50"
-            style={{
-              background: "var(--accent)",
-              color: "white",
-            }}
-          >
-            {isValidating ? "Validating..." : "Continue"}
-          </button>
-        </form>
-
-        <div className="mt-6 text-xs text-center" style={{ color: "var(--muted)" }}>
-          <p className="mb-2">How to get your API key:</p>
-          <ol className="text-left space-y-1 pl-4">
-            <li>1. Go to{" "}
-              <a
-                href="https://mixedbread.com"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="underline hover:opacity-80"
-                style={{ color: "var(--accent)" }}
-              >
-                mixedbread.com
-              </a>
-            </li>
-            <li>2. Sign in or create an account</li>
-            <li>3. Go to API Keys</li>
-            <li>4. Create a new API key</li>
-          </ol>
-        </div>
+  // Show nothing while redirecting
+  if (!isAuthenticated) {
+    return (
+      <div
+        className="min-h-screen flex items-center justify-center"
+        style={{ background: "var(--background)" }}
+      >
+        <div style={{ color: "var(--muted)" }}>...</div>
       </div>
-    </div>
-  );
+    );
+  }
+
+  return <>{children}</>;
 }

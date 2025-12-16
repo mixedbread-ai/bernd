@@ -1,52 +1,45 @@
 "use client";
 
-import { createContext, useContext, useState, useEffect, ReactNode } from "react";
+import { createContext, useContext, ReactNode } from "react";
+import { useSession, authClient } from "../lib/auth";
+
+interface User {
+  id: string;
+  name: string;
+  email: string;
+  image?: string | null;
+}
+
+interface Session {
+  id: string;
+  userId: string;
+  expiresAt: Date;
+}
 
 interface AuthContextType {
-  apiKey: string | null;
-  setApiKey: (key: string | null) => void;
+  user: User | null;
+  session: Session | null;
   isAuthenticated: boolean;
-  logout: () => void;
+  isPending: boolean;
+  logout: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const [apiKey, setApiKeyState] = useState<string | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
+  const { data, isPending } = useSession();
 
-  useEffect(() => {
-    // Load API key from localStorage on mount
-    const stored = localStorage.getItem("mxb_api_key");
-    if (stored) {
-      setApiKeyState(stored);
-    }
-    setIsLoading(false);
-  }, []);
-
-  const setApiKey = (key: string | null) => {
-    setApiKeyState(key);
-    if (key) {
-      localStorage.setItem("mxb_api_key", key);
-    } else {
-      localStorage.removeItem("mxb_api_key");
-    }
+  const logout = async () => {
+    await authClient.signOut();
   };
-
-  const logout = () => {
-    setApiKey(null);
-  };
-
-  if (isLoading) {
-    return null; // Or a loading spinner
-  }
 
   return (
     <AuthContext.Provider
       value={{
-        apiKey,
-        setApiKey,
-        isAuthenticated: !!apiKey,
+        user: data?.user ?? null,
+        session: data?.session ?? null,
+        isAuthenticated: !!data?.session,
+        isPending,
         logout,
       }}
     >
@@ -61,17 +54,4 @@ export function useAuth() {
     throw new Error("useAuth must be used within an AuthProvider");
   }
   return context;
-}
-
-// Helper to create fetch with auth header
-export function useAuthFetch() {
-  const { apiKey } = useAuth();
-
-  return (url: string, options: RequestInit = {}) => {
-    const headers = new Headers(options.headers);
-    if (apiKey) {
-      headers.set("Authorization", `Bearer ${apiKey}`);
-    }
-    return fetch(url, { ...options, headers });
-  };
 }
