@@ -23,7 +23,7 @@ type SortOption = "priority" | "due_date" | "created" | "alphabetical";
 
 const PRIORITY_ORDER: Record<string, number> = { high: 0, medium: 1, low: 2 };
 
-function sortTodos(todos: Todo[], sortBy: SortOption): Todo[] {
+function sortTodos<T extends Todo>(todos: T[], sortBy: SortOption): T[] {
   return [...todos].sort((a, b) => {
     switch (sortBy) {
       case "priority": {
