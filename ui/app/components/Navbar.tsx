@@ -10,6 +10,7 @@ const navItems = [
   { href: "/chat", label: "chat", key: "c" },
   { href: "/notes", label: "notes", key: "n" },
   { href: "/search", label: "search", key: "s" },
+  { href: "/settings", label: "settings", key: "," },
 ];
 
 export function Navbar() {

@@ -1,29 +1,63 @@
-from google.oauth2 import service_account
+from google.oauth2.credentials import Credentials
+from google.auth.transport.requests import Request
 from googleapiclient.discovery import build
 from datetime import datetime, timedelta
 import os
 
 SCOPES = ["https://www.googleapis.com/auth/calendar"]
-CREDENTIALS_FILE = os.path.join(
-    os.path.dirname(__file__), "../secret/quantum-vista-481014-b4-bdf172a439d6.json"
-)
 
 
 class GoogleCalendar:
-    def __init__(self, impersonate_email: str):
-        """Initialize with domain-wide delegation, impersonating a user."""
-        self.impersonate_email = impersonate_email
+    def __init__(
+        self,
+        access_token: str,
+        refresh_token: str,
+        client_id: str,
+        client_secret: str,
+        token_expiry: str | None = None,
+        on_token_refresh: callable = None,
+    ):
+        """Initialize with OAuth credentials.
+
+        Args:
+            access_token: OAuth access token
+            refresh_token: OAuth refresh token
+            client_id: Google OAuth client ID
+            client_secret: Google OAuth client secret
+            token_expiry: Token expiry time in ISO format
+            on_token_refresh: Callback when tokens are refreshed (receives new tokens dict)
+        """
+        self.access_token = access_token
+        self.refresh_token = refresh_token
+        self.client_id = client_id
+        self.client_secret = client_secret
+        self.token_expiry = token_expiry
+        self.on_token_refresh = on_token_refresh
         self._service = None
 
     @property
     def service(self):
         if self._service is None:
-            credentials = service_account.Credentials.from_service_account_file(
-                CREDENTIALS_FILE, scopes=SCOPES
+            creds = Credentials(
+                token=self.access_token,
+                refresh_token=self.refresh_token,
+                token_uri="https://oauth2.googleapis.com/token",
+                client_id=self.client_id,
+                client_secret=self.client_secret,
             )
-            # Impersonate the user
-            delegated_credentials = credentials.with_subject(self.impersonate_email)
-            self._service = build("calendar", "v3", credentials=delegated_credentials)
+
+            # Refresh if expired
+            if creds.expired and creds.refresh_token:
+                creds.refresh(Request())
+                # Notify about refreshed tokens
+                if self.on_token_refresh:
+                    self.on_token_refresh({
+                        "access_token": creds.token,
+                        "refresh_token": creds.refresh_token,
+                        "expiry": creds.expiry.isoformat() if creds.expiry else None,
+                    })
+
+            self._service = build("calendar", "v3", credentials=creds)
         return self._service
 
     def create_event(

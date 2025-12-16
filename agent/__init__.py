@@ -1,6 +1,7 @@
 """Bernd agent module."""
 
 import os
+import json
 from dotenv import load_dotenv
 from openai import OpenAI
 
@@ -22,18 +23,53 @@ client = OpenAI()
 # Get API key
 MXB_API_KEY = os.getenv("MIXEDBREAD_API_KEY")
 
+# Google OAuth config
+GOOGLE_CLIENT_ID = os.getenv("GOOGLE_CLIENT_ID")
+GOOGLE_CLIENT_SECRET = os.getenv("GOOGLE_CLIENT_SECRET")
+GOOGLE_AUTH_PATH = "/auth/google.json"
+
 # Token tracking
 token_usage = {"input": 0, "output": 0}
 
 # Initialize semantic filesystem
 fs = SemanticFS(api_key=MXB_API_KEY, store_name="bernd")
 
-# Initialize Google Calendar (if configured)
-gcal_email = os.getenv("GOOGLE_CALENDAR_EMAIL")
-gcal = GoogleCalendar(gcal_email) if gcal_email else None
 
-# Create handlers with injected dependencies
-HANDLERS = create_handlers(fs, gcal, MXB_API_KEY)
+def get_google_calendar() -> GoogleCalendar | None:
+    """Get GoogleCalendar instance using stored OAuth tokens."""
+    if not GOOGLE_CLIENT_ID or not GOOGLE_CLIENT_SECRET:
+        return None
+
+    # Load tokens from mixedbread
+    result = fs.read(GOOGLE_AUTH_PATH)
+    if "error" in result:
+        return None
+
+    try:
+        tokens = json.loads(result.get("content", "{}"))
+    except json.JSONDecodeError:
+        return None
+
+    if not tokens.get("access_token") or not tokens.get("refresh_token"):
+        return None
+
+    def on_token_refresh(new_tokens: dict):
+        """Callback to save refreshed tokens."""
+        tokens.update(new_tokens)
+        fs.write(GOOGLE_AUTH_PATH, json.dumps(tokens), {"type": "auth", "provider": "google"})
+
+    return GoogleCalendar(
+        access_token=tokens["access_token"],
+        refresh_token=tokens["refresh_token"],
+        client_id=GOOGLE_CLIENT_ID,
+        client_secret=GOOGLE_CLIENT_SECRET,
+        token_expiry=tokens.get("expiry"),
+        on_token_refresh=on_token_refresh,
+    )
+
+
+# Create handlers with injected dependencies (pass function for lazy gcal loading)
+HANDLERS = create_handlers(fs, get_google_calendar, MXB_API_KEY)
 
 # Load skills and add skill handler
 _skills = get_skills()
@@ -88,7 +124,7 @@ __all__ = [
     "ALL_TOOLS",
     "HANDLERS",
     "fs",
-    "gcal",
+    "get_google_calendar",
     "show_cost",
     "get_skills",
 ]

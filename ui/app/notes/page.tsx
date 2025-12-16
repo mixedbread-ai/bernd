@@ -28,7 +28,6 @@ export default function NotesPage() {
   const [title, setTitle] = useState("");
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-  const [showPreview, setShowPreview] = useState(false);
   const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
@@ -219,34 +218,29 @@ export default function NotesPage() {
                 {saving && (
                   <span className="text-xs" style={{ color: 'var(--muted)' }}>saving...</span>
                 )}
-                <button
-                  onClick={() => setShowPreview(!showPreview)}
-                  className="text-xs transition-colors hover:opacity-70"
-                  style={{ color: showPreview ? 'var(--accent)' : 'var(--muted)' }}
-                >
-                  {showPreview ? "edit" : "preview"}
-                </button>
+                <span className="text-xs" style={{ color: 'var(--muted)' }}>markdown</span>
               </div>
             </div>
 
-            {/* Content area */}
-            <div className="flex-1 overflow-hidden">
-              {showPreview ? (
-                <div className="h-full overflow-y-auto p-6">
-                  <div className="prose prose-sm max-w-none" style={{ color: 'var(--foreground)' }}>
-                    <ReactMarkdown>{content || "*No content*"}</ReactMarkdown>
-                  </div>
-                </div>
-              ) : (
+            {/* Content area - split view */}
+            <div className="flex-1 flex overflow-hidden">
+              {/* Editor */}
+              <div className="flex-1 overflow-hidden border-r" style={{ borderColor: 'var(--border)' }}>
                 <textarea
                   ref={textareaRef}
                   value={content}
                   onChange={(e) => handleContentChange(e.target.value)}
                   placeholder="Write your notes in markdown..."
-                  className="w-full h-full p-6 bg-transparent outline-none resize-none text-sm"
+                  className="w-full h-full p-6 bg-transparent outline-none resize-none text-sm font-mono"
                   style={{ color: 'var(--foreground)' }}
                 />
-              )}
+              </div>
+              {/* Live preview */}
+              <div className="flex-1 overflow-y-auto p-6" style={{ background: 'var(--surface)' }}>
+                <div className="prose prose-sm max-w-none" style={{ color: 'var(--foreground)' }}>
+                  <ReactMarkdown>{content || "*Start typing to see preview...*"}</ReactMarkdown>
+                </div>
+              </div>
             </div>
           </>
         ) : (

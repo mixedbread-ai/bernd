@@ -19,6 +19,10 @@ export const API_ENDPOINTS = {
   notes: `${API_BASE_URL}/notes`,
   noteById: (id: string) => `${API_BASE_URL}/notes/${id}`,
 
+  // Auth
+  googleAuth: `${API_BASE_URL}/auth/google`,
+  googleAuthStatus: `${API_BASE_URL}/auth/google/status`,
+
   // Search
   search: `${API_BASE_URL}/search`,
 } as const;

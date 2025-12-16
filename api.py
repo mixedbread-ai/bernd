@@ -290,6 +290,152 @@ def delete_note(note_id: str):
     return {"status": "deleted", "id": note_id}
 
 
+# Google Calendar OAuth endpoints
+GOOGLE_CLIENT_ID = os.getenv("GOOGLE_CLIENT_ID")
+GOOGLE_CLIENT_SECRET = os.getenv("GOOGLE_CLIENT_SECRET")
+GOOGLE_REDIRECT_URI = os.getenv("GOOGLE_REDIRECT_URI", "http://localhost:8000/auth/google/callback")
+GOOGLE_AUTH_PATH = "/auth/google.json"
+
+
+def get_google_auth_url() -> str:
+    """Generate Google OAuth authorization URL."""
+    from urllib.parse import urlencode
+    params = {
+        "client_id": GOOGLE_CLIENT_ID,
+        "redirect_uri": GOOGLE_REDIRECT_URI,
+        "response_type": "code",
+        "scope": "https://www.googleapis.com/auth/calendar",
+        "access_type": "offline",
+        "prompt": "consent",
+    }
+    return f"https://accounts.google.com/o/oauth2/v2/auth?{urlencode(params)}"
+
+
+def exchange_code_for_tokens(code: str) -> dict:
+    """Exchange authorization code for tokens."""
+    import requests
+    response = requests.post(
+        "https://oauth2.googleapis.com/token",
+        data={
+            "client_id": GOOGLE_CLIENT_ID,
+            "client_secret": GOOGLE_CLIENT_SECRET,
+            "code": code,
+            "grant_type": "authorization_code",
+            "redirect_uri": GOOGLE_REDIRECT_URI,
+        },
+    )
+    return response.json()
+
+
+def save_google_tokens(tokens: dict):
+    """Save Google OAuth tokens to mixedbread."""
+    from datetime import datetime
+    token_data = {
+        "access_token": tokens.get("access_token"),
+        "refresh_token": tokens.get("refresh_token"),
+        "expiry": tokens.get("expiry"),
+        "connected_at": datetime.now().isoformat(),
+    }
+    fs.write(GOOGLE_AUTH_PATH, json.dumps(token_data), {"type": "auth", "provider": "google"})
+
+
+def get_google_tokens() -> dict | None:
+    """Get stored Google OAuth tokens."""
+    result = fs.read(GOOGLE_AUTH_PATH)
+    if "error" in result:
+        return None
+    try:
+        return json.loads(result.get("content", "{}"))
+    except json.JSONDecodeError:
+        return None
+
+
+@app.get("/auth/google")
+def google_auth_start():
+    """Start Google OAuth flow - returns URL to redirect user to."""
+    if not GOOGLE_CLIENT_ID or not GOOGLE_CLIENT_SECRET:
+        return {"error": "Google OAuth not configured. Set GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET."}
+    return {"auth_url": get_google_auth_url()}
+
+
+@app.get("/auth/google/callback")
+def google_auth_callback(code: str = None, error: str = None):
+    """Handle Google OAuth callback."""
+    from fastapi.responses import HTMLResponse
+
+    if error:
+        return HTMLResponse(f"""
+            <html><body>
+            <h2>Authorization failed</h2>
+            <p>{error}</p>
+            <script>setTimeout(() => window.close(), 3000);</script>
+            </body></html>
+        """)
+
+    if not code:
+        return HTMLResponse("""
+            <html><body>
+            <h2>No authorization code received</h2>
+            <script>setTimeout(() => window.close(), 3000);</script>
+            </body></html>
+        """)
+
+    # Exchange code for tokens
+    tokens = exchange_code_for_tokens(code)
+
+    if "error" in tokens:
+        return HTMLResponse(f"""
+            <html><body>
+            <h2>Token exchange failed</h2>
+            <p>{tokens.get('error_description', tokens.get('error'))}</p>
+            <script>setTimeout(() => window.close(), 3000);</script>
+            </body></html>
+        """)
+
+    # Calculate expiry
+    from datetime import datetime, timedelta
+    if tokens.get("expires_in"):
+        expiry = (datetime.now() + timedelta(seconds=tokens["expires_in"])).isoformat()
+        tokens["expiry"] = expiry
+
+    # Save tokens
+    save_google_tokens(tokens)
+
+    return HTMLResponse("""
+        <html><body>
+        <h2>Google Calendar connected!</h2>
+        <p>You can close this window.</p>
+        <script>
+            setTimeout(() => {
+                window.opener?.postMessage('google-auth-success', '*');
+                window.close();
+            }, 1500);
+        </script>
+        </body></html>
+    """)
+
+
+@app.get("/auth/google/status")
+def google_auth_status():
+    """Check if Google Calendar is connected."""
+    tokens = get_google_tokens()
+    if tokens and tokens.get("access_token"):
+        return {
+            "connected": True,
+            "connected_at": tokens.get("connected_at"),
+        }
+    return {"connected": False}
+
+
+@app.delete("/auth/google")
+def google_auth_disconnect():
+    """Disconnect Google Calendar."""
+    result = fs.delete(GOOGLE_AUTH_PATH)
+    if "error" in result:
+        return {"status": "not_connected"}
+    return {"status": "disconnected"}
+
+
 class ImageAttachment(BaseModel):
     type: str
     data: str  # base64 data URL
