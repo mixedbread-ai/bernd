@@ -1,7 +1,15 @@
 "use client";
 
 import { useState, useRef, useEffect, useCallback } from "react";
-import ReactMarkdown from "react-markdown";
+import ReactMarkdown, { Components } from "react-markdown";
+
+const markdownComponents: Components = {
+  a: ({ href, children }) => (
+    <a href={href} target="_blank" rel="noopener noreferrer">
+      {children}
+    </a>
+  ),
+};
 import {
   useChat,
   handleChatKeyDown,
@@ -117,7 +125,7 @@ function MessageBubble({
       >
         <MessageImages images={msg.images} onImageClick={onImageClick} />
         <div className="prose prose-sm max-w-none" style={{ color: "var(--foreground)" }}>
-          <ReactMarkdown>{msg.content}</ReactMarkdown>
+          <ReactMarkdown components={markdownComponents}>{msg.content}</ReactMarkdown>
         </div>
       </div>
     );
@@ -129,11 +137,11 @@ function MessageBubble({
         <ToolCallsList toolCalls={msg.toolCalls} />
       )}
       <div className="prose prose-sm max-w-none" style={{ color: "var(--foreground)" }}>
-        <ReactMarkdown>{msg.content}</ReactMarkdown>
+        <ReactMarkdown components={markdownComponents}>{msg.content}</ReactMarkdown>
       </div>
       <button
         onClick={() => onCopy(msg.content)}
-        className="mt-1 text-xs opacity-0 group-hover:opacity-100 transition-opacity"
+        className="mt-1 text-xs opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity"
         style={{ color: "var(--muted)" }}
       >
         copy
@@ -171,7 +179,7 @@ function StreamingMessage({
         {toolCalls.length > 0 && <ToolCallsList toolCalls={toolCalls} />}
         {content ? (
           <div className="prose prose-sm max-w-none" style={{ color: "var(--foreground)" }}>
-            <ReactMarkdown>{content}</ReactMarkdown>
+            <ReactMarkdown components={markdownComponents}>{content}</ReactMarkdown>
           </div>
         ) : (
           <div className="flex items-center gap-1">

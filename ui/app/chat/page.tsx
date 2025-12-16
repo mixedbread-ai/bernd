@@ -1,7 +1,15 @@
 "use client";
 
 import { useState, useRef, useEffect, useCallback } from "react";
-import ReactMarkdown from "react-markdown";
+import ReactMarkdown, { Components } from "react-markdown";
+
+const markdownComponents: Components = {
+  a: ({ href, children }) => (
+    <a href={href} target="_blank" rel="noopener noreferrer">
+      {children}
+    </a>
+  ),
+};
 import {
   useChat,
   handleChatKeyDown,
@@ -331,7 +339,7 @@ export default function ChatPage() {
   const historyPanel = showHistory && (
     <div className="fixed inset-0 z-40" onClick={() => setShowHistory(false)}>
       <div
-        className="absolute left-44 top-0 h-full w-72 shadow-xl p-4 overflow-hidden flex flex-col"
+        className="absolute left-0 md:left-44 top-0 h-full w-72 shadow-xl p-4 overflow-hidden flex flex-col"
         style={{ background: 'var(--background)', borderRight: '1px solid var(--border)' }}
         onClick={(e) => e.stopPropagation()}
       >
@@ -507,7 +515,7 @@ export default function ChatPage() {
         onScroll={handleScroll}
         className="flex-1 overflow-y-auto"
       >
-        <div className="max-w-2xl mx-auto px-6 py-8 pb-48">
+        <div className="max-w-2xl mx-auto px-4 md:px-6 py-6 md:py-8 pb-48">
           {messages.map((msg, i) => (
             <div
               key={i}
@@ -520,7 +528,7 @@ export default function ChatPage() {
                 >
                   <MessageImages images={msg.images} onImageClick={setExpandedImage} />
                   <div className="prose prose-sm max-w-none" style={{ color: 'var(--foreground)' }}>
-                    <ReactMarkdown>{msg.content}</ReactMarkdown>
+                    <ReactMarkdown components={markdownComponents}>{msg.content}</ReactMarkdown>
                   </div>
                 </div>
               ) : (
@@ -529,9 +537,9 @@ export default function ChatPage() {
                     <ToolCallsList toolCalls={msg.toolCalls} showArgs />
                   )}
                   <div className="prose prose-sm max-w-none" style={{ color: 'var(--foreground)' }}>
-                    <ReactMarkdown>{msg.content}</ReactMarkdown>
+                    <ReactMarkdown components={markdownComponents}>{msg.content}</ReactMarkdown>
                   </div>
-                  <div className="mt-1 opacity-0 group-hover/msg:opacity-100 transition-opacity">
+                  <div className="mt-1 opacity-100 md:opacity-0 md:group-hover/msg:opacity-100 transition-opacity">
                     <CopyButton text={msg.content} />
                   </div>
                 </div>
@@ -547,7 +555,7 @@ export default function ChatPage() {
                 )}
                 {streamingContent ? (
                   <div className="prose prose-sm max-w-none" style={{ color: 'var(--foreground)' }}>
-                    <ReactMarkdown>{streamingContent}</ReactMarkdown>
+                    <ReactMarkdown components={markdownComponents}>{streamingContent}</ReactMarkdown>
                   </div>
                 ) : (
                   <div className="flex items-center gap-1">
@@ -566,7 +574,7 @@ export default function ChatPage() {
 
       {/* Fixed input */}
       <div
-        className="fixed bottom-0 left-44 right-0 pt-4 pb-3 px-6"
+        className="fixed bottom-0 left-0 md:left-44 right-0 pt-4 pb-20 md:pb-3 px-4 md:px-6"
         style={{ background: `linear-gradient(to top, var(--background), var(--background), transparent)` }}
       >
         <div className="max-w-2xl mx-auto">

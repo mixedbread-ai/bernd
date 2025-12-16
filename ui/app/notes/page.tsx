@@ -29,6 +29,7 @@ export default function NotesPage() {
   const [title, setTitle] = useState("");
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [showPreview, setShowPreview] = useState(false);
   const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
@@ -128,6 +129,12 @@ export default function NotesPage() {
     }
   };
 
+  const goBack = () => {
+    setSelectedNote(null);
+    setContent("");
+    setTitle("");
+  };
+
   useEffect(() => {
     return () => {
       if (saveTimeoutRef.current) {
@@ -136,11 +143,13 @@ export default function NotesPage() {
     };
   }, []);
 
+  // Mobile: Show note list or editor, not both
+  // Desktop: Show both side by side
   return (
-    <div className="min-h-screen flex" style={{ background: 'var(--background)' }}>
-      {/* Notes list sidebar */}
+    <div className="min-h-screen flex flex-col md:flex-row" style={{ background: 'var(--background)' }}>
+      {/* Notes list sidebar - hidden on mobile when note is selected */}
       <div
-        className="w-64 border-r flex flex-col"
+        className={`${selectedNote ? 'hidden md:flex' : 'flex'} w-full md:w-64 border-b md:border-b-0 md:border-r flex-col`}
         style={{ borderColor: 'var(--border)' }}
       >
         <div className="p-4 border-b flex items-center justify-between" style={{ borderColor: 'var(--border)' }}>
@@ -193,43 +202,64 @@ export default function NotesPage() {
         </div>
       </div>
 
-      {/* Editor area */}
-      <div className="flex-1 flex flex-col">
+      {/* Editor area - full screen on mobile when note is selected */}
+      <div className={`${selectedNote ? 'flex' : 'hidden md:flex'} flex-1 flex-col`}>
         {selectedNote ? (
           <>
             {/* Title and toolbar */}
-            <div className="p-4 border-b flex items-center justify-between" style={{ borderColor: 'var(--border)' }}>
+            <div className="p-4 border-b flex items-center gap-3" style={{ borderColor: 'var(--border)' }}>
+              {/* Back button on mobile */}
+              <button
+                onClick={goBack}
+                className="md:hidden p-1 -ml-1"
+                style={{ color: 'var(--muted)' }}
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M19 12H5M12 19l-7-7 7-7"/>
+                </svg>
+              </button>
               <input
                 type="text"
                 value={title}
                 onChange={(e) => handleTitleChange(e.target.value)}
                 placeholder="Note title..."
-                className="text-lg font-medium bg-transparent outline-none flex-1"
+                className="text-base md:text-lg font-medium bg-transparent outline-none flex-1 min-w-0"
                 style={{ color: 'var(--foreground)' }}
               />
-              <div className="flex items-center gap-4">
+              <div className="flex items-center gap-2 md:gap-4 shrink-0">
                 {saving && (
                   <span className="text-xs" style={{ color: 'var(--muted)' }}>saving...</span>
                 )}
-                <span className="text-xs" style={{ color: 'var(--muted)' }}>markdown</span>
+                {/* Toggle preview on mobile */}
+                <button
+                  onClick={() => setShowPreview(!showPreview)}
+                  className="md:hidden text-xs px-2 py-1 rounded"
+                  style={{
+                    background: showPreview ? 'var(--accent)' : 'var(--surface)',
+                    color: showPreview ? 'white' : 'var(--muted)',
+                  }}
+                >
+                  {showPreview ? 'edit' : 'preview'}
+                </button>
+                <span className="hidden md:inline text-xs" style={{ color: 'var(--muted)' }}>markdown</span>
               </div>
             </div>
 
-            {/* Content area - split view */}
-            <div className="flex-1 flex overflow-hidden">
-              {/* Editor */}
-              <div className="flex-1 overflow-hidden border-r" style={{ borderColor: 'var(--border)' }}>
+            {/* Content area */}
+            <div className="flex-1 flex flex-col md:flex-row overflow-hidden">
+              {/* Editor - hidden on mobile when preview is shown */}
+              <div className={`${showPreview ? 'hidden' : 'flex'} md:flex flex-1 overflow-hidden md:border-r`} style={{ borderColor: 'var(--border)' }}>
                 <textarea
                   ref={textareaRef}
                   value={content}
                   onChange={(e) => handleContentChange(e.target.value)}
                   placeholder="Write your notes in markdown..."
-                  className="w-full h-full p-6 bg-transparent outline-none resize-none text-sm font-mono"
+                  className="w-full h-full p-4 md:p-6 bg-transparent outline-none resize-none text-sm font-mono"
                   style={{ color: 'var(--foreground)' }}
                 />
               </div>
-              {/* Live preview */}
-              <div className="flex-1 overflow-y-auto p-6" style={{ background: 'var(--surface)' }}>
+              {/* Live preview - shown on mobile when preview is toggled, always on desktop */}
+              <div className={`${showPreview ? 'flex' : 'hidden'} md:flex flex-1 overflow-y-auto p-4 md:p-6`} style={{ background: 'var(--surface)' }}>
                 <div className="prose prose-sm max-w-none" style={{ color: 'var(--foreground)' }}>
                   <ReactMarkdown>{content || "*Start typing to see preview...*"}</ReactMarkdown>
                 </div>

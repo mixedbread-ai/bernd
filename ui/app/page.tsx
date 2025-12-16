@@ -77,9 +77,9 @@ export default function TodosPage() {
   };
 
   return (
-    <div className="min-h-screen p-12" style={{ background: 'var(--background)', color: 'var(--foreground)' }}>
+    <div className="min-h-screen p-4 md:p-12" style={{ background: 'var(--background)', color: 'var(--foreground)' }}>
       <div className="mx-auto max-w-xl">
-        <div className="mb-10 flex items-baseline gap-6 text-sm">
+        <div className="mb-6 md:mb-10 flex items-baseline gap-4 md:gap-6 text-sm overflow-x-auto">
           {(["all", "pending", "in_progress", "completed"] as const).map((f) => (
             <button
               key={f}

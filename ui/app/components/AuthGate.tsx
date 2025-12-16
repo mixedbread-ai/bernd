@@ -98,18 +98,25 @@ export function AuthGate({ children }: { children: ReactNode }) {
           </button>
         </form>
 
-        <p className="mt-6 text-xs text-center" style={{ color: "var(--muted)" }}>
-          Get your API key from{" "}
-          <a
-            href="https://mixedbread.ai"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="underline hover:opacity-80"
-            style={{ color: "var(--accent)" }}
-          >
-            mixedbread.ai
-          </a>
-        </p>
+        <div className="mt-6 text-xs text-center" style={{ color: "var(--muted)" }}>
+          <p className="mb-2">How to get your API key:</p>
+          <ol className="text-left space-y-1 pl-4">
+            <li>1. Go to{" "}
+              <a
+                href="https://mixedbread.com"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="underline hover:opacity-80"
+                style={{ color: "var(--accent)" }}
+              >
+                mixedbread.com
+              </a>
+            </li>
+            <li>2. Sign in or create an account</li>
+            <li>3. Go to API Keys</li>
+            <li>4. Create a new API key</li>
+          </ol>
+        </div>
       </div>
     </div>
   );

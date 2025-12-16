@@ -30,7 +30,7 @@ export default function RootLayout({
             <AuthGate>
               <div className="min-h-screen" style={{ background: 'var(--background)' }}>
                 <Navbar />
-                <main className="ml-44">{children}</main>
+                <main className="md:ml-44 pb-20 md:pb-0">{children}</main>
                 <FloatingChat />
               </div>
             </AuthGate>

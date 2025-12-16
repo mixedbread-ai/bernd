@@ -89,7 +89,7 @@ export default function SettingsPage() {
   };
 
   return (
-    <div className="min-h-screen p-12" style={{ background: "var(--background)" }}>
+    <div className="min-h-screen p-4 md:p-12" style={{ background: "var(--background)" }}>
       <div className="mx-auto max-w-xl">
         <h1 className="text-lg font-medium mb-8" style={{ color: "var(--foreground)" }}>
           Settings

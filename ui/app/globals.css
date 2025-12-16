@@ -87,3 +87,41 @@ body {
 .dark .prose a {
   color: var(--accent);
 }
+
+/* Mobile safe areas for iOS */
+.safe-area-bottom {
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+
+/* Prevent text selection on mobile nav */
+nav {
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* Smooth scrolling */
+html {
+  scroll-behavior: smooth;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* Fix long text/links wrapping */
+.prose {
+  word-break: break-word;
+  overflow-wrap: anywhere;
+  max-width: 100%;
+}
+
+.prose p {
+  word-break: break-word;
+  overflow-wrap: anywhere;
+}
+
+.prose a {
+  word-break: break-all;
+  color: var(--accent);
+  text-decoration: underline;
+}
+
+.prose a:hover {
+  opacity: 0.8;
+}

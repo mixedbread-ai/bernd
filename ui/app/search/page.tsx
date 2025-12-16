@@ -72,7 +72,7 @@ export default function SearchPage() {
   }, [query, debouncedSearch]);
 
   return (
-    <div className="min-h-screen p-12" style={{ background: 'var(--background)', color: 'var(--foreground)' }}>
+    <div className="min-h-screen p-4 md:p-12" style={{ background: 'var(--background)', color: 'var(--foreground)' }}>
       <div className="mx-auto max-w-2xl">
         <input
           type="text"
