@@ -173,6 +173,36 @@ def _id_to_path(file_id: str) -> str:
     return "/" + file_id.replace("__", "/")
 
 
+@app.post("/auth/validate")
+def validate_api_key(authorization: str = Header(None)):
+    """Validate that an API key is valid by attempting to use it."""
+    if not authorization:
+        raise HTTPException(status_code=401, detail="Authorization header required")
+
+    # Support "Bearer <key>" or just "<key>"
+    if authorization.startswith("Bearer "):
+        api_key = authorization[7:]
+    else:
+        api_key = authorization
+
+    if not api_key:
+        raise HTTPException(status_code=401, detail="API key required")
+
+    try:
+        # Try to create SemanticFS and list files to validate the key
+        fs = SemanticFS(api_key=api_key, store_name="bernd")
+        fs.list(prefix="/", limit=1)
+        # If we get here, the key is valid - cache it
+        _fs_cache[api_key] = fs
+        return {"valid": True}
+    except Exception as e:
+        error_msg = str(e).lower()
+        if "unauthorized" in error_msg or "invalid" in error_msg or "401" in error_msg:
+            return {"valid": False, "error": "Invalid API key"}
+        # Other errors might be network issues, etc.
+        return {"valid": False, "error": str(e)}
+
+
 @app.get("/todos")
 def get_todos(n: int = 50, fs: SemanticFS = Depends(get_user_fs)):
     files = fs.list(prefix="/todos", limit=n)

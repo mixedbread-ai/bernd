@@ -2,19 +2,45 @@
 
 import { useState, ReactNode } from "react";
 import { useAuth } from "../context/AuthContext";
+import { API_ENDPOINTS } from "../config";
 
 export function AuthGate({ children }: { children: ReactNode }) {
   const { isAuthenticated, setApiKey } = useAuth();
   const [inputKey, setInputKey] = useState("");
   const [error, setError] = useState("");
+  const [isValidating, setIsValidating] = useState(false);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (inputKey.trim()) {
-      setApiKey(inputKey.trim());
-      setError("");
-    } else {
+    const key = inputKey.trim();
+
+    if (!key) {
       setError("Please enter your API key");
+      return;
+    }
+
+    setIsValidating(true);
+    setError("");
+
+    try {
+      const res = await fetch(API_ENDPOINTS.validateApiKey, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${key}`,
+        },
+      });
+
+      const data = await res.json();
+
+      if (data.valid) {
+        setApiKey(key);
+      } else {
+        setError(data.error || "Invalid API key");
+      }
+    } catch {
+      setError("Failed to validate API key. Please try again.");
+    } finally {
+      setIsValidating(false);
     }
   };
 
@@ -61,13 +87,14 @@ export function AuthGate({ children }: { children: ReactNode }) {
 
           <button
             type="submit"
-            className="w-full px-4 py-3 rounded-lg text-sm font-medium transition-colors hover:opacity-90"
+            disabled={isValidating}
+            className="w-full px-4 py-3 rounded-lg text-sm font-medium transition-colors hover:opacity-90 disabled:opacity-50"
             style={{
               background: "var(--accent)",
               color: "white",
             }}
           >
-            Continue
+            {isValidating ? "Validating..." : "Continue"}
           </button>
         </form>
 

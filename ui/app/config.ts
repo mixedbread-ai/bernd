@@ -20,6 +20,7 @@ export const API_ENDPOINTS = {
   noteById: (id: string) => `${API_BASE_URL}/notes/${id}`,
 
   // Auth
+  validateApiKey: `${API_BASE_URL}/auth/validate`,
   googleAuth: `${API_BASE_URL}/auth/google`,
   googleAuthStatus: `${API_BASE_URL}/auth/google/status`,
 
