@@ -163,7 +163,7 @@ def create_handlers(fs: SemanticFS, get_gcal: callable, mxb_api_key: str):
         return {"error": f"Unknown command: {cmd}"}
 
     def web_search(args):
-        from tools.websearch import WebSearch
+        from ..tools.websearch import WebSearch
 
         ws = WebSearch(api_key=mxb_api_key)
         return ws.search(args["query"], args.get("top_k", 10))
