@@ -515,7 +515,7 @@ export default function ChatPage() {
         onScroll={handleScroll}
         className="flex-1 overflow-y-auto"
       >
-        <div className="max-w-2xl mx-auto px-4 md:px-6 py-6 md:py-8 pb-48">
+        <div className="max-w-2xl mx-auto px-4 md:px-6 py-6 md:py-8 pb-64 md:pb-48">
           {messages.map((msg, i) => (
             <div
               key={i}
