@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { SearchResult } from "../types";
 import { API_ENDPOINTS } from "../config";
+import { api } from "../lib/api";
 
 function debounce<T extends (...args: Parameters<T>) => void>(
   fn: T,
@@ -50,7 +51,7 @@ export default function SearchPage() {
 
     setLoading(true);
     try {
-      const res = await fetch(
+      const res = await api.get(
         `${API_ENDPOINTS.search}?q=${encodeURIComponent(q)}&top_k=20`
       );
       const data = await res.json();

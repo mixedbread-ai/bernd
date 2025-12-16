@@ -10,6 +10,7 @@ import {
 } from "../hooks/useChat";
 import { Message, ToolCall, ChatSummary, ImageAttachment } from "../types";
 import { API_ENDPOINTS } from "../config";
+import { api } from "../lib/api";
 
 function CopyButton({ text }: { text: string }) {
   const [copied, setCopied] = useState(false);
@@ -190,7 +191,7 @@ export default function ChatPage() {
 
   const fetchChats = async () => {
     try {
-      const res = await fetch(API_ENDPOINTS.chats);
+      const res = await api.get(API_ENDPOINTS.chats);
       const data = await res.json();
       setChats(data);
     } catch (e) {
@@ -200,7 +201,7 @@ export default function ChatPage() {
 
   const loadChat = async (id: string) => {
     try {
-      const res = await fetch(API_ENDPOINTS.chatById(id));
+      const res = await api.get(API_ENDPOINTS.chatById(id));
       const data = await res.json();
       if (data.error) {
         console.error("Chat not found:", data.error);
@@ -225,7 +226,7 @@ export default function ChatPage() {
   const deleteChat = async (id: string, e: React.MouseEvent) => {
     e.stopPropagation();
     try {
-      await fetch(API_ENDPOINTS.chatById(id), { method: "DELETE" });
+      await api.delete(API_ENDPOINTS.chatById(id));
       if (chatId === id) {
         startNewChat();
       }

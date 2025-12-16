@@ -1,8 +1,8 @@
 """System prompt management for the agent."""
 
 from datetime import datetime
-from constants import Paths
-from tools.semantic_fs import SemanticFS
+from ..constants import Paths
+from ..tools.semantic_fs import SemanticFS
 
 
 def load_user_profile(fs: SemanticFS) -> str:

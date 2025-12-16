@@ -1,6 +1,6 @@
 """Tool schemas for the OpenAI model."""
 
-from constants import TodoStatus, Priority
+from ..constants import TodoStatus, Priority
 
 # Tool schemas for the model
 TOOLS = [

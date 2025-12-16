@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { Todo } from "./types";
 import { API_ENDPOINTS } from "./config";
+import { api } from "./lib/api";
 
 function formatDate(iso: string): string {
   if (!iso) return "";
@@ -38,7 +39,7 @@ export default function TodosPage() {
     const todo = todos.find((t) => t.id === id);
     if (todo && todo.content === undefined) {
       try {
-        const res = await fetch(API_ENDPOINTS.todoById(id));
+        const res = await api.get(API_ENDPOINTS.todoById(id));
         const data = await res.json();
         setTodos((prev) =>
           prev.map((t) =>
@@ -57,7 +58,7 @@ export default function TodosPage() {
   };
 
   useEffect(() => {
-    fetch(API_ENDPOINTS.todos)
+    api.get(API_ENDPOINTS.todos)
       .then((res) => res.json())
       .then((data) => {
         setTodos(data);

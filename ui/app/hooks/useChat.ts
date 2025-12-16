@@ -3,6 +3,7 @@
 import { useState, useCallback } from "react";
 import { Message, ToolCall, StreamEvent, ImageAttachment } from "../types";
 import { API_ENDPOINTS } from "../config";
+import { api } from "../lib/api";
 
 interface UseChatOptions {
   onChatSaved?: (chatId: string) => void;
@@ -69,11 +70,7 @@ export function useChat(options: UseChatOptions = {}): UseChatReturn {
       setStreamingContent("");
 
       try {
-        const res = await fetch(API_ENDPOINTS.chatStream, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ messages: newMessages, chat_id: chatId }),
-        });
+        const res = await api.post(API_ENDPOINTS.chatStream, { messages: newMessages, chat_id: chatId });
 
         const reader = res.body?.getReader();
         const decoder = new TextDecoder();

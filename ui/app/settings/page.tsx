@@ -2,6 +2,8 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { API_ENDPOINTS } from "../config";
+import { api } from "../lib/api";
+import { useAuth } from "../context/AuthContext";
 
 interface GoogleAuthStatus {
   connected: boolean;
@@ -21,13 +23,14 @@ function formatDate(iso: string): string {
 }
 
 export default function SettingsPage() {
+  const { logout } = useAuth();
   const [googleStatus, setGoogleStatus] = useState<GoogleAuthStatus | null>(null);
   const [loading, setLoading] = useState(true);
   const [disconnecting, setDisconnecting] = useState(false);
 
   const checkGoogleStatus = useCallback(async () => {
     try {
-      const res = await fetch(API_ENDPOINTS.googleAuthStatus);
+      const res = await api.get(API_ENDPOINTS.googleAuthStatus);
       const data = await res.json();
       setGoogleStatus(data);
     } catch {
@@ -52,7 +55,7 @@ export default function SettingsPage() {
 
   const connectGoogle = async () => {
     try {
-      const res = await fetch(API_ENDPOINTS.googleAuth);
+      const res = await api.get(API_ENDPOINTS.googleAuth);
       const data = await res.json();
       if (data.auth_url) {
         window.open(data.auth_url, "google-auth", "width=500,height=600");
@@ -70,12 +73,18 @@ export default function SettingsPage() {
     }
     setDisconnecting(true);
     try {
-      await fetch(API_ENDPOINTS.googleAuth, { method: "DELETE" });
+      await api.delete(API_ENDPOINTS.googleAuth);
       setGoogleStatus({ connected: false });
     } catch (e) {
       console.error("Failed to disconnect Google", e);
     } finally {
       setDisconnecting(false);
+    }
+  };
+
+  const handleLogout = () => {
+    if (confirm("Are you sure you want to logout?")) {
+      logout();
     }
   };
 
@@ -179,6 +188,40 @@ export default function SettingsPage() {
                 Bernd can create, update, and manage calendar events for your todos.
               </div>
             )}
+          </div>
+        </section>
+
+        {/* Account section */}
+        <section>
+          <h2 className="text-sm font-medium mb-4" style={{ color: "var(--foreground)" }}>
+            Account
+          </h2>
+
+          <div
+            className="p-4 rounded-lg"
+            style={{ background: "var(--surface)", border: "1px solid var(--border)" }}
+          >
+            <div className="flex items-center justify-between">
+              <div>
+                <div className="text-sm" style={{ color: "var(--foreground)" }}>
+                  Logout
+                </div>
+                <div className="text-xs mt-0.5" style={{ color: "var(--muted)" }}>
+                  Clear your API key from this browser
+                </div>
+              </div>
+              <button
+                onClick={handleLogout}
+                className="text-xs px-3 py-1.5 rounded-lg transition-colors hover:opacity-80"
+                style={{
+                  background: "var(--background)",
+                  border: "1px solid var(--border)",
+                  color: "var(--muted)",
+                }}
+              >
+                Logout
+              </button>
+            </div>
           </div>
         </section>
       </div>

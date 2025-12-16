@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback, useRef } from "react";
 import ReactMarkdown from "react-markdown";
 import { Note } from "../types";
 import { API_ENDPOINTS } from "../config";
+import { api } from "../lib/api";
 
 function formatDate(iso: string): string {
   if (!iso) return "";
@@ -33,7 +34,7 @@ export default function NotesPage() {
 
   const fetchNotes = useCallback(async () => {
     try {
-      const res = await fetch(API_ENDPOINTS.notes);
+      const res = await api.get(API_ENDPOINTS.notes);
       const data = await res.json();
       setNotes(data);
     } catch (e) {
@@ -49,7 +50,7 @@ export default function NotesPage() {
 
   const loadNote = async (note: Note) => {
     try {
-      const res = await fetch(API_ENDPOINTS.noteById(note.id));
+      const res = await api.get(API_ENDPOINTS.noteById(note.id));
       const data = await res.json();
       if (data.error) {
         console.error("Note not found");
@@ -66,11 +67,7 @@ export default function NotesPage() {
   const saveNote = useCallback(async (noteId: string, newTitle: string, newContent: string) => {
     setSaving(true);
     try {
-      await fetch(API_ENDPOINTS.noteById(noteId), {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ title: newTitle, content: newContent }),
-      });
+      await api.put(API_ENDPOINTS.noteById(noteId), { title: newTitle, content: newContent });
       fetchNotes();
     } catch (e) {
       console.error("Failed to save note", e);
@@ -104,11 +101,7 @@ export default function NotesPage() {
 
   const createNote = async () => {
     try {
-      const res = await fetch(API_ENDPOINTS.notes, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ title: "Untitled", content: "" }),
-      });
+      const res = await api.post(API_ENDPOINTS.notes, { title: "Untitled", content: "" });
       const data = await res.json();
       await fetchNotes();
       setSelectedNote(data);
@@ -123,7 +116,7 @@ export default function NotesPage() {
   const deleteNote = async (noteId: string, e: React.MouseEvent) => {
     e.stopPropagation();
     try {
-      await fetch(API_ENDPOINTS.noteById(noteId), { method: "DELETE" });
+      await api.delete(API_ENDPOINTS.noteById(noteId));
       if (selectedNote?.id === noteId) {
         setSelectedNote(null);
         setContent("");

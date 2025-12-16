@@ -1,10 +1,11 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, Depends, HTTPException, Header
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
 from dotenv import load_dotenv
 from openai import OpenAI
-from tools.semantic_fs import SemanticFS
+from .tools.semantic_fs import SemanticFS
+from .agent import run_agent, run_agent_stream
 import json
 import os
 import uuid
@@ -12,26 +13,51 @@ import base64
 
 load_dotenv()
 
-# Import agent components
-from agent import run_agent, run_agent_stream
-
 # OpenAI client for title generation
 openai_client = OpenAI()
+
+# Google OAuth config (server-side, not per-user)
+GOOGLE_CLIENT_ID = os.getenv("GOOGLE_CLIENT_ID")
+GOOGLE_CLIENT_SECRET = os.getenv("GOOGLE_CLIENT_SECRET")
+
+# Cache for SemanticFS instances per API key
+_fs_cache: dict[str, SemanticFS] = {}
 
 app = FastAPI()
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000"],
+    allow_origins=["*"],  # Allow all origins for deployed API
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
-fs = SemanticFS(api_key=os.getenv("MIXEDBREAD_API_KEY"), store_name="bernd")
+
+# Dependency to get user's SemanticFS from Authorization header
+def get_user_fs(authorization: str = Header(None)) -> SemanticFS:
+    """Extract API key from Authorization header and return cached SemanticFS."""
+    if not authorization:
+        raise HTTPException(status_code=401, detail="Authorization header required")
+
+    # Support "Bearer <key>" or just "<key>"
+    if authorization.startswith("Bearer "):
+        api_key = authorization[7:]
+    else:
+        api_key = authorization
+
+    if not api_key:
+        raise HTTPException(status_code=401, detail="API key required")
+
+    # Return cached instance or create new one
+    if api_key not in _fs_cache:
+        _fs_cache[api_key] = SemanticFS(api_key=api_key, store_name="bernd")
+    return _fs_cache[api_key]
 
 
-def save_image_to_store(chat_id: str, image_data: str, mime_type: str) -> str:
+def save_image_to_store(
+    fs: SemanticFS, chat_id: str, image_data: str, mime_type: str
+) -> str:
     """Save base64 image to mixedbread store and return the path."""
     # Determine file extension from mime type
     ext_map = {
@@ -58,7 +84,7 @@ def save_image_to_store(chat_id: str, image_data: str, mime_type: str) -> str:
     return path
 
 
-def load_image_from_store(image_path: str) -> str | None:
+def load_image_from_store(fs: SemanticFS, image_path: str) -> str | None:
     """Load image from mixedbread store and return as base64 data URL."""
     result = fs.read_binary(image_path)
     if "error" in result:
@@ -80,7 +106,9 @@ def load_image_from_store(image_path: str) -> str | None:
     return f"data:{mime_type};base64,{b64_data}"
 
 
-def process_images_for_save(chat_id: str, messages: list[dict]) -> list[dict]:
+def process_images_for_save(
+    fs: SemanticFS, chat_id: str, messages: list[dict]
+) -> list[dict]:
     """Replace base64 images with file paths before saving."""
     processed = []
     for msg in messages:
@@ -89,18 +117,22 @@ def process_images_for_save(chat_id: str, messages: list[dict]) -> list[dict]:
             new_images = []
             for img in msg["images"]:
                 # Save image to store and keep path instead of base64
-                image_path = save_image_to_store(chat_id, img["data"], img["mimeType"])
-                new_images.append({
-                    "type": "image",
-                    "path": image_path,
-                    "mimeType": img["mimeType"],
-                })
+                image_path = save_image_to_store(
+                    fs, chat_id, img["data"], img["mimeType"]
+                )
+                new_images.append(
+                    {
+                        "type": "image",
+                        "path": image_path,
+                        "mimeType": img["mimeType"],
+                    }
+                )
             new_msg["images"] = new_images
         processed.append(new_msg)
     return processed
 
 
-def process_images_for_load(messages: list[dict]) -> list[dict]:
+def process_images_for_load(fs: SemanticFS, messages: list[dict]) -> list[dict]:
     """Replace file paths with base64 images after loading."""
     processed = []
     for msg in messages:
@@ -110,13 +142,15 @@ def process_images_for_load(messages: list[dict]) -> list[dict]:
             for img in msg["images"]:
                 if "path" in img:
                     # Load image from store
-                    data = load_image_from_store(img["path"])
+                    data = load_image_from_store(fs, img["path"])
                     if data:
-                        new_images.append({
-                            "type": "image",
-                            "data": data,
-                            "mimeType": img["mimeType"],
-                        })
+                        new_images.append(
+                            {
+                                "type": "image",
+                                "data": data,
+                                "mimeType": img["mimeType"],
+                            }
+                        )
                 elif "data" in img:
                     # Already has data (shouldn't happen but handle it)
                     new_images.append(img)
@@ -140,26 +174,28 @@ def _id_to_path(file_id: str) -> str:
 
 
 @app.get("/todos")
-def get_todos(n: int = 50):
+def get_todos(n: int = 50, fs: SemanticFS = Depends(get_user_fs)):
     files = fs.list(prefix="/todos", limit=n)
     todos = []
     for f in files:
         path = f["path"]
-        todos.append({
-            "id": _path_to_id(path),
-            "title": path.split("/")[-1].replace(".md", ""),
-            **f["metadata"],
-        })
+        todos.append(
+            {
+                "id": _path_to_id(path),
+                "title": path.split("/")[-1].replace(".md", ""),
+                **f["metadata"],
+            }
+        )
     return todos
 
 
 @app.get("/todos/search")
-def search_todos(q: str):
+def search_todos(q: str, fs: SemanticFS = Depends(get_user_fs)):
     return fs.search(q, prefix="/todos", top_k=20)
 
 
 @app.get("/todos/by-id/{todo_id:path}")
-def get_todo(todo_id: str):
+def get_todo(todo_id: str, fs: SemanticFS = Depends(get_user_fs)):
     """Get todo by ID (which is the path with / replaced by __)."""
     path = _id_to_path(todo_id)
     result = fs.read(path)
@@ -174,7 +210,7 @@ def get_todo(todo_id: str):
 
 
 @app.get("/search")
-def search_all(q: str, top_k: int = 20):
+def search_all(q: str, top_k: int = 20, fs: SemanticFS = Depends(get_user_fs)):
     """Search across all files in the semantic filesystem."""
     return fs.search(q, prefix="/", top_k=top_k)
 
@@ -191,22 +227,26 @@ class NoteUpdate(BaseModel):
 
 
 @app.get("/notes")
-def get_notes(n: int = 50):
+def get_notes(n: int = 50, fs: SemanticFS = Depends(get_user_fs)):
     """List all notes."""
     files = fs.list(prefix="/notes", limit=n)
     notes = []
     for f in files:
         path = f["path"]
-        notes.append({
-            "id": _path_to_id(path),
-            "title": f["metadata"].get("title", path.split("/")[-1].replace(".md", "")),
-            "updated_at": f["metadata"].get("updated_at", ""),
-        })
+        notes.append(
+            {
+                "id": _path_to_id(path),
+                "title": f["metadata"].get(
+                    "title", path.split("/")[-1].replace(".md", "")
+                ),
+                "updated_at": f["metadata"].get("updated_at", ""),
+            }
+        )
     return notes
 
 
 @app.get("/notes/{note_id:path}")
-def get_note(note_id: str):
+def get_note(note_id: str, fs: SemanticFS = Depends(get_user_fs)):
     """Get a note by ID."""
     path = _id_to_path(note_id)
     result = fs.read(path)
@@ -214,16 +254,19 @@ def get_note(note_id: str):
         return {"error": "not found"}
     return {
         "id": note_id,
-        "title": result.get("metadata", {}).get("title", path.split("/")[-1].replace(".md", "")),
+        "title": result.get("metadata", {}).get(
+            "title", path.split("/")[-1].replace(".md", "")
+        ),
         "content": result.get("content", ""),
         "updated_at": result.get("metadata", {}).get("updated_at", ""),
     }
 
 
 @app.post("/notes")
-def create_note(note: NoteCreate):
+def create_note(note: NoteCreate, fs: SemanticFS = Depends(get_user_fs)):
     """Create a new note."""
     from datetime import datetime
+
     note_id = datetime.now().strftime("%Y%m%d_%H%M%S")
     path = f"/notes/{note_id}.md"
     updated_at = datetime.now().isoformat()
@@ -247,9 +290,10 @@ def create_note(note: NoteCreate):
 
 
 @app.put("/notes/{note_id:path}")
-def update_note(note_id: str, note: NoteUpdate):
+def update_note(note_id: str, note: NoteUpdate, fs: SemanticFS = Depends(get_user_fs)):
     """Update an existing note."""
     from datetime import datetime
+
     path = _id_to_path(note_id)
     existing = fs.read(path)
     if "error" in existing:
@@ -259,7 +303,9 @@ def update_note(note_id: str, note: NoteUpdate):
     current_metadata = existing.get("metadata", {})
 
     new_content = note.content if note.content is not None else current_content
-    new_title = note.title if note.title is not None else current_metadata.get("title", "")
+    new_title = (
+        note.title if note.title is not None else current_metadata.get("title", "")
+    )
     updated_at = datetime.now().isoformat()
 
     # Ensure content is not empty (mixedbread requires valid file content)
@@ -281,7 +327,7 @@ def update_note(note_id: str, note: NoteUpdate):
 
 
 @app.delete("/notes/{note_id:path}")
-def delete_note(note_id: str):
+def delete_note(note_id: str, fs: SemanticFS = Depends(get_user_fs)):
     """Delete a note by ID."""
     path = _id_to_path(note_id)
     result = fs.delete(path)
@@ -291,15 +337,16 @@ def delete_note(note_id: str):
 
 
 # Google Calendar OAuth endpoints
-GOOGLE_CLIENT_ID = os.getenv("GOOGLE_CLIENT_ID")
-GOOGLE_CLIENT_SECRET = os.getenv("GOOGLE_CLIENT_SECRET")
-GOOGLE_REDIRECT_URI = os.getenv("GOOGLE_REDIRECT_URI", "http://localhost:8000/auth/google/callback")
+GOOGLE_REDIRECT_URI = os.getenv(
+    "GOOGLE_REDIRECT_URI", "http://localhost:8000/auth/google/callback"
+)
 GOOGLE_AUTH_PATH = "/auth/google.json"
 
 
-def get_google_auth_url() -> str:
-    """Generate Google OAuth authorization URL."""
+def get_google_auth_url(state: str) -> str:
+    """Generate Google OAuth authorization URL with state parameter."""
     from urllib.parse import urlencode
+
     params = {
         "client_id": GOOGLE_CLIENT_ID,
         "redirect_uri": GOOGLE_REDIRECT_URI,
@@ -307,6 +354,7 @@ def get_google_auth_url() -> str:
         "scope": "https://www.googleapis.com/auth/calendar",
         "access_type": "offline",
         "prompt": "consent",
+        "state": state,  # Contains encoded API key
     }
     return f"https://accounts.google.com/o/oauth2/v2/auth?{urlencode(params)}"
 
@@ -314,6 +362,7 @@ def get_google_auth_url() -> str:
 def exchange_code_for_tokens(code: str) -> dict:
     """Exchange authorization code for tokens."""
     import requests
+
     response = requests.post(
         "https://oauth2.googleapis.com/token",
         data={
@@ -327,19 +376,22 @@ def exchange_code_for_tokens(code: str) -> dict:
     return response.json()
 
 
-def save_google_tokens(tokens: dict):
+def save_google_tokens(fs: SemanticFS, tokens: dict):
     """Save Google OAuth tokens to mixedbread."""
     from datetime import datetime
+
     token_data = {
         "access_token": tokens.get("access_token"),
         "refresh_token": tokens.get("refresh_token"),
         "expiry": tokens.get("expiry"),
         "connected_at": datetime.now().isoformat(),
     }
-    fs.write(GOOGLE_AUTH_PATH, json.dumps(token_data), {"type": "auth", "provider": "google"})
+    fs.write(
+        GOOGLE_AUTH_PATH, json.dumps(token_data), {"type": "auth", "provider": "google"}
+    )
 
 
-def get_google_tokens() -> dict | None:
+def get_google_tokens(fs: SemanticFS) -> dict | None:
     """Get stored Google OAuth tokens."""
     result = fs.read(GOOGLE_AUTH_PATH)
     if "error" in result:
@@ -351,15 +403,28 @@ def get_google_tokens() -> dict | None:
 
 
 @app.get("/auth/google")
-def google_auth_start():
+def google_auth_start(
+    fs: SemanticFS = Depends(get_user_fs), authorization: str = Header(None)
+):
     """Start Google OAuth flow - returns URL to redirect user to."""
     if not GOOGLE_CLIENT_ID or not GOOGLE_CLIENT_SECRET:
-        return {"error": "Google OAuth not configured. Set GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET."}
-    return {"auth_url": get_google_auth_url()}
+        return {
+            "error": "Google OAuth not configured. Set GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET."
+        }
+
+    # Encode API key in state parameter (base64)
+    api_key = (
+        authorization[7:]
+        if authorization and authorization.startswith("Bearer ")
+        else authorization
+    )
+    state = base64.b64encode(api_key.encode()).decode()
+
+    return {"auth_url": get_google_auth_url(state)}
 
 
 @app.get("/auth/google/callback")
-def google_auth_callback(code: str = None, error: str = None):
+def google_auth_callback(code: str = None, state: str = None, error: str = None):
     """Handle Google OAuth callback."""
     from fastapi.responses import HTMLResponse
 
@@ -372,10 +437,22 @@ def google_auth_callback(code: str = None, error: str = None):
             </body></html>
         """)
 
-    if not code:
+    if not code or not state:
         return HTMLResponse("""
             <html><body>
             <h2>No authorization code received</h2>
+            <script>setTimeout(() => window.close(), 3000);</script>
+            </body></html>
+        """)
+
+    # Decode API key from state parameter
+    try:
+        api_key = base64.b64decode(state).decode()
+        fs = SemanticFS(api_key=api_key, store_name="bernd")
+    except Exception:
+        return HTMLResponse("""
+            <html><body>
+            <h2>Invalid state parameter</h2>
             <script>setTimeout(() => window.close(), 3000);</script>
             </body></html>
         """)
@@ -387,19 +464,20 @@ def google_auth_callback(code: str = None, error: str = None):
         return HTMLResponse(f"""
             <html><body>
             <h2>Token exchange failed</h2>
-            <p>{tokens.get('error_description', tokens.get('error'))}</p>
+            <p>{tokens.get("error_description", tokens.get("error"))}</p>
             <script>setTimeout(() => window.close(), 3000);</script>
             </body></html>
         """)
 
     # Calculate expiry
     from datetime import datetime, timedelta
+
     if tokens.get("expires_in"):
         expiry = (datetime.now() + timedelta(seconds=tokens["expires_in"])).isoformat()
         tokens["expiry"] = expiry
 
-    # Save tokens
-    save_google_tokens(tokens)
+    # Save tokens to user's store
+    save_google_tokens(fs, tokens)
 
     return HTMLResponse("""
         <html><body>
@@ -416,9 +494,9 @@ def google_auth_callback(code: str = None, error: str = None):
 
 
 @app.get("/auth/google/status")
-def google_auth_status():
+def google_auth_status(fs: SemanticFS = Depends(get_user_fs)):
     """Check if Google Calendar is connected."""
-    tokens = get_google_tokens()
+    tokens = get_google_tokens(fs)
     if tokens and tokens.get("access_token"):
         return {
             "connected": True,
@@ -428,7 +506,7 @@ def google_auth_status():
 
 
 @app.delete("/auth/google")
-def google_auth_disconnect():
+def google_auth_disconnect(fs: SemanticFS = Depends(get_user_fs)):
     """Disconnect Google Calendar."""
     result = fs.delete(GOOGLE_AUTH_PATH)
     if "error" in result:
@@ -467,10 +545,7 @@ def convert_message_for_openai(msg: dict) -> dict:
 
     # Add images
     for img in msg["images"]:
-        content.append({
-            "type": "input_image",
-            "image_url": img["data"]
-        })
+        content.append({"type": "input_image", "image_url": img["data"]})
 
     return {"role": msg["role"], "content": content}
 
@@ -492,19 +567,16 @@ def generate_chat_title(messages: list[dict]) -> str:
             messages=[
                 {
                     "role": "system",
-                    "content": "Generate a short, descriptive title (3-6 words) for this conversation. Return ONLY the title, no quotes or punctuation at the end."
+                    "content": "Generate a short, descriptive title (3-6 words) for this conversation. Return ONLY the title, no quotes or punctuation at the end.",
                 },
-                {
-                    "role": "user",
-                    "content": conversation_text
-                }
+                {"role": "user", "content": conversation_text},
             ],
             max_tokens=20,
             temperature=0.7,
         )
         title = response.choices[0].message.content.strip()
         # Clean up any quotes or trailing punctuation
-        title = title.strip('"\'').rstrip('.')
+        title = title.strip("\"'").rstrip(".")
         return title[:50]  # Ensure max length
     except Exception as e:
         print(f"[API] Title generation failed: {e}")
@@ -518,11 +590,11 @@ def generate_chat_title(messages: list[dict]) -> str:
         return "New chat"
 
 
-def save_chat(chat_id: str, messages: list[dict]):
+def save_chat(fs: SemanticFS, chat_id: str, messages: list[dict]):
     """Save chat to semantic filesystem."""
     title = generate_chat_title(messages)
     # Process images: save to disk and replace with paths
-    processed_messages = process_images_for_save(chat_id, messages)
+    processed_messages = process_images_for_save(fs, chat_id, messages)
     content = json.dumps(processed_messages)
     fs.write(
         f"/chats/{chat_id}.json",
@@ -536,22 +608,24 @@ def save_chat(chat_id: str, messages: list[dict]):
 
 
 @app.get("/chats")
-def list_chats(n: int = 50):
+def list_chats(n: int = 50, fs: SemanticFS = Depends(get_user_fs)):
     """List all chats."""
     files = fs.list(prefix="/chats", limit=n)
     chats = []
     for f in files:
         chat_id = f["path"].split("/")[-1].replace(".json", "")
-        chats.append({
-            "id": chat_id,
-            "title": f["metadata"].get("title", "Untitled"),
-            "message_count": f["metadata"].get("message_count", 0),
-        })
+        chats.append(
+            {
+                "id": chat_id,
+                "title": f["metadata"].get("title", "Untitled"),
+                "message_count": f["metadata"].get("message_count", 0),
+            }
+        )
     return chats
 
 
 @app.get("/chats/{chat_id}")
-def get_chat(chat_id: str):
+def get_chat(chat_id: str, fs: SemanticFS = Depends(get_user_fs)):
     """Get a specific chat by ID."""
     result = fs.read(f"/chats/{chat_id}.json")
     if "error" in result:
@@ -559,7 +633,7 @@ def get_chat(chat_id: str):
     try:
         messages = json.loads(result.get("content", "[]"))
         # Load images from disk and convert back to base64
-        messages = process_images_for_load(messages)
+        messages = process_images_for_load(fs, messages)
     except json.JSONDecodeError:
         messages = []
     return {
@@ -570,7 +644,7 @@ def get_chat(chat_id: str):
 
 
 @app.delete("/chats/{chat_id}")
-def delete_chat(chat_id: str):
+def delete_chat(chat_id: str, fs: SemanticFS = Depends(get_user_fs)):
     """Delete a chat by ID."""
     result = fs.delete(f"/chats/{chat_id}.json")
     if "error" in result:
@@ -582,8 +656,17 @@ def delete_chat(chat_id: str):
     return {"status": "deleted", "id": chat_id}
 
 
+def get_api_key_from_header(authorization: str = Header(None)) -> str:
+    """Extract API key from Authorization header."""
+    if not authorization:
+        raise HTTPException(status_code=401, detail="Authorization header required")
+    if authorization.startswith("Bearer "):
+        return authorization[7:]
+    return authorization
+
+
 @app.post("/chat")
-def chat(request: ChatRequest):
+def chat(request: ChatRequest, api_key: str = Depends(get_api_key_from_header)):
     """Send a message to the agent and get a response."""
     # Convert to the format expected by run_agent (with image support)
     conversation = []
@@ -593,14 +676,18 @@ def chat(request: ChatRequest):
             msg["images"] = [img.model_dump() for img in m.images]
         conversation.append(convert_message_for_openai(msg))
 
-    # Run the agent with tool call tracking
-    result = run_agent(conversation, return_tool_calls=True)
+    # Run the agent with tool call tracking (using user's API key)
+    result = run_agent(conversation, return_tool_calls=True, api_key=api_key)
 
     return {"response": result["response"], "tool_calls": result["tool_calls"]}
 
 
 @app.post("/chat/stream")
-def chat_stream(request: ChatRequest):
+def chat_stream(
+    request: ChatRequest,
+    api_key: str = Depends(get_api_key_from_header),
+    fs: SemanticFS = Depends(get_user_fs),
+):
     """Stream agent response with tool calls via SSE."""
     # Keep a clean copy for saving (without OpenAI content format)
     messages_to_save = []
@@ -617,20 +704,29 @@ def chat_stream(request: ChatRequest):
     chat_id = request.chat_id
     if not chat_id:
         from datetime import datetime
+
         chat_id = datetime.now().strftime("%Y%m%d_%H%M%S")
 
     def event_stream():
         final_content = ""
-        for event in run_agent_stream(agent_input):
+        for event in run_agent_stream(agent_input, api_key=api_key):
             if event["type"] == "response_end":
                 final_content = event["content"]
             yield f"data: {json.dumps(event)}\n\n"
 
-        # Save the chat with the assistant's response
-        full_conversation = messages_to_save + [{"role": "assistant", "content": final_content}]
-        save_chat(chat_id, full_conversation)
+        # Save the chat with the assistant's response (using user's fs)
+        full_conversation = messages_to_save + [
+            {"role": "assistant", "content": final_content}
+        ]
+        save_chat(fs, chat_id, full_conversation)
 
         # Send chat_id to frontend
         yield f"data: {json.dumps({'type': 'chat_saved', 'chat_id': chat_id})}\n\n"
 
     return StreamingResponse(event_stream(), media_type="text/event-stream")
+
+
+if __name__ == "__main__":
+    import uvicorn
+
+    uvicorn.run("main:app", host="0.0.0.0", port=5001, reload=True)
