@@ -23,32 +23,15 @@ export default function SignInPage() {
   };
 
   return (
-    <div
-      className="min-h-screen flex pt-[35svh] justify-center p-4"
-      style={{ background: "var(--background)" }}
-    >
+    <div className="min-h-screen flex pt-[35svh] justify-center p-4 bg-background">
       <div className="w-full max-w-sm">
         <div className="mb-8 text-center">
-          <h1
-            className="text-xl font-medium mb-2"
-            style={{ color: "var(--foreground)" }}
-          >
-            bernd
-          </h1>
-          <p className="text-sm" style={{ color: "var(--muted)" }}>
-            Sign in to continue
-          </p>
+          <h1 className="text-xl font-medium mb-2 text-foreground">bernd</h1>
+          <p className="text-sm text-muted">Sign in to continue</p>
         </div>
 
         {error && (
-          <div
-            className="mb-4 p-3 rounded-lg text-sm text-center"
-            style={{
-              background: "var(--surface)",
-              border: "1px solid var(--border)",
-              color: "var(--accent)",
-            }}
-          >
+          <div className="mb-4 p-3 rounded-lg text-sm text-center bg-surface border border-border text-accent">
             {error}
           </div>
         )}
@@ -57,12 +40,7 @@ export default function SignInPage() {
           <button
             onClick={() => handleSignIn("google")}
             disabled={loadingProvider !== null}
-            className="w-full px-4 py-3 rounded-lg text-sm font-medium transition-colors hover:opacity-90 disabled:opacity-50 flex items-center justify-center gap-3"
-            style={{
-              background: "var(--surface)",
-              border: "1px solid var(--border)",
-              color: "var(--foreground)",
-            }}
+            className="w-full px-4 py-3 rounded-lg text-sm font-medium transition-colors hover:opacity-90 disabled:opacity-50 flex items-center justify-center gap-3 bg-surface border border-border text-foreground"
           >
             <GoogleLogoIcon className="w-5 h-5" />
             {loadingProvider === "google" ? "Signing in..." : "Continue with Google"}
@@ -71,12 +49,7 @@ export default function SignInPage() {
           <button
             onClick={() => handleSignIn("github")}
             disabled={loadingProvider !== null}
-            className="w-full px-4 py-3 rounded-lg text-sm font-medium transition-colors hover:opacity-90 disabled:opacity-50 flex items-center justify-center gap-3"
-            style={{
-              background: "var(--surface)",
-              border: "1px solid var(--border)",
-              color: "var(--foreground)",
-            }}
+            className="w-full px-4 py-3 rounded-lg text-sm font-medium transition-colors hover:opacity-90 disabled:opacity-50 flex items-center justify-center gap-3 bg-surface border border-border text-foreground"
           >
             <GitHubLogoIcon className="w-5 h-5" />
             {loadingProvider === "github" ? "Signing in..." : "Continue with GitHub"}

@@ -147,18 +147,16 @@ export default function NotesPage() {
   // Mobile: Show note list or editor, not both
   // Desktop: Show both side by side
   return (
-    <div className="min-h-screen flex flex-col md:flex-row" style={{ background: 'var(--background)' }}>
+    <div className="min-h-screen flex flex-col md:flex-row bg-background">
       {/* Notes list sidebar - hidden on mobile when note is selected */}
       <div
-        className={`${selectedNote ? 'hidden md:flex' : 'flex'} w-full md:w-64 border-b md:border-b-0 md:border-r flex-col`}
-        style={{ borderColor: 'var(--border)' }}
+        className={`${selectedNote ? 'hidden md:flex' : 'flex'} w-full md:w-64 border-b md:border-b-0 md:border-r border-border flex-col`}
       >
-        <div className="p-4 border-b flex items-center justify-between" style={{ borderColor: 'var(--border)' }}>
-          <h2 className="text-sm font-medium" style={{ color: 'var(--foreground)' }}>Notes</h2>
+        <div className="p-4 border-b border-border flex items-center justify-between">
+          <h2 className="text-sm font-medium text-foreground">Notes</h2>
           <button
             onClick={createNote}
-            className="text-xs transition-colors hover:opacity-70"
-            style={{ color: 'var(--accent)' }}
+            className="text-xs transition-colors hover:opacity-70 text-accent"
           >
             + new
           </button>
@@ -166,30 +164,27 @@ export default function NotesPage() {
 
         <div className="flex-1 overflow-y-auto p-2">
           {loading ? (
-            <p className="text-xs p-2" style={{ color: 'var(--muted)' }}>loading...</p>
+            <p className="text-xs p-2 text-muted">loading...</p>
           ) : notes.length === 0 ? (
-            <p className="text-xs p-2" style={{ color: 'var(--muted)' }}>no notes yet</p>
+            <p className="text-xs p-2 text-muted">no notes yet</p>
           ) : (
             <ul className="space-y-0.5">
               {notes.map((note) => (
                 <li key={note.id} className="group/item relative">
                   <button
                     onClick={() => loadNote(note)}
-                    className="w-full text-left px-3 py-2 pr-8 text-xs rounded-lg transition-colors"
-                    style={{
-                      background: selectedNote?.id === note.id ? 'var(--surface-hover)' : 'transparent',
-                      color: selectedNote?.id === note.id ? 'var(--foreground)' : 'var(--muted)',
-                    }}
+                    className={`w-full text-left px-3 py-2 pr-8 text-xs rounded-lg transition-colors ${
+                      selectedNote?.id === note.id ? 'bg-surface-hover text-foreground' : 'text-muted'
+                    }`}
                   >
                     <div className="truncate">{note.title || "Untitled"}</div>
-                    <div className="text-[10px] mt-0.5" style={{ color: 'var(--muted)' }}>
+                    <div className="text-[10px] mt-0.5 text-muted">
                       {formatDate(note.updated_at || "")}
                     </div>
                   </button>
                   <button
                     onClick={(e) => deleteNote(note.id, e)}
-                    className="absolute right-2 top-1/2 -translate-y-1/2 p-1 opacity-0 group-hover/item:opacity-100 transition-opacity hover:opacity-70"
-                    style={{ color: 'var(--accent)' }}
+                    className="absolute right-2 top-1/2 -translate-y-1/2 p-1 opacity-0 group-hover/item:opacity-100 transition-opacity hover:opacity-70 text-accent"
                     title="Delete"
                   >
                     <TrashIcon size={12} />
@@ -206,12 +201,11 @@ export default function NotesPage() {
         {selectedNote ? (
           <>
             {/* Title and toolbar */}
-            <div className="p-4 border-b flex items-center gap-3" style={{ borderColor: 'var(--border)' }}>
+            <div className="p-4 border-b border-border flex items-center gap-3">
               {/* Back button on mobile */}
               <button
                 onClick={goBack}
-                className="md:hidden p-1 -ml-1"
-                style={{ color: 'var(--muted)' }}
+                className="md:hidden p-1 -ml-1 text-muted"
               >
                 <ArrowLeftIcon size={20} />
               </button>
@@ -220,44 +214,38 @@ export default function NotesPage() {
                 value={title}
                 onChange={(e) => handleTitleChange(e.target.value)}
                 placeholder="Note title..."
-                className="text-base md:text-lg font-medium bg-transparent outline-none flex-1 min-w-0"
-                style={{ color: 'var(--foreground)' }}
+                className="text-base md:text-lg font-medium bg-transparent outline-none flex-1 min-w-0 text-foreground"
               />
               <div className="flex items-center gap-2 md:gap-4 shrink-0">
                 {saving && (
-                  <span className="text-xs" style={{ color: 'var(--muted)' }}>saving...</span>
+                  <span className="text-xs text-muted">saving...</span>
                 )}
                 {/* Toggle preview on mobile */}
                 <button
                   onClick={() => setShowPreview(!showPreview)}
-                  className="md:hidden text-xs px-2 py-1 rounded"
-                  style={{
-                    background: showPreview ? 'var(--accent)' : 'var(--surface)',
-                    color: showPreview ? 'white' : 'var(--muted)',
-                  }}
+                  className={`md:hidden text-xs px-2 py-1 rounded ${showPreview ? 'bg-accent text-white' : 'bg-surface text-muted'}`}
                 >
                   {showPreview ? 'edit' : 'preview'}
                 </button>
-                <span className="hidden md:inline text-xs" style={{ color: 'var(--muted)' }}>markdown</span>
+                <span className="hidden md:inline text-xs text-muted">markdown</span>
               </div>
             </div>
 
             {/* Content area */}
             <div className="flex-1 flex flex-col md:flex-row overflow-hidden">
               {/* Editor - hidden on mobile when preview is shown */}
-              <div className={`${showPreview ? 'hidden' : 'flex'} md:flex flex-1 overflow-hidden md:border-r`} style={{ borderColor: 'var(--border)' }}>
+              <div className={`${showPreview ? 'hidden' : 'flex'} md:flex flex-1 overflow-hidden md:border-r border-border`}>
                 <textarea
                   ref={textareaRef}
                   value={content}
                   onChange={(e) => handleContentChange(e.target.value)}
                   placeholder="Write your notes in markdown..."
-                  className="w-full h-full p-4 md:p-6 bg-transparent outline-none resize-none text-sm font-mono"
-                  style={{ color: 'var(--foreground)' }}
+                  className="w-full h-full p-4 md:p-6 bg-transparent outline-none resize-none text-sm font-mono text-foreground"
                 />
               </div>
               {/* Live preview - shown on mobile when preview is toggled, always on desktop */}
-              <div className={`${showPreview ? 'flex' : 'hidden'} md:flex flex-1 overflow-y-auto p-4 md:p-6`} style={{ background: 'var(--surface)' }}>
-                <div className="prose prose-sm max-w-none" style={{ color: 'var(--foreground)' }}>
+              <div className={`${showPreview ? 'flex' : 'hidden'} md:flex flex-1 overflow-y-auto p-4 md:p-6 bg-surface`}>
+                <div className="prose prose-sm max-w-none text-foreground">
                   <ReactMarkdown>{content || "*Start typing to see preview...*"}</ReactMarkdown>
                 </div>
               </div>
@@ -266,11 +254,10 @@ export default function NotesPage() {
         ) : (
           <div className="flex-1 flex items-center justify-center">
             <div className="text-center">
-              <p className="text-sm mb-2" style={{ color: 'var(--muted)' }}>Select a note or create a new one</p>
+              <p className="text-sm mb-2 text-muted">Select a note or create a new one</p>
               <button
                 onClick={createNote}
-                className="text-sm transition-colors hover:opacity-70"
-                style={{ color: 'var(--accent)' }}
+                className="text-sm transition-colors hover:opacity-70 text-accent"
               >
                 + create note
               </button>

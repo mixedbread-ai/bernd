@@ -22,11 +22,8 @@ export function AuthGate({ children }: { children: ReactNode }) {
   // Show loading state while checking session
   if (isPending) {
     return (
-      <div
-        className="min-h-screen flex items-center justify-center"
-        style={{ background: "var(--background)" }}
-      >
-        <div style={{ color: "var(--muted)" }}>...</div>
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <div className="text-muted">...</div>
       </div>
     );
   }
@@ -38,11 +35,8 @@ export function AuthGate({ children }: { children: ReactNode }) {
   // Show loading state while redirecting
   if (!isAuthenticated) {
     return (
-      <div
-        className="min-h-screen flex items-center justify-center"
-        style={{ background: "var(--background)" }}
-      >
-        <div style={{ color: "var(--muted)" }}>...</div>
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <div className="text-muted">...</div>
       </div>
     );
   }

@@ -35,13 +35,11 @@ function ImagePreview({
           <img
             src={img.data}
             alt={`Attachment ${i + 1}`}
-            className="h-12 w-12 object-cover rounded-lg"
-            style={{ border: "1px solid var(--border)" }}
+            className="h-12 w-12 object-cover rounded-lg border border-border"
           />
           <button
             onClick={() => onRemove(i)}
-            className="absolute -top-1 -right-1 w-4 h-4 text-white rounded-full text-xs flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
-            style={{ background: "var(--accent)" }}
+            className="absolute -top-1 -right-1 w-4 h-4 text-white rounded-full text-xs flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity bg-accent"
           >
             ×
           </button>
@@ -68,8 +66,7 @@ function MessageImages({
           src={img.data}
           alt={`Image ${i + 1}`}
           onClick={() => onImageClick?.(img.data)}
-          className="max-h-32 max-w-full rounded-lg cursor-pointer hover:opacity-90 transition-opacity"
-          style={{ border: "1px solid var(--border)" }}
+          className="max-h-32 max-w-full rounded-lg cursor-pointer hover:opacity-90 transition-opacity border border-border"
         />
       ))}
     </div>
@@ -120,12 +117,9 @@ function MessageBubble({
 }) {
   if (msg.role === "user") {
     return (
-      <div
-        className="px-3 py-2 rounded-2xl max-w-[80%] text-sm"
-        style={{ background: "var(--user-bubble)", color: "var(--foreground)" }}
-      >
+      <div className="px-3 py-2 rounded-2xl max-w-[80%] text-sm bg-user-bubble text-foreground">
         <MessageImages images={msg.images} onImageClick={onImageClick} />
-        <div className="prose prose-sm max-w-none" style={{ color: "var(--foreground)" }}>
+        <div className="prose prose-sm max-w-none text-foreground">
           <ReactMarkdown components={markdownComponents}>{msg.content}</ReactMarkdown>
         </div>
       </div>
@@ -137,13 +131,12 @@ function MessageBubble({
       {msg.toolCalls && msg.toolCalls.length > 0 && (
         <ToolCallsList toolCalls={msg.toolCalls} />
       )}
-      <div className="prose prose-sm max-w-none" style={{ color: "var(--foreground)" }}>
+      <div className="prose prose-sm max-w-none text-foreground">
         <ReactMarkdown components={markdownComponents}>{msg.content}</ReactMarkdown>
       </div>
       <button
         onClick={() => onCopy(msg.content)}
-        className="mt-1 text-xs opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity"
-        style={{ color: "var(--muted)" }}
+        className="mt-1 text-xs opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity text-muted"
       >
         copy
       </button>
@@ -157,10 +150,9 @@ function ToolCallsList({ toolCalls }: { toolCalls: ToolCall[] }) {
       {toolCalls.map((tc, j) => (
         <div
           key={j}
-          className="text-xs font-mono break-all"
-          style={{ color: "var(--muted)" }}
+          className="text-xs font-mono break-all text-muted"
         >
-          <span style={{ color: "var(--accent)" }}>→</span> {tc.name}
+          <span className="text-accent">→</span> {tc.name}
         </div>
       ))}
     </div>
@@ -179,22 +171,22 @@ function StreamingMessage({
       <div className="max-w-[85%]">
         {toolCalls.length > 0 && <ToolCallsList toolCalls={toolCalls} />}
         {content ? (
-          <div className="prose prose-sm max-w-none" style={{ color: "var(--foreground)" }}>
+          <div className="prose prose-sm max-w-none text-foreground">
             <ReactMarkdown components={markdownComponents}>{content}</ReactMarkdown>
           </div>
         ) : (
           <div className="flex items-center gap-1">
             <div
-              className="w-1.5 h-1.5 rounded-full animate-bounce"
-              style={{ background: "var(--accent)", animationDelay: "0ms" }}
+              className="w-1.5 h-1.5 rounded-full animate-bounce bg-accent"
+              style={{ animationDelay: "0ms" }}
             />
             <div
-              className="w-1.5 h-1.5 rounded-full animate-bounce"
-              style={{ background: "var(--accent)", animationDelay: "150ms" }}
+              className="w-1.5 h-1.5 rounded-full animate-bounce bg-accent"
+              style={{ animationDelay: "150ms" }}
             />
             <div
-              className="w-1.5 h-1.5 rounded-full animate-bounce"
-              style={{ background: "var(--accent)", animationDelay: "300ms" }}
+              className="w-1.5 h-1.5 rounded-full animate-bounce bg-accent"
+              style={{ animationDelay: "300ms" }}
             />
           </div>
         )}
@@ -290,32 +282,24 @@ export function FloatingChat() {
       />
 
       {/* Floating window */}
-      <div
-        className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-2xl max-h-[80vh] rounded-xl shadow-2xl z-50 flex flex-col overflow-hidden"
-        style={{ background: "var(--background)", border: "1px solid var(--border)" }}
-      >
+      <div className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-2xl max-h-[80vh] rounded-xl shadow-2xl z-50 flex flex-col overflow-hidden bg-background border border-border">
         {/* Header */}
-        <div
-          className="flex items-center justify-between px-4 py-3"
-          style={{ borderBottom: "1px solid var(--border)" }}
-        >
-          <span className="text-sm font-medium" style={{ color: "var(--foreground)" }}>
+        <div className="flex items-center justify-between px-4 py-3 border-b border-border">
+          <span className="text-sm font-medium text-foreground">
             Quick Chat
           </span>
           <div className="flex items-center gap-3">
             {messages.length > 0 && (
               <button
                 onClick={clearChat}
-                className="text-xs transition-colors hover:opacity-70"
-                style={{ color: "var(--muted)" }}
+                className="text-xs transition-colors hover:opacity-70 text-muted"
               >
                 clear
               </button>
             )}
             <button
               onClick={() => setIsOpen(false)}
-              className="text-xs transition-colors hover:opacity-70"
-              style={{ color: "var(--muted)" }}
+              className="text-xs transition-colors hover:opacity-70 text-muted"
             >
               esc
             </button>
@@ -325,7 +309,7 @@ export function FloatingChat() {
         {/* Messages */}
         <div className="flex-1 overflow-y-auto px-4 py-4 space-y-4">
           {messages.length === 0 && !loading && (
-            <div className="text-center text-sm py-8" style={{ color: "var(--muted)" }}>
+            <div className="text-center text-sm py-8 text-muted">
               Ask Bernd anything...
             </div>
           )}
@@ -354,7 +338,7 @@ export function FloatingChat() {
         </div>
 
         {/* Input */}
-        <div className="p-3" style={{ borderTop: "1px solid var(--border)" }}>
+        <div className="p-3 border-t border-border">
           <ImagePreview images={images} onRemove={removeImage} />
           <div className="relative">
             <textarea
@@ -366,14 +350,7 @@ export function FloatingChat() {
               placeholder="message..."
               disabled={loading}
               rows={2}
-              className="w-full rounded-lg px-3 py-2 pr-10 text-sm outline-none disabled:opacity-50 transition-colors resize-none"
-              style={{
-                background: "var(--surface)",
-                border: "1px solid var(--border)",
-                color: "var(--foreground)",
-              }}
-              onFocus={(e) => (e.target.style.borderColor = "var(--accent)")}
-              onBlur={(e) => (e.target.style.borderColor = "var(--border)")}
+              className="w-full rounded-lg px-3 py-2 pr-10 text-sm outline-none disabled:opacity-50 transition-colors resize-none bg-surface border border-border text-foreground focus:border-accent"
             />
             <input
               ref={fileInputRef}
@@ -385,8 +362,7 @@ export function FloatingChat() {
             />
             <button
               onClick={() => fileInputRef.current?.click()}
-              className="absolute right-2 bottom-2 p-1 transition-colors hover:opacity-70"
-              style={{ color: "var(--muted)" }}
+              className="absolute right-2 bottom-2 p-1 transition-colors hover:opacity-70 text-muted"
               title="Attach image"
             >
               <ImageIcon size={16} />
