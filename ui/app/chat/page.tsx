@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useRef, useEffect, useCallback } from "react";
+import { ImageIcon, XIcon, ClockIcon } from "lucide-react";
 import ReactMarkdown, { Components } from "react-markdown";
 
 const markdownComponents: Components = {
@@ -328,21 +329,7 @@ export default function ChatPage() {
           style={{ color: 'var(--muted)' }}
           title="Attach image"
         >
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            width="18"
-            height="18"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          >
-            <rect x="3" y="3" width="18" height="18" rx="2" ry="2" />
-            <circle cx="8.5" cy="8.5" r="1.5" />
-            <polyline points="21 15 16 10 5 21" />
-          </svg>
+          <ImageIcon size={18} />
         </button>
       </div>
     </div>
@@ -404,9 +391,7 @@ export default function ChatPage() {
                     style={{ color: 'var(--accent)' }}
                     title="Delete"
                   >
-                    <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                      <path d="M18 6L6 18M6 6l12 12" />
-                    </svg>
+                    <XIcon size={12} />
                   </button>
                 </li>
               ))}
@@ -428,10 +413,7 @@ export default function ChatPage() {
             className="flex items-center gap-2 text-sm transition-colors hover:opacity-70"
             style={{ color: 'var(--muted)' }}
           >
-            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <circle cx="12" cy="12" r="10" />
-              <polyline points="12 6 12 12 16 14" />
-            </svg>
+            <ClockIcon size={16} />
             <span>History</span>
             {chats.length > 0 && (
               <span className="text-xs" style={{ color: 'var(--muted)' }}>({chats.length})</span>
@@ -506,10 +488,7 @@ export default function ChatPage() {
           className="flex items-center gap-2 text-sm transition-colors hover:opacity-70"
           style={{ color: 'var(--muted)' }}
         >
-          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-            <circle cx="12" cy="12" r="10" />
-            <polyline points="12 6 12 12 16 14" />
-          </svg>
+          <ClockIcon size={16} />
           <span className="hidden sm:inline">History</span>
         </button>
 

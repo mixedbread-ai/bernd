@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef, useCallback } from "react";
+import { ArrowLeftIcon, DownloadIcon, Trash2Icon, XIcon } from "lucide-react";
 import { API_ENDPOINTS } from "../config";
 import { api } from "../lib/api";
 import ReactMarkdown from "react-markdown";
@@ -382,9 +383,7 @@ export default function FilesPage() {
             className="mb-4 text-sm flex items-center gap-2 hover:opacity-80"
             style={{ color: "var(--muted)" }}
           >
-            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M19 12H5M12 19l-7-7 7-7" />
-            </svg>
+            <ArrowLeftIcon size={16} />
             back
           </button>
         )}
@@ -440,11 +439,7 @@ export default function FilesPage() {
                       style={{ color: "var(--muted)" }}
                       title="Download"
                     >
-                      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
-                        <polyline points="7 10 12 15 17 10" />
-                        <line x1="12" y1="15" x2="12" y2="3" />
-                      </svg>
+                      <DownloadIcon size={16} />
                     </button>
                   )}
                   <button
@@ -453,9 +448,7 @@ export default function FilesPage() {
                     style={{ color: "var(--accent)" }}
                     title="Delete"
                   >
-                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                      <path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
-                    </svg>
+                    <Trash2Icon size={16} />
                   </button>
                 </div>
               </div>
@@ -494,11 +487,7 @@ export default function FilesPage() {
                   style={{ color: "var(--muted)" }}
                   title="Download"
                 >
-                  <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
-                    <polyline points="7 10 12 15 17 10" />
-                    <line x1="12" y1="15" x2="12" y2="3" />
-                  </svg>
+                  <DownloadIcon size={18} />
                 </button>
                 <button
                   onClick={closePreview}
@@ -506,10 +495,7 @@ export default function FilesPage() {
                   style={{ color: "var(--muted)" }}
                   title="Close"
                 >
-                  <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <line x1="18" y1="6" x2="6" y2="18" />
-                    <line x1="6" y1="6" x2="18" y2="18" />
-                  </svg>
+                  <XIcon size={18} />
                 </button>
               </div>
             </div>
@@ -595,10 +581,7 @@ export default function FilesPage() {
                   style={{ color: "var(--muted)" }}
                   title="Close"
                 >
-                  <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <line x1="18" y1="6" x2="6" y2="18" />
-                    <line x1="6" y1="6" x2="18" y2="18" />
-                  </svg>
+                  <XIcon size={18} />
                 </button>
               </div>
             </div>

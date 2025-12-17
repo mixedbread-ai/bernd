@@ -3,49 +3,37 @@
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect } from "react";
+import {
+  CircleCheckIcon,
+  MessageSquareIcon,
+  FileTextIcon,
+  SearchIcon,
+  FolderIcon,
+  SettingsIcon,
+  LogOutIcon,
+} from "lucide-react";
+import { useAuth } from "../context/AuthContext";
 
 const navItems = [
-  { href: "/", label: "todos", key: "t", icon: (
-    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
-      <polyline points="22 4 12 14.01 9 11.01" />
-    </svg>
-  )},
-  { href: "/chat", label: "chat", key: "c", icon: (
-    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
-    </svg>
-  )},
-  { href: "/notes", label: "notes", key: "n", icon: (
-    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
-      <polyline points="14 2 14 8 20 8" />
-      <line x1="16" y1="13" x2="8" y2="13" />
-      <line x1="16" y1="17" x2="8" y2="17" />
-    </svg>
-  )},
-  { href: "/search", label: "search", key: "s", icon: (
-    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <circle cx="11" cy="11" r="8" />
-      <line x1="21" y1="21" x2="16.65" y2="16.65" />
-    </svg>
-  )},
-  { href: "/files", label: "files", key: "f", icon: (
-    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z" />
-    </svg>
-  )},
-  { href: "/settings", label: "settings", key: ",", icon: (
-    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <circle cx="12" cy="12" r="3" />
-      <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z" />
-    </svg>
-  )},
+  { href: "/", label: "todos", key: "t", icon: CircleCheckIcon },
+  { href: "/chat", label: "chat", key: "c", icon: MessageSquareIcon },
+  { href: "/notes", label: "notes", key: "n", icon: FileTextIcon },
+  { href: "/search", label: "search", key: "s", icon: SearchIcon },
+  { href: "/files", label: "files", key: "f", icon: FolderIcon },
+  { href: "/settings", label: "settings", key: ",", icon: SettingsIcon },
 ];
 
 export function Navbar() {
   const pathname = usePathname();
   const router = useRouter();
+  const { user, logout } = useAuth();
+
+  const handleLogout = async () => {
+    if (confirm("Are you sure you want to sign out?")) {
+      await logout();
+      router.push("/sign-in");
+    }
+  };
 
   useEffect(() => {
     function handleKeyDown(e: KeyboardEvent) {
@@ -97,6 +85,22 @@ export function Navbar() {
           })}
         </ul>
 
+        {user && (
+          <div className="mt-auto pt-6 border-t" style={{ borderColor: 'var(--border)' }}>
+            <div className="mb-3 text-sm truncate" style={{ color: 'var(--muted)' }}>
+              {user.email}
+            </div>
+          
+            <button
+              onClick={handleLogout}
+              className="text-sm transition-colors hover:opacity-80 flex items-center gap-2"
+              style={{ color: 'var(--muted)' }}
+            >
+              <LogOutIcon size={14} />
+              sign out
+            </button>
+          </div>
+        )}
       </nav>
 
       {/* Mobile bottom nav */}
@@ -107,6 +111,7 @@ export function Navbar() {
         <div className="flex items-center justify-around py-2 px-2">
           {navItems.map((item) => {
             const isActive = pathname === item.href;
+            const Icon = item.icon;
             return (
               <Link
                 key={item.href}
@@ -114,7 +119,7 @@ export function Navbar() {
                 className="flex flex-col items-center gap-1 px-3 py-2 rounded-lg transition-colors"
                 style={{ color: isActive ? 'var(--accent)' : 'var(--muted)' }}
               >
-                {item.icon}
+                <Icon size={20} />
                 <span className="text-[10px]">{item.label}</span>
               </Link>
             );
