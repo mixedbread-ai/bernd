@@ -95,41 +95,35 @@ export default function SettingsPage() {
   };
 
   return (
-    <div className="min-h-screen p-4 md:p-12" style={{ background: "var(--background)" }}>
+    <div className="min-h-screen p-4 md:p-12 bg-background">
       <div className="mx-auto max-w-xl">
-        <h1 className="text-lg font-medium mb-8" style={{ color: "var(--foreground)" }}>
+        <h1 className="text-lg font-medium mb-8 text-foreground">
           Settings
         </h1>
 
         {/* Integrations section */}
         <section className="mb-8">
-          <h2 className="text-sm font-medium mb-4" style={{ color: "var(--foreground)" }}>
+          <h2 className="text-sm font-medium mb-4 text-foreground">
             Integrations
           </h2>
 
           {/* Google Calendar */}
-          <div
-            className="p-4 rounded-lg"
-            style={{ background: "var(--surface)", border: "1px solid var(--border)" }}
-          >
+          <div className="p-4 rounded-lg bg-surface border border-border">
             <div className="flex items-start justify-between">
               <div className="flex items-center gap-3">
-                <div
-                  className="w-10 h-10 rounded-lg flex items-center justify-center"
-                  style={{ background: "var(--background)" }}
-                >
-                  <CalendarIcon size={20} style={{ color: "var(--foreground)" }} />
+                <div className="w-10 h-10 rounded-lg flex items-center justify-center bg-background">
+                  <CalendarIcon size={20} className="text-foreground" />
                 </div>
                 <div>
-                  <div className="text-sm font-medium" style={{ color: "var(--foreground)" }}>
+                  <div className="text-sm font-medium text-foreground">
                     Google Calendar
                   </div>
-                  <div className="text-xs mt-0.5" style={{ color: "var(--muted)" }}>
+                  <div className="text-xs mt-0.5 text-muted">
                     {loading ? (
                       "Checking..."
                     ) : googleStatus?.connected ? (
                       <>
-                        <span style={{ color: "var(--accent)" }}>Connected</span>
+                        <span className="text-accent">Connected</span>
                         {googleStatus.connected_at && (
                           <span> since {formatDate(googleStatus.connected_at)}</span>
                         )}
@@ -146,23 +140,14 @@ export default function SettingsPage() {
                   <button
                     onClick={disconnectGoogle}
                     disabled={disconnecting}
-                    className="text-xs px-3 py-1.5 rounded-lg transition-colors hover:opacity-80 disabled:opacity-50"
-                    style={{
-                      background: "var(--background)",
-                      border: "1px solid var(--border)",
-                      color: "var(--muted)",
-                    }}
+                    className="text-xs px-3 py-1.5 rounded-lg transition-colors hover:opacity-80 disabled:opacity-50 bg-background border border-border text-muted"
                   >
                     {disconnecting ? "Disconnecting..." : "Disconnect"}
                   </button>
                 ) : (
                   <button
                     onClick={connectGoogle}
-                    className="text-xs px-3 py-1.5 rounded-lg transition-colors hover:opacity-80"
-                    style={{
-                      background: "var(--accent)",
-                      color: "white",
-                    }}
+                    className="text-xs px-3 py-1.5 rounded-lg transition-colors hover:opacity-80 bg-accent text-white"
                   >
                     Connect
                   </button>
@@ -171,10 +156,7 @@ export default function SettingsPage() {
             </div>
 
             {googleStatus?.connected && (
-              <div
-                className="mt-3 pt-3 text-xs"
-                style={{ borderTop: "1px solid var(--border)", color: "var(--muted)" }}
-              >
+              <div className="mt-3 pt-3 text-xs border-t border-border text-muted">
                 Bernd can create, update, and manage calendar events for your todos.
               </div>
             )}
@@ -183,31 +165,25 @@ export default function SettingsPage() {
 
         {/* Appearance section */}
         <section className="mb-8">
-          <h2 className="text-sm font-medium mb-4" style={{ color: "var(--foreground)" }}>
+          <h2 className="text-sm font-medium mb-4 text-foreground">
             Appearance
           </h2>
 
-          <div
-            className="p-4 rounded-lg"
-            style={{ background: "var(--surface)", border: "1px solid var(--border)" }}
-          >
+          <div className="p-4 rounded-lg bg-surface border border-border">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
-                <div
-                  className="w-10 h-10 rounded-lg flex items-center justify-center"
-                  style={{ background: "var(--background)" }}
-                >
+                <div className="w-10 h-10 rounded-lg flex items-center justify-center bg-background">
                   {theme === "light" ? (
-                    <SunIcon size={20} style={{ color: "var(--foreground)" }} />
+                    <SunIcon size={20} className="text-foreground" />
                   ) : (
-                    <MoonIcon size={20} style={{ color: "var(--foreground)" }} />
+                    <MoonIcon size={20} className="text-foreground" />
                   )}
                 </div>
                 <div>
-                  <div className="text-sm font-medium" style={{ color: "var(--foreground)" }}>
+                  <div className="text-sm font-medium text-foreground">
                     Theme
                   </div>
-                  <div className="text-xs mt-0.5" style={{ color: "var(--muted)" }}>
+                  <div className="text-xs mt-0.5 text-muted">
                     {theme === "light" ? "Light mode" : "Dark mode"}
                   </div>
                 </div>
@@ -215,11 +191,7 @@ export default function SettingsPage() {
 
               <button
                 onClick={toggleTheme}
-                className="text-xs px-3 py-1.5 rounded-lg transition-colors hover:opacity-80"
-                style={{
-                  background: "var(--accent)",
-                  color: "white",
-                }}
+                className="text-xs px-3 py-1.5 rounded-lg transition-colors hover:opacity-80 bg-accent text-white"
               >
                 {theme === "light" ? "Switch to dark" : "Switch to light"}
               </button>
@@ -229,31 +201,23 @@ export default function SettingsPage() {
 
         {/* Account section */}
         <section>
-          <h2 className="text-sm font-medium mb-4" style={{ color: "var(--foreground)" }}>
+          <h2 className="text-sm font-medium mb-4 text-foreground">
             Account
           </h2>
 
-          <div
-            className="p-4 rounded-lg"
-            style={{ background: "var(--surface)", border: "1px solid var(--border)" }}
-          >
+          <div className="p-4 rounded-lg bg-surface border border-border">
             <div className="flex items-center justify-between">
               <div>
-                <div className="text-sm" style={{ color: "var(--foreground)" }}>
+                <div className="text-sm text-foreground">
                   {user?.email || "Signed in"}
                 </div>
-                <div className="text-xs mt-0.5" style={{ color: "var(--muted)" }}>
+                <div className="text-xs mt-0.5 text-muted">
                   {user?.name || "Sign out of your account"}
                 </div>
               </div>
               <button
                 onClick={handleLogout}
-                className="text-xs px-3 py-1.5 rounded-lg transition-colors hover:opacity-80"
-                style={{
-                  background: "var(--background)",
-                  border: "1px solid var(--border)",
-                  color: "var(--muted)",
-                }}
+                className="text-xs px-3 py-1.5 rounded-lg transition-colors hover:opacity-80 bg-background border border-border text-muted"
               >
                 Sign out
               </button>

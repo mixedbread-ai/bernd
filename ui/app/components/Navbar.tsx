@@ -60,9 +60,9 @@ export function Navbar() {
   return (
     <>
       {/* Desktop sidebar */}
-      <nav className="hidden md:flex fixed left-0 top-0 h-screen w-44 flex-col border-r px-6 py-8" style={{ borderColor: 'var(--border)', background: 'var(--background)' }}>
+      <nav className="hidden md:flex fixed left-0 top-0 h-screen w-44 flex-col border-r border-border px-6 py-8 bg-background">
         <div className="mb-12">
-          <span className="text-sm font-medium tracking-wide" style={{ color: 'var(--foreground)' }}>bernd</span>
+          <span className="text-sm font-medium tracking-wide text-foreground">bernd</span>
         </div>
 
         <ul className="space-y-1">
@@ -72,11 +72,10 @@ export function Navbar() {
               <li key={item.href}>
                 <Link
                   href={item.href}
-                  className="group flex items-center justify-between py-1.5 text-sm transition-colors"
-                  style={{ color: isActive ? 'var(--foreground)' : 'var(--muted)' }}
+                  className={`group flex items-center justify-between py-1.5 text-sm transition-colors ${isActive ? 'text-foreground' : 'text-muted'}`}
                 >
                   <span className="hover:opacity-80">{item.label}</span>
-                  <span style={{ color: isActive ? 'var(--accent)' : 'var(--muted)', opacity: isActive ? 1 : 0.5 }} className="text-xs">
+                  <span className={`text-xs ${isActive ? 'text-accent' : 'text-muted opacity-50'}`}>
                     {item.key}
                   </span>
                 </Link>
@@ -86,15 +85,14 @@ export function Navbar() {
         </ul>
 
         {user && (
-          <div className="mt-auto pt-6 border-t" style={{ borderColor: 'var(--border)' }}>
-            <div className="mb-3 text-sm truncate" style={{ color: 'var(--muted)' }}>
+          <div className="mt-auto pt-6 border-t border-border">
+            <div className="mb-3 text-sm truncate text-muted">
               {user.email}
             </div>
           
             <button
               onClick={handleLogout}
-              className="text-sm transition-colors hover:opacity-80 flex items-center gap-2"
-              style={{ color: 'var(--muted)' }}
+              className="text-sm transition-colors hover:opacity-80 flex items-center gap-2 text-muted"
             >
               <LogOutIcon size={14} />
               sign out
@@ -104,10 +102,7 @@ export function Navbar() {
       </nav>
 
       {/* Mobile bottom nav */}
-      <nav
-        className="md:hidden fixed bottom-0 left-0 right-0 border-t z-30 safe-area-bottom"
-        style={{ borderColor: 'var(--border)', background: 'var(--background)' }}
-      >
+      <nav className="md:hidden fixed bottom-0 left-0 right-0 border-t border-border z-30 safe-area-bottom bg-background">
         <div className="flex items-center justify-around py-2 px-2">
           {navItems.map((item) => {
             const isActive = pathname === item.href;
@@ -116,8 +111,7 @@ export function Navbar() {
               <Link
                 key={item.href}
                 href={item.href}
-                className="flex flex-col items-center gap-1 px-3 py-2 rounded-lg transition-colors"
-                style={{ color: isActive ? 'var(--accent)' : 'var(--muted)' }}
+                className={`flex flex-col items-center gap-1 px-3 py-2 rounded-lg transition-colors ${isActive ? 'text-accent' : 'text-muted'}`}
               >
                 <Icon size={20} />
                 <span className="text-[10px]">{item.label}</span>

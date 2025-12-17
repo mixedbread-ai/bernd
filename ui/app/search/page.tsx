@@ -26,13 +26,13 @@ function getTypeFromPath(path: string): string {
 function getTypeColor(type: string): string {
   switch (type) {
     case "todo":
-      return "var(--accent)";
+      return "bg-accent";
     case "memory":
-      return "#3a7bc4";
+      return "bg-[#3a7bc4]";
     case "project":
-      return "#3ac45d";
+      return "bg-[#3ac45d]";
     default:
-      return "var(--muted)";
+      return "bg-muted";
   }
 }
 
@@ -72,7 +72,7 @@ export default function SearchPage() {
   }, [query, debouncedSearch]);
 
   return (
-    <div className="min-h-screen p-4 md:p-12" style={{ background: 'var(--background)', color: 'var(--foreground)' }}>
+    <div className="min-h-screen p-4 md:p-12 bg-background text-foreground">
       <div className="mx-auto max-w-2xl">
         <input
           type="text"
@@ -80,20 +80,13 @@ export default function SearchPage() {
           onChange={(e) => setQuery(e.target.value)}
           placeholder="search everything..."
           autoFocus
-          className="w-full rounded-lg shadow-sm px-4 py-3 text-sm outline-none transition-all mb-8"
-          style={{
-            background: 'var(--surface)',
-            border: '1px solid var(--border)',
-            color: 'var(--foreground)',
-          }}
-          onFocus={(e) => e.target.style.borderColor = 'var(--accent)'}
-          onBlur={(e) => e.target.style.borderColor = 'var(--border)'}
+          className="w-full rounded-lg shadow-sm px-4 py-3 text-sm outline-none transition-all mb-8 bg-surface border border-border text-foreground focus:border-accent"
         />
 
-        {loading && <div style={{ color: 'var(--muted)' }}>searching...</div>}
+        {loading && <div className="text-muted">searching...</div>}
 
         {!loading && searched && results.length === 0 && (
-          <div style={{ color: 'var(--muted)' }}>no results</div>
+          <div className="text-muted">no results</div>
         )}
 
         {!loading && results.length > 0 && (
@@ -111,17 +104,16 @@ export default function SearchPage() {
                 <li key={i} className="group">
                   <div className="flex items-start gap-3">
                     <span
-                      className="mt-1.5 px-2 py-0.5 text-xs text-white rounded"
-                      style={{ background: getTypeColor(type) }}
+                      className={`mt-1.5 px-2 py-0.5 text-xs text-white rounded ${getTypeColor(type)}`}
                     >
                       {type}
                     </span>
                     <div className="flex-1 min-w-0">
-                      <div className="font-medium" style={{ color: 'var(--foreground)' }}>{name}</div>
-                      <div className="text-sm mt-1 line-clamp-2" style={{ color: 'var(--muted)' }}>
+                      <div className="font-medium text-foreground">{name}</div>
+                      <div className="text-sm mt-1 line-clamp-2 text-muted">
                         {snippet || "(no content)"}
                       </div>
-                      <div className="text-xs mt-2" style={{ color: 'var(--muted)' }}>
+                      <div className="text-xs mt-2 text-muted">
                         {result.path}
                         <span className="ml-3">
                           score: {(result.score * 100).toFixed(0)}%

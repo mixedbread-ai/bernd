@@ -277,18 +277,17 @@ export default function FilesPage() {
   const pathParts = currentPath.split("/").filter(Boolean);
 
   return (
-    <div className="min-h-screen p-4 md:p-12" style={{ background: "var(--background)" }}>
+    <div className="min-h-screen p-4 md:p-12 bg-background">
       <div className="mx-auto max-w-3xl">
         {/* Header with breadcrumb */}
         <div className="mb-6 flex items-center justify-between gap-4">
           <div className="flex items-center gap-2 text-sm overflow-x-auto">
             {pathParts.map((part, i) => (
               <span key={i} className="flex items-center gap-2">
-                {i > 0 && <span style={{ color: "var(--muted)" }}>/</span>}
+                {i > 0 && <span className="text-muted">/</span>}
                 <button
                   onClick={() => navigateTo("/" + pathParts.slice(0, i + 1).join("/"))}
-                  className="hover:underline"
-                  style={{ color: i === pathParts.length - 1 ? "var(--foreground)" : "var(--muted)" }}
+                  className={`hover:underline ${i === pathParts.length - 1 ? 'text-foreground' : 'text-muted'}`}
                 >
                   {part}
                 </button>
@@ -299,33 +298,17 @@ export default function FilesPage() {
           <div className="flex items-center gap-2">
             <button
               onClick={() => setNewFile({ name: "", content: "" })}
-              className="text-xs px-3 py-1.5 rounded-lg transition-colors hover:opacity-80"
-              style={{
-                background: "var(--surface)",
-                border: "1px solid var(--border)",
-                color: "var(--muted)",
-              }}
+              className="text-xs px-3 py-1.5 rounded-lg transition-colors hover:opacity-80 bg-surface border border-border text-muted"
             >
               + file
             </button>
             <button
               onClick={() => setShowNewFolder(true)}
-              className="text-xs px-3 py-1.5 rounded-lg transition-colors hover:opacity-80"
-              style={{
-                background: "var(--surface)",
-                border: "1px solid var(--border)",
-                color: "var(--muted)",
-              }}
+              className="text-xs px-3 py-1.5 rounded-lg transition-colors hover:opacity-80 bg-surface border border-border text-muted"
             >
               + folder
             </button>
-            <label
-              className="text-xs px-3 py-1.5 rounded-lg transition-colors hover:opacity-80 cursor-pointer"
-              style={{
-                background: "var(--accent)",
-                color: "white",
-              }}
-            >
+            <label className="text-xs px-3 py-1.5 rounded-lg transition-colors hover:opacity-80 cursor-pointer bg-accent text-white">
               {uploading ? "uploading..." : "+ upload"}
               <input
                 ref={fileInputRef}
@@ -342,18 +325,14 @@ export default function FilesPage() {
 
         {/* New folder input */}
         {showNewFolder && (
-          <div
-            className="mb-4 p-3 rounded-lg flex items-center gap-2"
-            style={{ background: "var(--surface)", border: "1px solid var(--border)" }}
-          >
+          <div className="mb-4 p-3 rounded-lg flex items-center gap-2 bg-surface border border-border">
             <input
               type="text"
               value={newFolderName}
               onChange={(e) => setNewFolderName(e.target.value)}
               placeholder="Folder name..."
               autoFocus
-              className="flex-1 text-sm bg-transparent outline-none"
-              style={{ color: "var(--foreground)" }}
+              className="flex-1 text-sm bg-transparent outline-none text-foreground"
               onKeyDown={(e) => {
                 if (e.key === "Enter") createFolder();
                 if (e.key === "Escape") setShowNewFolder(false);
@@ -361,15 +340,13 @@ export default function FilesPage() {
             />
             <button
               onClick={createFolder}
-              className="text-xs px-2 py-1 rounded"
-              style={{ background: "var(--accent)", color: "white" }}
+              className="text-xs px-2 py-1 rounded bg-accent text-white"
             >
               create
             </button>
             <button
               onClick={() => setShowNewFolder(false)}
-              className="text-xs px-2 py-1"
-              style={{ color: "var(--muted)" }}
+              className="text-xs px-2 py-1 text-muted"
             >
               cancel
             </button>
@@ -380,8 +357,7 @@ export default function FilesPage() {
         {currentPath !== "/files" && (
           <button
             onClick={goUp}
-            className="mb-4 text-sm flex items-center gap-2 hover:opacity-80"
-            style={{ color: "var(--muted)" }}
+            className="mb-4 text-sm flex items-center gap-2 hover:opacity-80 text-muted"
           >
             <ArrowLeftIcon size={16} />
             back
@@ -390,9 +366,9 @@ export default function FilesPage() {
 
         {/* File list */}
         {loading ? (
-          <div style={{ color: "var(--muted)" }}>loading...</div>
+          <div className="text-muted">loading...</div>
         ) : items.length === 0 ? (
-          <div className="text-center py-12" style={{ color: "var(--muted)" }}>
+          <div className="text-center py-12 text-muted">
             <p className="mb-2">This folder is empty</p>
             <p className="text-xs">Upload files or create a folder to get started</p>
           </div>
@@ -401,8 +377,7 @@ export default function FilesPage() {
             {items.map((item) => (
               <div
                 key={item.path}
-                className="group flex items-center gap-3 p-3 rounded-lg transition-colors hover:bg-opacity-50"
-                style={{ background: "var(--surface)" }}
+                className="group flex items-center gap-3 p-3 rounded-lg transition-colors hover:bg-opacity-50 bg-surface"
               >
                 {item.type === "folder" ? (
                   <button
@@ -410,7 +385,7 @@ export default function FilesPage() {
                     className="flex-1 flex items-center gap-3 text-left"
                   >
                     <span className="text-lg">📁</span>
-                    <span className="text-sm" style={{ color: "var(--foreground)" }}>
+                    <span className="text-sm text-foreground">
                       {item.name}
                     </span>
                   </button>
@@ -421,10 +396,10 @@ export default function FilesPage() {
                   >
                     <span className="text-lg">{getFileIcon(item.mime_type)}</span>
                     <div className="flex-1 min-w-0">
-                      <div className="text-sm truncate" style={{ color: "var(--foreground)" }}>
+                      <div className="text-sm truncate text-foreground">
                         {item.name}
                       </div>
-                      <div className="text-xs" style={{ color: "var(--muted)" }}>
+                      <div className="text-xs text-muted">
                         {formatSize(item.size)}
                       </div>
                     </div>
@@ -435,8 +410,7 @@ export default function FilesPage() {
                   {item.type === "file" && (
                     <button
                       onClick={(e) => { e.stopPropagation(); downloadFile(item); }}
-                      className="p-1.5 rounded hover:bg-opacity-80"
-                      style={{ color: "var(--muted)" }}
+                      className="p-1.5 rounded hover:bg-opacity-80 text-muted"
                       title="Download"
                     >
                       <DownloadIcon size={16} />
@@ -444,8 +418,7 @@ export default function FilesPage() {
                   )}
                   <button
                     onClick={(e) => { e.stopPropagation(); deleteItem(item); }}
-                    className="p-1.5 rounded hover:bg-opacity-80"
-                    style={{ color: "var(--accent)" }}
+                    className="p-1.5 rounded hover:bg-opacity-80 text-accent"
                     title="Delete"
                   >
                     <Trash2Icon size={16} />
@@ -460,39 +433,32 @@ export default function FilesPage() {
       {/* Preview Modal */}
       {preview && (
         <div
-          className="fixed inset-0 z-50 flex items-center justify-center p-4 md:p-8"
-          style={{ background: "rgba(0, 0, 0, 0.8)" }}
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 md:p-8 bg-black/80"
           onClick={closePreview}
         >
           <div
-            className="relative w-full max-w-4xl max-h-[90vh] rounded-xl overflow-hidden flex flex-col"
-            style={{ background: "var(--background)" }}
+            className="relative w-full max-w-4xl max-h-[90vh] rounded-xl overflow-hidden flex flex-col bg-background"
             onClick={(e) => e.stopPropagation()}
           >
             {/* Header */}
-            <div
-              className="flex items-center justify-between p-4 border-b"
-              style={{ borderColor: "var(--border)" }}
-            >
+            <div className="flex items-center justify-between p-4 border-b border-border">
               <div className="flex items-center gap-3 min-w-0">
                 <span className="text-lg">{getFileIcon(preview.item.mime_type)}</span>
-                <span className="text-sm truncate" style={{ color: "var(--foreground)" }}>
+                <span className="text-sm truncate text-foreground">
                   {preview.item.name}
                 </span>
               </div>
               <div className="flex items-center gap-2">
                 <button
                   onClick={() => downloadFile(preview.item)}
-                  className="p-2 rounded-lg hover:opacity-80"
-                  style={{ color: "var(--muted)" }}
+                  className="p-2 rounded-lg hover:opacity-80 text-muted"
                   title="Download"
                 >
                   <DownloadIcon size={18} />
                 </button>
                 <button
                   onClick={closePreview}
-                  className="p-2 rounded-lg hover:opacity-80"
-                  style={{ color: "var(--muted)" }}
+                  className="p-2 rounded-lg hover:opacity-80 text-muted"
                   title="Close"
                 >
                   <XIcon size={18} />
@@ -503,7 +469,7 @@ export default function FilesPage() {
             {/* Content */}
             <div className="flex-1 overflow-auto p-4">
               {preview.loading ? (
-                <div className="flex items-center justify-center h-64" style={{ color: "var(--muted)" }}>
+                <div className="flex items-center justify-center h-64 text-muted">
                   loading...
                 </div>
               ) : preview.item.mime_type?.startsWith("image/") ? (
@@ -521,14 +487,11 @@ export default function FilesPage() {
                   title={preview.item.name}
                 />
               ) : preview.item.mime_type === "text/markdown" ? (
-                <div className="prose prose-invert max-w-none" style={{ color: "var(--foreground)" }}>
+                <div className="prose prose-invert max-w-none text-foreground">
                   <ReactMarkdown>{preview.content || ""}</ReactMarkdown>
                 </div>
               ) : (
-                <pre
-                  className="text-sm whitespace-pre-wrap font-mono p-4 rounded-lg overflow-auto"
-                  style={{ background: "var(--surface)", color: "var(--foreground)" }}
-                >
+                <pre className="text-sm whitespace-pre-wrap font-mono p-4 rounded-lg overflow-auto bg-surface text-foreground">
                   {preview.content}
                 </pre>
               )}
@@ -540,20 +503,15 @@ export default function FilesPage() {
       {/* New File Editor Modal */}
       {newFile && (
         <div
-          className="fixed inset-0 z-50 flex items-center justify-center p-4 md:p-8"
-          style={{ background: "rgba(0, 0, 0, 0.8)" }}
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 md:p-8 bg-black/80"
           onClick={() => setNewFile(null)}
         >
           <div
-            className="relative w-full max-w-3xl max-h-[90vh] rounded-xl overflow-hidden flex flex-col"
-            style={{ background: "var(--background)" }}
+            className="relative w-full max-w-3xl max-h-[90vh] rounded-xl overflow-hidden flex flex-col bg-background"
             onClick={(e) => e.stopPropagation()}
           >
             {/* Header */}
-            <div
-              className="flex items-center justify-between p-4 border-b"
-              style={{ borderColor: "var(--border)" }}
-            >
+            <div className="flex items-center justify-between p-4 border-b border-border">
               <div className="flex items-center gap-3 flex-1 min-w-0">
                 <span className="text-lg">📝</span>
                 <input
@@ -562,23 +520,20 @@ export default function FilesPage() {
                   onChange={(e) => setNewFile({ ...newFile, name: e.target.value })}
                   placeholder="filename.md"
                   autoFocus
-                  className="flex-1 text-sm bg-transparent outline-none"
-                  style={{ color: "var(--foreground)" }}
+                  className="flex-1 text-sm bg-transparent outline-none text-foreground"
                 />
               </div>
               <div className="flex items-center gap-2">
                 <button
                   onClick={createFile}
                   disabled={!newFile.name.trim()}
-                  className="text-xs px-3 py-1.5 rounded-lg transition-colors hover:opacity-80 disabled:opacity-50"
-                  style={{ background: "var(--accent)", color: "white" }}
+                  className="text-xs px-3 py-1.5 rounded-lg transition-colors hover:opacity-80 disabled:opacity-50 bg-accent text-white"
                 >
                   save
                 </button>
                 <button
                   onClick={() => setNewFile(null)}
-                  className="p-2 rounded-lg hover:opacity-80"
-                  style={{ color: "var(--muted)" }}
+                  className="p-2 rounded-lg hover:opacity-80 text-muted"
                   title="Close"
                 >
                   <XIcon size={18} />
@@ -592,8 +547,7 @@ export default function FilesPage() {
                 value={newFile.content}
                 onChange={(e) => setNewFile({ ...newFile, content: e.target.value })}
                 placeholder="Write your markdown here..."
-                className="w-full h-[60vh] text-sm font-mono bg-transparent outline-none resize-none"
-                style={{ color: "var(--foreground)" }}
+                className="w-full h-[60vh] text-sm font-mono bg-transparent outline-none resize-none text-foreground"
               />
             </div>
           </div>

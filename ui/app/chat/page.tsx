@@ -33,8 +33,7 @@ function CopyButton({ text }: { text: string }) {
   return (
     <button
       onClick={handleCopy}
-      className="text-xs transition-colors"
-      style={{ color: 'var(--muted)' }}
+      className="text-xs transition-colors text-muted"
     >
       {copied ? "copied" : "copy"}
     </button>
@@ -51,10 +50,10 @@ function ToolCallsList({
   return (
     <div className="mb-2 space-y-1">
       {toolCalls.map((tc, j) => (
-        <div key={j} className="text-xs font-mono break-all" style={{ color: 'var(--muted)' }}>
-          <span style={{ color: 'var(--accent)' }}>→</span> {tc.name}
+        <div key={j} className="text-xs font-mono break-all text-muted">
+          <span className="text-accent">→</span> {tc.name}
           {showArgs && (
-            <span className="ml-1" style={{ color: 'var(--muted)' }}>
+            <span className="ml-1 text-muted">
               ({JSON.stringify(tc.args)})
             </span>
           )}
@@ -80,13 +79,11 @@ function ImagePreview({
           <img
             src={img.data}
             alt={`Attachment ${i + 1}`}
-            className="h-16 w-16 object-cover rounded-lg"
-            style={{ border: '1px solid var(--border)' }}
+            className="h-16 w-16 object-cover rounded-lg border border-border"
           />
           <button
             onClick={() => onRemove(i)}
-            className="absolute -top-1 -right-1 w-5 h-5 text-white rounded-full text-xs flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
-            style={{ background: 'var(--accent)' }}
+            className="absolute -top-1 -right-1 w-5 h-5 text-white rounded-full text-xs flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity bg-accent"
           >
             ×
           </button>
@@ -107,8 +104,7 @@ function MessageImages({ images, onImageClick }: { images?: ImageAttachment[]; o
           src={img.data}
           alt={`Image ${i + 1}`}
           onClick={() => onImageClick?.(img.data)}
-          className="max-h-48 max-w-full rounded-lg cursor-pointer hover:opacity-90 transition-opacity"
-          style={{ border: '1px solid var(--border)' }}
+          className="max-h-48 max-w-full rounded-lg cursor-pointer hover:opacity-90 transition-opacity border border-border"
         />
       ))}
     </div>
@@ -299,16 +295,7 @@ export default function ChatPage() {
           disabled={loading}
           autoFocus
           rows={2}
-          className="w-full rounded-xl shadow-sm px-4 py-3 pr-12 text-sm outline-none disabled:opacity-50 transition-all resize-none"
-          style={{
-            background: 'var(--surface)',
-            border: '1px solid var(--border)',
-            color: 'var(--foreground)',
-            minHeight: '56px',
-            maxHeight: '120px',
-          }}
-          onFocus={(e) => e.target.style.borderColor = 'var(--accent)'}
-          onBlur={(e) => e.target.style.borderColor = 'var(--border)'}
+          className="w-full rounded-xl shadow-sm px-4 py-3 pr-12 text-sm outline-none disabled:opacity-50 transition-all resize-none bg-surface border border-border text-foreground min-h-[56px] max-h-[120px] focus:border-accent"
           onInput={(e) => {
             const target = e.target as HTMLTextAreaElement;
             target.style.height = 'auto';
@@ -325,8 +312,7 @@ export default function ChatPage() {
         />
         <button
           onClick={() => fileInputRef.current?.click()}
-          className="absolute right-3 bottom-3 p-1.5 transition-colors hover:opacity-70"
-          style={{ color: 'var(--muted)' }}
+          className="absolute right-3 bottom-3 p-1.5 transition-colors hover:opacity-70 text-muted"
           title="Attach image"
         >
           <ImageIcon size={18} />
@@ -339,16 +325,14 @@ export default function ChatPage() {
   const historyPanel = showHistory && (
     <div className="fixed inset-0 z-40" onClick={() => setShowHistory(false)}>
       <div
-        className="absolute left-0 md:left-44 top-0 h-full w-72 shadow-xl p-4 overflow-hidden flex flex-col"
-        style={{ background: 'var(--background)', borderRight: '1px solid var(--border)' }}
+        className="absolute left-0 md:left-44 top-0 h-full w-72 shadow-xl p-4 overflow-hidden flex flex-col bg-background border-r border-border"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex items-center justify-between mb-4">
-          <h2 className="text-sm font-medium" style={{ color: 'var(--foreground)' }}>History</h2>
+          <h2 className="text-sm font-medium text-foreground">History</h2>
           <button
             onClick={startNewChat}
-            className="text-xs transition-colors hover:opacity-70"
-            style={{ color: 'var(--accent)' }}
+            className="text-xs transition-colors hover:opacity-70 text-accent"
           >
             + new
           </button>
@@ -359,36 +343,28 @@ export default function ChatPage() {
           value={chatSearch}
           onChange={(e) => setChatSearch(e.target.value)}
           placeholder="Search..."
-          className="w-full rounded-lg px-3 py-2 text-xs outline-none transition-colors mb-3"
-          style={{
-            background: 'var(--surface)',
-            border: '1px solid var(--border)',
-            color: 'var(--foreground)',
-          }}
+          className="w-full rounded-lg px-3 py-2 text-xs outline-none transition-colors mb-3 bg-surface border border-border text-foreground"
         />
 
         <div className="flex-1 overflow-y-auto -mx-2">
           {filteredChats.length === 0 ? (
-            <p className="text-xs px-2" style={{ color: 'var(--muted)' }}>No chats yet</p>
+            <p className="text-xs px-2 text-muted">No chats yet</p>
           ) : (
             <ul className="space-y-0.5">
               {filteredChats.map((chat) => (
                 <li key={chat.id} className="group/item relative">
                   <button
                     onClick={() => loadChat(chat.id)}
-                    className="w-full text-left px-3 py-2 pr-8 text-xs rounded-lg transition-colors"
-                    style={{
-                      background: chatId === chat.id ? 'var(--surface-hover)' : 'transparent',
-                      color: chatId === chat.id ? 'var(--foreground)' : 'var(--muted)',
-                    }}
+                    className={`w-full text-left px-3 py-2 pr-8 text-xs rounded-lg transition-colors ${
+                      chatId === chat.id ? 'bg-surface-hover text-foreground' : 'text-muted'
+                    }`}
                   >
                     <div className="truncate">{chat.title}</div>
-                    <div className="text-[10px] mt-0.5" style={{ color: 'var(--muted)' }}>{chat.message_count} messages</div>
+                    <div className="text-[10px] mt-0.5 text-muted">{chat.message_count} messages</div>
                   </button>
                   <button
                     onClick={(e) => deleteChat(chat.id, e)}
-                    className="absolute right-2 top-1/2 -translate-y-1/2 p-1 opacity-0 group-hover/item:opacity-100 transition-opacity hover:opacity-70"
-                    style={{ color: 'var(--accent)' }}
+                    className="absolute right-2 top-1/2 -translate-y-1/2 p-1 opacity-0 group-hover/item:opacity-100 transition-opacity hover:opacity-70 text-accent"
                     title="Delete"
                   >
                     <XIcon size={12} />
@@ -405,18 +381,17 @@ export default function ChatPage() {
   // Empty state
   if (messages.length === 0 && !loading) {
     return (
-      <div className="min-h-screen flex flex-col" style={{ background: 'var(--background)' }}>
+      <div className="min-h-screen flex flex-col bg-background">
         {/* Top bar */}
-        <div className="flex items-center justify-between px-6 py-4" style={{ borderBottom: '1px solid var(--border)' }}>
+        <div className="flex items-center justify-between px-6 py-4 border-b border-border">
           <button
             onClick={() => setShowHistory(true)}
-            className="flex items-center gap-2 text-sm transition-colors hover:opacity-70"
-            style={{ color: 'var(--muted)' }}
+            className="flex items-center gap-2 text-sm transition-colors hover:opacity-70 text-muted"
           >
             <ClockIcon size={16} />
             <span>History</span>
             {chats.length > 0 && (
-              <span className="text-xs" style={{ color: 'var(--muted)' }}>({chats.length})</span>
+              <span className="text-xs text-muted">({chats.length})</span>
             )}
           </button>
         </div>
@@ -425,8 +400,8 @@ export default function ChatPage() {
         <div className="flex-1 flex flex-col items-center justify-center px-6 pb-20">
           <div className="w-full max-w-xl">
             <div className="text-center mb-8">
-              <h1 className="text-2xl font-light mb-2" style={{ color: 'var(--foreground)' }}>What can I help with?</h1>
-              <p className="text-sm" style={{ color: 'var(--muted)' }}>Ask me anything or pick up where you left off</p>
+              <h1 className="text-2xl font-light mb-2 text-foreground">What can I help with?</h1>
+              <p className="text-sm text-muted">Ask me anything or pick up where you left off</p>
             </div>
 
             {inputElement}
@@ -434,18 +409,13 @@ export default function ChatPage() {
             {/* Quick actions */}
             {chats.length > 0 && (
               <div className="mt-6">
-                <p className="text-xs mb-2" style={{ color: 'var(--muted)' }}>Recent</p>
+                <p className="text-xs mb-2 text-muted">Recent</p>
                 <div className="flex flex-wrap gap-2">
                   {chats.slice(0, 3).map((chat) => (
                     <button
                       key={chat.id}
                       onClick={() => loadChat(chat.id)}
-                      className="text-xs px-3 py-1.5 rounded-full transition-colors truncate max-w-[200px] hover:opacity-80"
-                      style={{
-                        background: 'var(--surface)',
-                        border: '1px solid var(--border)',
-                        color: 'var(--muted)',
-                      }}
+                      className="text-xs px-3 py-1.5 rounded-full transition-colors truncate max-w-[200px] hover:opacity-80 bg-surface border border-border text-muted"
                     >
                       {chat.title}
                     </button>
@@ -453,12 +423,7 @@ export default function ChatPage() {
                   {chats.length > 3 && (
                     <button
                       onClick={() => setShowHistory(true)}
-                      className="text-xs px-3 py-1.5 rounded-full transition-colors hover:opacity-80"
-                      style={{
-                        background: 'var(--surface)',
-                        border: '1px solid var(--border)',
-                        color: 'var(--muted)',
-                      }}
+                      className="text-xs px-3 py-1.5 rounded-full transition-colors hover:opacity-80 bg-surface border border-border text-muted"
                     >
                       +{chats.length - 3} more
                     </button>
@@ -477,16 +442,12 @@ export default function ChatPage() {
 
   // Chat view
   return (
-    <div className="min-h-screen flex flex-col" style={{ background: 'var(--background)' }}>
+    <div className="min-h-screen flex flex-col bg-background">
       {/* Top bar */}
-      <div
-        className="flex items-center justify-between px-6 py-3 backdrop-blur sticky top-0 z-10"
-        style={{ borderBottom: '1px solid var(--border)', background: 'var(--background)' }}
-      >
+      <div className="flex items-center justify-between px-6 py-3 backdrop-blur sticky top-0 z-10 border-b border-border bg-background">
         <button
           onClick={() => setShowHistory(true)}
-          className="flex items-center gap-2 text-sm transition-colors hover:opacity-70"
-          style={{ color: 'var(--muted)' }}
+          className="flex items-center gap-2 text-sm transition-colors hover:opacity-70 text-muted"
         >
           <ClockIcon size={16} />
           <span className="hidden sm:inline">History</span>
@@ -494,8 +455,7 @@ export default function ChatPage() {
 
         <button
           onClick={startNewChat}
-          className="text-xs transition-colors hover:opacity-70"
-          style={{ color: 'var(--accent)' }}
+          className="text-xs transition-colors hover:opacity-70 text-accent"
         >
           + New chat
         </button>
@@ -514,12 +474,9 @@ export default function ChatPage() {
               className={`mb-6 flex ${msg.role === "user" ? "justify-end" : "justify-start"}`}
             >
               {msg.role === "user" ? (
-                <div
-                  className="px-4 py-2.5 rounded-2xl max-w-[80%] text-sm"
-                  style={{ background: 'var(--user-bubble)', color: 'var(--foreground)' }}
-                >
+                <div className="px-4 py-2.5 rounded-2xl max-w-[80%] text-sm bg-user-bubble text-foreground">
                   <MessageImages images={msg.images} onImageClick={setExpandedImage} />
-                  <div className="prose prose-sm max-w-none" style={{ color: 'var(--foreground)' }}>
+                  <div className="prose prose-sm max-w-none text-foreground">
                     <ReactMarkdown components={markdownComponents}>{msg.content}</ReactMarkdown>
                   </div>
                 </div>
@@ -528,7 +485,7 @@ export default function ChatPage() {
                   {msg.toolCalls && msg.toolCalls.length > 0 && (
                     <ToolCallsList toolCalls={msg.toolCalls} showArgs />
                   )}
-                  <div className="prose prose-sm max-w-none" style={{ color: 'var(--foreground)' }}>
+                  <div className="prose prose-sm max-w-none text-foreground">
                     <ReactMarkdown components={markdownComponents}>{msg.content}</ReactMarkdown>
                   </div>
                   <div className="mt-1 opacity-100 md:opacity-0 md:group-hover/msg:opacity-100 transition-opacity">
@@ -546,14 +503,14 @@ export default function ChatPage() {
                   <ToolCallsList toolCalls={streamingToolCalls} showArgs />
                 )}
                 {streamingContent ? (
-                  <div className="prose prose-sm max-w-none" style={{ color: 'var(--foreground)' }}>
+                  <div className="prose prose-sm max-w-none text-foreground">
                     <ReactMarkdown components={markdownComponents}>{streamingContent}</ReactMarkdown>
                   </div>
                 ) : (
                   <div className="flex items-center gap-1">
-                    <div className="w-2 h-2 rounded-full animate-bounce" style={{ background: 'var(--accent)', animationDelay: '0ms' }} />
-                    <div className="w-2 h-2 rounded-full animate-bounce" style={{ background: 'var(--accent)', animationDelay: '150ms' }} />
-                    <div className="w-2 h-2 rounded-full animate-bounce" style={{ background: 'var(--accent)', animationDelay: '300ms' }} />
+                    <div className="w-2 h-2 rounded-full animate-bounce bg-accent" style={{ animationDelay: '0ms' }} />
+                    <div className="w-2 h-2 rounded-full animate-bounce bg-accent" style={{ animationDelay: '150ms' }} />
+                    <div className="w-2 h-2 rounded-full animate-bounce bg-accent" style={{ animationDelay: '300ms' }} />
                   </div>
                 )}
               </div>
