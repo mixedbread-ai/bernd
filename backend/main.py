@@ -1,4 +1,4 @@
-from fastapi import FastAPI, Depends, HTTPException, Header
+from fastapi import FastAPI, Depends, HTTPException, Header, UploadFile, File, Form
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
@@ -203,6 +203,29 @@ def validate_api_key(authorization: str = Header(None)):
         return {"valid": False, "error": str(e)}
 
 
+PRIORITY_ORDER = {"high": 0, "medium": 1, "low": 2, None: 3, "": 3}
+
+
+def sort_todos(todos: list) -> list:
+    """Sort todos by priority (high first), then by due date (earliest first)."""
+    def sort_key(todo):
+        # Priority: high=0, medium=1, low=2, none=3
+        priority = PRIORITY_ORDER.get(todo.get("priority"), 3)
+        # Due date: parse ISO date, None goes to end
+        due = todo.get("due_date") or todo.get("due")
+        if due:
+            try:
+                # Handle both date and datetime formats
+                due_sort = due[:19]  # Take just the date/time part
+            except:
+                due_sort = "9999-99-99"
+        else:
+            due_sort = "9999-99-99"
+        return (priority, due_sort)
+
+    return sorted(todos, key=sort_key)
+
+
 @app.get("/todos")
 def get_todos(n: int = 50, fs: SemanticFS = Depends(get_user_fs)):
     files = fs.list(prefix="/todos", limit=n)
@@ -216,7 +239,7 @@ def get_todos(n: int = 50, fs: SemanticFS = Depends(get_user_fs)):
                 **f["metadata"],
             }
         )
-    return todos
+    return sort_todos(todos)
 
 
 @app.get("/todos/search")
@@ -754,6 +777,216 @@ def chat_stream(
         yield f"data: {json.dumps({'type': 'chat_saved', 'chat_id': chat_id})}\n\n"
 
     return StreamingResponse(event_stream(), media_type="text/event-stream")
+
+
+# File management endpoints
+ALLOWED_FILE_TYPES = {
+    "application/pdf": ".pdf",
+    "text/markdown": ".md",
+    "text/plain": ".txt",
+    "application/vnd.openxmlformats-officedocument.wordprocessingml.document": ".docx",
+    "image/png": ".png",
+    "image/jpeg": ".jpg",
+    "image/gif": ".gif",
+    "image/webp": ".webp",
+}
+
+
+@app.get("/files")
+def list_files(path: str = "/files", fs: SemanticFS = Depends(get_user_fs)):
+    """List files and folders in a directory."""
+    # Ensure path starts with /files
+    if not path.startswith("/files"):
+        path = f"/files{path}" if path.startswith("/") else f"/files/{path}"
+
+    files = fs.list(prefix=path, limit=200)
+
+    items = []
+    seen_folders = set()
+
+    for f in files:
+        file_path = f["path"]
+
+        # Skip if not under the requested path
+        if not file_path.startswith(path):
+            continue
+
+        # Get the relative path after the prefix
+        relative = file_path[len(path):].lstrip("/")
+
+        if "/" in relative:
+            # This is inside a subfolder - extract folder name
+            folder_name = relative.split("/")[0]
+            if folder_name and folder_name not in seen_folders:
+                seen_folders.add(folder_name)
+                items.append({
+                    "name": folder_name,
+                    "path": f"{path}/{folder_name}".replace("//", "/"),
+                    "type": "folder",
+                })
+        elif relative:
+            # Skip folder marker files
+            if relative == "folder_meta.json":
+                continue
+            # This is a file directly in this folder
+            items.append({
+                "name": relative,
+                "path": file_path,
+                "type": "file",
+                "size": f["metadata"].get("size"),
+                "mime_type": f["metadata"].get("mime_type"),
+                "created_at": f["metadata"].get("created_at"),
+            })
+
+    # Sort: folders first, then files alphabetically
+    items.sort(key=lambda x: (0 if x["type"] == "folder" else 1, x["name"].lower()))
+
+    return {"path": path, "items": items}
+
+
+@app.post("/files/upload")
+async def upload_file(
+    file: UploadFile = File(...),
+    path: str = Form("/files"),
+    fs: SemanticFS = Depends(get_user_fs),
+):
+    """Upload a file."""
+    from datetime import datetime
+    import base64
+
+    # Validate file type
+    content_type = file.content_type or "application/octet-stream"
+    if content_type not in ALLOWED_FILE_TYPES and not content_type.startswith("image/"):
+        raise HTTPException(
+            status_code=400,
+            detail=f"File type not allowed: {content_type}. Allowed: PDF, Markdown, DOCX, images",
+        )
+
+    # Read file content
+    content = await file.read()
+
+    # Ensure path starts with /files
+    if not path.startswith("/files"):
+        path = f"/files{path}" if path.startswith("/") else f"/files/{path}"
+
+    # Build full file path
+    filename = file.filename or "unnamed"
+    file_path = f"{path}/{filename}".replace("//", "/")
+
+    # For binary files (images, PDFs, etc.), store as base64
+    is_text = content_type in ["text/markdown", "text/plain"]
+
+    if is_text:
+        file_content = content.decode("utf-8")
+    else:
+        file_content = base64.b64encode(content).decode("utf-8")
+
+    # Write to SemanticFS
+    fs.write(
+        file_path,
+        file_content,
+        {
+            "type": "file",
+            "mime_type": content_type,
+            "size": len(content),
+            "is_base64": not is_text,
+            "original_name": filename,
+            "created_at": datetime.now().isoformat(),
+        },
+    )
+
+    return {
+        "status": "uploaded",
+        "path": file_path,
+        "name": filename,
+        "size": len(content),
+    }
+
+
+class FolderCreate(BaseModel):
+    name: str
+    parent_path: str = "/files"
+
+
+@app.post("/files/folder")
+def create_folder(folder: FolderCreate, fs: SemanticFS = Depends(get_user_fs)):
+    """Create a folder (by creating a folder_meta.json marker file)."""
+    from datetime import datetime
+
+    parent = folder.parent_path
+    if not parent.startswith("/files"):
+        parent = f"/files{parent}" if parent.startswith("/") else f"/files/{parent}"
+
+    folder_path = f"{parent}/{folder.name}/folder_meta.json".replace("//", "/")
+    created_at = datetime.now().isoformat()
+
+    fs.write(
+        folder_path,
+        json.dumps({"type": "folder", "name": folder.name, "created_at": created_at}),
+        {
+            "type": "folder_marker",
+            "created_at": created_at,
+        },
+    )
+
+    return {"status": "created", "path": f"{parent}/{folder.name}".replace("//", "/")}
+
+
+@app.get("/files/download/{file_path:path}")
+def download_file(file_path: str, fs: SemanticFS = Depends(get_user_fs)):
+    """Get file content for download."""
+    import base64
+
+    path = f"/{file_path}" if not file_path.startswith("/") else file_path
+    if not path.startswith("/files"):
+        path = f"/files{path}"
+
+    result = fs.read(path)
+    if "error" in result:
+        raise HTTPException(status_code=404, detail="File not found")
+
+    metadata = result.get("metadata", {})
+    content = result.get("content", "")
+
+    # If base64 encoded, decode it
+    if metadata.get("is_base64"):
+        content = base64.b64decode(content)
+        return StreamingResponse(
+            iter([content]),
+            media_type=metadata.get("mime_type", "application/octet-stream"),
+            headers={
+                "Content-Disposition": f'attachment; filename="{metadata.get("original_name", "file")}"'
+            },
+        )
+
+    return {
+        "content": content,
+        "mime_type": metadata.get("mime_type", "text/plain"),
+        "name": metadata.get("original_name", path.split("/")[-1]),
+    }
+
+
+@app.delete("/files/{file_path:path}")
+def delete_file(file_path: str, fs: SemanticFS = Depends(get_user_fs)):
+    """Delete a file or folder."""
+    path = f"/{file_path}" if not file_path.startswith("/") else file_path
+    if not path.startswith("/files"):
+        path = f"/files{path}"
+
+    # Check if it's a folder (delete all contents)
+    files = fs.list(prefix=path, limit=100)
+    if len(files) > 1 or (len(files) == 1 and files[0]["path"] != path):
+        # It's a folder with contents - delete all
+        for f in files:
+            fs.delete(f["path"])
+        return {"status": "deleted", "path": path, "type": "folder"}
+
+    # Single file
+    result = fs.delete(path)
+    if "error" in result:
+        raise HTTPException(status_code=404, detail="File not found")
+
+    return {"status": "deleted", "path": path, "type": "file"}
 
 
 if __name__ == "__main__":

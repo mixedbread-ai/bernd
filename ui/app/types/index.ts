@@ -33,6 +33,7 @@ export interface Todo {
   status: "pending" | "in_progress" | "completed";
   tags?: string[];
   calendar_event_id?: string;
+  created_at?: string;
 }
 
 export interface SearchResult {

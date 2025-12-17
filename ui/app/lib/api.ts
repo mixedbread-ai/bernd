@@ -28,4 +28,9 @@ export const api = {
       body: JSON.stringify(data),
     }),
   delete: (url: string) => authFetch(url, { method: "DELETE" }),
+  upload: (url: string, formData: FormData) =>
+    authFetch(url, {
+      method: "POST",
+      body: formData,
+    }),
 };
