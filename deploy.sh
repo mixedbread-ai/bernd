@@ -28,7 +28,7 @@ ssh $SERVER "cd $REMOTE_DIR && \
   curl -1sLf 'https://dl.cloudsmith.io/public/caddy/stable/debian.deb.txt' | tee /etc/apt/sources.list.d/caddy-stable.list > /dev/null && \
   apt-get update && apt-get install -y caddy && \
   python3 -m venv venv && \
-  ./venv/bin/pip install fastapi uvicorn openai mixedbread google-api-python-client google-auth python-dotenv rich prompt-toolkit && \
+  ./venv/bin/pip install fastapi uvicorn openai mixedbread google-api-python-client google-auth python-dotenv rich prompt-toolkit python-multipart && \
   pkill -f 'uvicorn backend.main' || true && \
   nohup ./venv/bin/uvicorn backend.main:app --host 127.0.0.1 --port 8080 > /var/log/bernd.log 2>&1 & \
   echo 'bernd-api.mixedbread.com {
