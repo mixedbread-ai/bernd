@@ -135,7 +135,7 @@ export default function TodosPage() {
           <select
             value={sortBy}
             onChange={(e) => setSortBy(e.target.value as SortOption)}
-            className="text-xs px-2 py-1 rounded outline-none cursor-pointer bg-surface border text-muted"
+            className="text-xs px-2 py-1 rounded outline-none cursor-pointer bg-surface border border-border text-muted"
           >
             <option value="priority">priority</option>
             <option value="due_date">due date</option>
