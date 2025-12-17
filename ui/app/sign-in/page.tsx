@@ -14,7 +14,7 @@ export default function SignInPage() {
     try {
       await authClient.signIn.social({
         provider,
-        callbackURL: "http://localhost:3000",
+        callbackURL: process.env.NEXT_PUBLIC_BERND_URL || "http://localhost:3000",
       });
     } catch {
       setError("Failed to sign in. Please try again.");
@@ -24,7 +24,7 @@ export default function SignInPage() {
 
   return (
     <div
-      className="min-h-screen flex items-center justify-center p-4"
+      className="min-h-screen flex pt-[35svh] justify-center p-4"
       style={{ background: "var(--background)" }}
     >
       <div className="w-full max-w-sm">

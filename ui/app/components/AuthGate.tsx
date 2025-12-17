@@ -10,8 +10,12 @@ export function AuthGate({ children }: { children: ReactNode }) {
   const pathname = usePathname();
 
   useEffect(() => {
-    if (!isPending && !isAuthenticated && pathname !== "/sign-in") {
+    if (isPending) return;
+
+    if (!isAuthenticated && pathname !== "/sign-in") {
       router.push("/sign-in");
+    } else if (isAuthenticated && pathname === "/sign-in") {
+      router.push("/");
     }
   }, [isPending, isAuthenticated, pathname, router]);
 
@@ -27,12 +31,11 @@ export function AuthGate({ children }: { children: ReactNode }) {
     );
   }
 
-  // Allow access to sign-in page without authentication
   if (pathname === "/sign-in") {
     return <>{children}</>;
   }
 
-  // Show nothing while redirecting
+  // Show loading state while redirecting
   if (!isAuthenticated) {
     return (
       <div
