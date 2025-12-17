@@ -261,47 +261,4 @@ Commands:
             "required": ["command"],
         },
     },
-    {
-        "type": "function",
-        "name": "notes",
-        "description": """Manage user's notes in markdown format.
-Commands:
-- list: List all notes with titles and last updated timestamps
-- create: Create a new note with title and content
-- read: Read a note by title (searches for matching note)
-- update: Update a note's title or content
-- delete: Delete a note by title
-- search: Semantic search across all notes""",
-        "parameters": {
-            "type": "object",
-            "properties": {
-                "command": {
-                    "type": "string",
-                    "enum": ["list", "create", "read", "update", "delete", "search"],
-                    "description": "The notes operation to perform",
-                },
-                "title": {
-                    "type": "string",
-                    "description": "Note title (for create, read, update, delete)",
-                },
-                "content": {
-                    "type": "string",
-                    "description": "Note content in markdown (for create, update)",
-                },
-                "new_title": {
-                    "type": "string",
-                    "description": "New title when renaming a note (for update)",
-                },
-                "query": {
-                    "type": "string",
-                    "description": "Search query (for search command)",
-                },
-                "top_k": {
-                    "type": "integer",
-                    "description": "Max search results (default: 10)",
-                },
-            },
-            "required": ["command"],
-        },
-    },
 ]
