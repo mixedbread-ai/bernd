@@ -72,7 +72,7 @@ Start both the API server and the frontend:
 
 ```bash
 # Terminal 1: Start API server
-uvicorn api:app --reload
+uvicorn backend.main:app --reload
 
 # Terminal 2: Start UI
 cd ui && npm run dev
@@ -105,7 +105,7 @@ bernd/
 │       ├── chat/       # Chat page
 │       ├── search/     # Search page
 │       └── components/ # Shared components
-├── api.py              # FastAPI backend
+├── backend/main.py     # FastAPI backend
 ├── agent.py            # CLI entry point
 └── constants.py        # Shared constants
 ```

@@ -1,11 +1,10 @@
 import type { Metadata } from "next";
 import { Geist_Mono } from "next/font/google";
 import "./globals.css";
-import { Navbar } from "./components/Navbar";
-import { FloatingChat } from "./components/FloatingChat";
 import { ThemeProvider } from "./context/ThemeContext";
 import { AuthProvider } from "./context/AuthContext";
 import { AuthGate } from "./components/AuthGate";
+import { AuthenticatedLayout } from "./components/AuthenticatedLayout";
 
 const geistMono = Geist_Mono({
   variable: "--font-geist-mono",
@@ -28,11 +27,7 @@ export default function RootLayout({
         <ThemeProvider>
           <AuthProvider>
             <AuthGate>
-              <div className="min-h-screen" style={{ background: 'var(--background)' }}>
-                <Navbar />
-                <main className="md:ml-44 pb-20 md:pb-0">{children}</main>
-                <FloatingChat />
-              </div>
+              <AuthenticatedLayout>{children}</AuthenticatedLayout>
             </AuthGate>
           </AuthProvider>
         </ThemeProvider>

@@ -1,15 +1,13 @@
-import { API_ENDPOINTS } from "../config";
+import { getToken } from "./auth";
 
-export function getApiKey(): string | null {
-  if (typeof window === "undefined") return null;
-  return localStorage.getItem("mxb_api_key");
-}
-
-export function authFetch(url: string, options: RequestInit = {}): Promise<Response> {
-  const apiKey = getApiKey();
+export async function authFetch(
+  url: string,
+  options: RequestInit = {}
+): Promise<Response> {
+  const token = await getToken();
   const headers = new Headers(options.headers);
-  if (apiKey) {
-    headers.set("Authorization", `Bearer ${apiKey}`);
+  if (token) {
+    headers.set("Authorization", `Bearer ${token}`);
   }
   return fetch(url, { ...options, headers });
 }
