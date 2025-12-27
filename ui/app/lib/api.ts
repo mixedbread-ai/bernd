@@ -27,6 +27,12 @@ export const api = {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(data),
     }),
+  patch: (url: string, data: unknown) =>
+    authFetch(url, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(data),
+    }),
   delete: (url: string) => authFetch(url, { method: "DELETE" }),
   upload: (url: string, formData: FormData) =>
     authFetch(url, {

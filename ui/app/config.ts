@@ -8,6 +8,9 @@ export const API_ENDPOINTS = {
   todos: `${API_BASE_URL}/todos`,
   todosSearch: `${API_BASE_URL}/todos/search`,
   todoById: (id: string) => `${API_BASE_URL}/todos/by-id/${id}`,
+  todoCreate: `${API_BASE_URL}/todos`,
+  todoUpdate: (id: string) => `${API_BASE_URL}/todos/by-id/${id}`,
+  todoDelete: (id: string) => `${API_BASE_URL}/todos/by-id/${id}`,
 
   // Chat
   chat: `${API_BASE_URL}/chat`,

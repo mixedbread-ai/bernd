@@ -262,6 +262,98 @@ def get_todo(todo_id: str, fs: SemanticFS = Depends(get_user_fs)):
     }
 
 
+class TodoCreate(BaseModel):
+    title: str
+    description: str = ""
+    status: str = "pending"
+    priority: str = "medium"
+    due_date: str | None = None
+    tags: list[str] = []
+
+
+class TodoUpdate(BaseModel):
+    title: str | None = None
+    description: str | None = None
+    status: str | None = None
+    priority: str | None = None
+    due_date: str | None = None
+    tags: list[str] | None = None
+
+
+@app.post("/todos")
+def create_todo(todo: TodoCreate, fs: SemanticFS = Depends(get_user_fs)):
+    """Create a new todo."""
+    from datetime import datetime
+    import re
+
+    # Create a URL-safe filename from the title
+    safe_title = re.sub(r'[^\w\s-]', '', todo.title).strip().replace(' ', '-').lower()
+    safe_title = safe_title[:50]  # Limit length
+    timestamp = datetime.now().strftime("%Y%m%d%H%M%S")
+    filename = f"{safe_title}-{timestamp}.md"
+    path = f"/todos/{filename}"
+
+    # Build content with title as header and description as body
+    content = f"# {todo.title}\n\n{todo.description}" if todo.description else f"# {todo.title}"
+
+    metadata = {
+        "type": "todo",
+        "status": todo.status,
+        "priority": todo.priority,
+        "due_date": todo.due_date,
+        "tags": todo.tags,
+    }
+
+    fs.write(path, content, metadata)
+
+    return {
+        "id": _path_to_id(path),
+        "title": todo.title,
+        **metadata,
+    }
+
+
+@app.patch("/todos/by-id/{todo_id:path}")
+def update_todo(todo_id: str, update: TodoUpdate, fs: SemanticFS = Depends(get_user_fs)):
+    """Update a todo's metadata (status, priority, etc.)."""
+    path = _id_to_path(todo_id)
+    result = fs.read(path)
+    if "error" in result:
+        raise HTTPException(status_code=404, detail="Todo not found")
+
+    content = result.get("content", "")
+    metadata = result.get("metadata", {})
+
+    # Update only provided fields
+    if update.status is not None:
+        metadata["status"] = update.status
+    if update.priority is not None:
+        metadata["priority"] = update.priority
+    if update.due_date is not None:
+        metadata["due_date"] = update.due_date
+    if update.tags is not None:
+        metadata["tags"] = update.tags
+
+    # Write back with updated metadata
+    fs.write(path, content, metadata)
+
+    return {
+        "id": todo_id,
+        "title": path.split("/")[-1].replace(".md", ""),
+        **metadata,
+    }
+
+
+@app.delete("/todos/by-id/{todo_id:path}")
+def delete_todo(todo_id: str, fs: SemanticFS = Depends(get_user_fs)):
+    """Delete a todo by ID."""
+    path = _id_to_path(todo_id)
+    result = fs.delete(path)
+    if "error" in result:
+        raise HTTPException(status_code=404, detail="Todo not found")
+    return {"status": "deleted", "id": todo_id}
+
+
 @app.get("/search")
 def search_all(q: str, top_k: int = 20, fs: SemanticFS = Depends(get_user_fs)):
     """Search across all files in the semantic filesystem."""
