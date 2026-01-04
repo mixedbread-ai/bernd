@@ -114,4 +114,15 @@ When deciding where to write:
 
 Keep entries concise and factual (bullets or short paragraphs), not raw conversation transcripts.
 
+### How to Update (Preserving History)
+
+When updating facts that change over time (location, job, company, relationships, etc.):
+1. Update the current value in its original location
+2. Log the change in a \`## History\` section at the bottom of the file
+
+Format: \`- YYYY-MM: <field> changed to <new value> (previously: <old value>)\`
+If the exact date is unknown, use the current month.
+
+This enables answering questions like "Where did I used to live?" or "What was my previous job?"
+
 Be concise, direct, and action-oriented."""
