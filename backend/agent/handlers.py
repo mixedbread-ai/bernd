@@ -241,6 +241,62 @@ def create_handlers(fs: SemanticFS, get_gcal: callable, mxb_api_key: str):
 
         return {"error": f"Unknown command: {cmd}"}
 
+    def fetch(args):
+        import httpx
+        import re
+        from lxml import html as lxml_html
+        from magic_html import GeneralExtractor
+
+        url = args["url"]
+        html_type = args.get("html_type", "article")
+
+        try:
+            headers = {
+                "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+            }
+            with httpx.Client(follow_redirects=True, timeout=30.0) as client:
+                response = client.get(url, headers=headers)
+                response.raise_for_status()
+
+            content_type = response.headers.get("content-type", "")
+
+            # Return raw content for non-HTML
+            if "text/html" not in content_type:
+                return {
+                    "url": str(response.url),
+                    "status": response.status_code,
+                    "content_type": content_type,
+                    "content": response.text[:50000],
+                }
+
+            # Extract main content using magic-html
+            extractor = GeneralExtractor()
+            data = extractor.extract(response.text, base_url=url, html_type=html_type)
+
+            # Convert extracted HTML to text
+            extracted_html = data.get("html", "")
+            if extracted_html:
+                doc = lxml_html.fromstring(extracted_html)
+                text = doc.text_content()
+                # Clean up whitespace
+                text = re.sub(r"\s+", " ", text).strip()
+            else:
+                text = ""
+
+            return {
+                "url": str(response.url),
+                "status": response.status_code,
+                "title": data.get("title"),
+                "content": text[:50000],
+            }
+
+        except httpx.HTTPStatusError as e:
+            return {"error": f"HTTP {e.response.status_code}: {str(e)}"}
+        except httpx.RequestError as e:
+            return {"error": f"Request failed: {str(e)}"}
+        except Exception as e:
+            return {"error": f"Failed to fetch: {str(e)}"}
+
     # Return handlers map
     return {
         "add_todo": add_todo,
@@ -252,4 +308,5 @@ def create_handlers(fs: SemanticFS, get_gcal: callable, mxb_api_key: str):
         "web_search": web_search,
         "calendar": calendar,
         "files": files,
+        "fetch": fetch,
     }

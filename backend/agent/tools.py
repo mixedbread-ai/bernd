@@ -261,4 +261,26 @@ Commands:
             "required": ["command"],
         },
     },
+    {
+        "type": "function",
+        "name": "fetch",
+        "description": """Fetch a webpage and extract its main content.
+Uses magic-html for intelligent content extraction that strips navigation, ads, and boilerplate.
+Returns cleaned text optimized for reading.""",
+        "parameters": {
+            "type": "object",
+            "properties": {
+                "url": {
+                    "type": "string",
+                    "description": "The URL to fetch",
+                },
+                "html_type": {
+                    "type": "string",
+                    "enum": ["article", "forum", "weixin"],
+                    "description": "Page type hint for better extraction (default: article)",
+                },
+            },
+            "required": ["url"],
+        },
+    },
 ]
