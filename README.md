@@ -19,6 +19,10 @@ Most AI assistants are stateless — they forget everything between sessions. Be
 
 Unlike AI agents with opaque memory systems, everything Bernd knows is stored in your Mixedbread store. Browse it, search it, edit it, or delete it anytime through the [Mixedbread dashboard](https://mixedbread.com). Full visibility and control.
 
+<p align="center">
+  <img src="public/bernd_store.png" alt="Bernd's memory stored in Mixedbread" width="700" />
+</p>
+
 ### What is Mixedbread
 
 [Mixedbread](https://mixedbread.com) is a multilingual semantic search API for your data — upload any file and Mixedbread automatically indexes it, making it searchable by meaning.
