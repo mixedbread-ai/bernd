@@ -5,7 +5,7 @@
   <h1>Bernd</h1>
   <p><em>An AI chief of staff with transparent, persistent, searchable memory. Built with OpenAI + Mixedbread.</em></p>
   <a href="https://opensource.org/licenses/MIT"><img src="https://img.shields.io/badge/License-MIT-blue.svg" alt="License: MIT" /></a>
-  <a href="https://bernd.mixedbread.com"><img src="https://img.shields.io/badge/Demo-Try%20it%20now-brightgreen" alt="Dashboard: Try it now" /></a>
+  <a href="https://bernd.mixedbread.com"><img src="https://img.shields.io/badge/Dashboard-Try%20it%20now-brightgreen" alt="Dashboard: Try it now" /></a>
   <a href="https://join.slack.com/t/mixedbreadcommunity/shared_invite/zt-3kagj5m36-wwM_hryIFby7B2wlcOaHaQ"><img src="https://img.shields.io/badge/Slack-Join%20Community-4A154B?logo=slack" alt="Slack Community" /></a>
 </div>
 
