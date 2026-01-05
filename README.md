@@ -1,6 +1,6 @@
 <div align="center">
   <a href="https://github.com/mixedbread-ai/bernd">
-    <img src="public/logo.svg" alt="Bernd" width="96" height="96" />
+    <img src="public/logo_mb.svg" alt="Bernd" width="96" height="96" />
   </a>
   <h1>Bernd</h1>
   <p><em>An AI chief of staff with persistent, searchable memory. Built with OpenAI + Mixedbread.</em></p>
@@ -29,43 +29,19 @@ Unlike AI agents with opaque memory systems, everything Bernd knows is stored in
 
 In Bernd, we use Mixedbread as the storage and retrieval layer: every todo, note, and memory is a file in a Mixedbread store, instantly searchable by the AI agent.
 
-## The Semantic Filesystem
+## How It Works
 
-The core idea: treat a [Mixedbread store](https://mixedbread.com) like a filesystem where every file is automatically embedded and searchable.
-
-### How It Works
-
-Mixedbread stores let you upload files with an `external_id` and `metadata`. We use this to build a filesystem abstraction:
-
-1. **Path as external_id** — The file path (e.g., `/todos/buy-groceries.md`) becomes the `external_id`, enabling direct CRUD operations by path
-2. **Path in metadata** — We also store the path in metadata, enabling prefix filtering (e.g., search only within `/memories/`)
-3. **Automatic indexing** — Files are automatically embedded and indexed by Mixedbread
-4. **Flexible search scope** — Search a subfolder (`prefix="/todos/"`) or the entire store (`prefix="/"`)
-
-### Store Structure
+We treat a Mixedbread store like a filesystem — file paths become `external_id`s, and every file is automatically embedded and searchable by meaning.
 
 ```
-/todos/                     # Todo items with metadata (status, priority, due_date)
-/memories/                  # Persistent user knowledge
-    user.md                 # Core profile (auto-loaded into system prompt)
-    people/                 # Contacts and relationships
-    projects/               # Ongoing projects
+/todos/                     # Todo items
+/memories/user.md           # User profile (auto-loaded into system prompt)
+/memories/people/           # Contacts and relationships
 /notes/                     # User notes
-/files/                     # General file storage
 /chats/                     # Conversation history
 ```
 
-### Operations
-
-| Method | Description |
-|--------|-------------|
-| `write(path, content, metadata)` | Upload with path as external_id, auto-indexed |
-| `read(path)` | Retrieve by external_id |
-| `list(prefix)` | List files matching path prefix |
-| `search(query, prefix)` | Semantic search with optional path filter |
-| `delete(path)` | Remove by external_id |
-
-The key is `search()` — it uses Mixedbread's semantic search to find files by meaning, scoped to any folder. Search for "Q4 planning" in `/notes/` and find notes mentioning "fourth quarter strategy" without exact keyword matches.
+See [`semantic_fs.py`](backend/tools/semantic_fs.py) for the implementation (~200 lines).
 
 ## Key Files
 
