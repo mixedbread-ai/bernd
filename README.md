@@ -21,6 +21,8 @@ Unlike AI agents with opaque memory systems, everything Bernd knows is stored in
 
 <p align="center">
   <img src="public/bernd_store.png" alt="Bernd's memory stored in Mixedbread" width="700" />
+  <br>
+  <em>Bernd's memory in the Mixedbread dashboard</em>
 </p>
 
 ### What is Mixedbread
