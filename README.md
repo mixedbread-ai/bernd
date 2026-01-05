@@ -11,27 +11,21 @@
 
 <br>
 
-## What Is Bernd
+## Bernd: AI assistant with transparent semantic memory
 
 Bernd is an AI assistant that remembers everything you tell it — and lets you see exactly what it knows.
 
-Most AI assistants are stateless. They forget everything between sessions. Bernd uses Mixedbread as a semantic filesystem to give your AI persistent, searchable memory. Ask "what was that project with Sarah?" and it finds the right context by meaning, not keywords.
-
-This repo is both a working product and a reference implementation. The core memory system is ~200 lines of Python — see [`semantic_fs.py`](backend/tools/semantic_fs.py).
-
-### Transparent Memory
+Most AI assistants are stateless — they forget everything between sessions. Bernd uses Mixedbread to give your AI persistent, searchable memory. Ask "what was that project with Sarah?" and it finds the right context by meaning, not keywords.
 
 Unlike AI agents with opaque memory systems, everything Bernd knows is stored in your Mixedbread store. Browse it, search it, edit it, or delete it anytime through the [Mixedbread dashboard](https://mixedbread.com). Full visibility and control.
 
-## What is Mixedbread
+### What is Mixedbread
 
-[Mixedbread](https://mixedbread.com) is infrastructure for building AI applications with semantic understanding. Upload any file — text, images, PDFs, audio, video — and Mixedbread automatically indexes it for semantic search. Query by meaning, not keywords.
-
-In Bernd, we use Mixedbread as the storage and retrieval layer: every todo, note, and memory is a file in a Mixedbread store, instantly searchable by the AI agent.
+[Mixedbread](https://mixedbread.com) is a multilingual semantic search API for your data — upload any file and Mixedbread automatically indexes it, making it searchable by meaning.
 
 ## How It Works
 
-We treat a Mixedbread store like a filesystem — file paths become `external_id`s, and every file is automatically embedded and searchable by meaning.
+We treat a Mixedbread store like a filesystem — file paths become `external_id`s, and every file is automatically embedded and searchable.
 
 ```
 /todos/                     # Todo items
@@ -41,17 +35,12 @@ We treat a Mixedbread store like a filesystem — file paths become `external_id
 /chats/                     # Conversation history
 ```
 
-See [`semantic_fs.py`](backend/tools/semantic_fs.py) for the implementation (~200 lines).
-
-## Key Files
-
-| File | Purpose |
-|------|---------|
-| [`backend/tools/semantic_fs.py`](backend/tools/semantic_fs.py) | SemanticFS class — path-based CRUD + semantic search over Mixedbread |
+| File | What it does |
+|------|--------------|
+| [`backend/tools/semantic_fs.py`](backend/tools/semantic_fs.py) | SemanticFS class — the core abstraction (~200 lines) |
 | [`backend/agent/tools.py`](backend/agent/tools.py) | OpenAI function schemas |
-| [`backend/agent/handlers.py`](backend/agent/handlers.py) | Tool implementations using SemanticFS |
-| [`backend/agent/core.py`](backend/agent/core.py) | Agent loop managing OpenAI's tool-calling flow |
-| [`backend/agent/prompts.py`](backend/agent/prompts.py) | System prompt that loads user profile from `/memories/user.md` |
+| [`backend/agent/handlers.py`](backend/agent/handlers.py) | Tool implementations |
+| [`backend/agent/core.py`](backend/agent/core.py) | Agent loop for tool-calling |
 
 ## Quick Start
 
@@ -118,26 +107,12 @@ Open [http://localhost:3000](http://localhost:3000) and sign in with your Mixedb
 
 | Tool | Description |
 |------|-------------|
-| `add_todo` | Create a todo (syncs to calendar if due date set) |
-| `get_todos` | List all todos |
-| `search_todos` | Semantic search across todos |
-| `update_todo` | Update status, title, etc. |
-| `remove_todo` | Delete a todo |
+| `todos` | Add, list, search, update, remove (syncs to calendar) |
 | `memory` | Store, retrieve, and search memories |
-| `files` | General semantic filesystem access |
+| `files` | Semantic filesystem access |
 | `calendar` | Google Calendar integration |
-| `web_search` | Search the web via Mixedbread |
+| `web_search` | Search the web |
 | `fetch` | Extract content from URLs |
-
-## API Endpoints
-
-| Endpoint | Description |
-|----------|-------------|
-| `POST /chat` | Send message, get response |
-| `POST /chat/stream` | Streaming chat with SSE |
-| `GET /todos` | List todos |
-| `GET /search?q=...` | Semantic search across all files |
-| `GET /chats` | List saved conversations |
 
 ## Built With
 
