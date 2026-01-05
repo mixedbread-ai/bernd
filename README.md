@@ -1,54 +1,46 @@
-# Bernd - AI Chief of Staff with Semantic Memory
+<div align="center">
+  <a href="https://github.com/mixedbread-ai/bernd">
+    <img src="public/logo.svg" alt="Bernd" width="96" height="96" />
+  </a>
+  <h1>Bernd</h1>
+  <p><em>An AI chief of staff with persistent, searchable memory. Built with OpenAI + Mixedbread.</em></p>
+  <a href="https://opensource.org/licenses/MIT"><img src="https://img.shields.io/badge/License-MIT-blue.svg" alt="License: MIT" /></a>
+  <a href="https://bernd.mixedbread.com"><img src="https://img.shields.io/badge/Demo-Try%20it%20now-brightgreen" alt="Demo: Try it now" /></a>
+  <a href="https://join.slack.com/t/mixedbreadcommunity/shared_invite/zt-3kagj5m36-wwM_hryIFby7B2wlcOaHaQ"><img src="https://img.shields.io/badge/Slack-Join%20Community-4A154B?logo=slack" alt="Slack Community" /></a>
+</div>
 
-Your AI assistant that actually remembers. Built with OpenAI + [Mixedbread](https://mixedbread.com).
+<br>
 
-## Why This Exists
+## What Is Bernd
 
-Most AI assistants are stateless - they forget everything between sessions. Bernd uses Mixedbread as a **semantic filesystem** to give your AI persistent, searchable memory.
+Bernd is an AI assistant that remembers everything you tell it — and lets you see exactly what it knows.
 
-Your todos, notes, memories, and files are stored semantically - meaning the AI can find relevant context using natural language, not just exact keyword matches. Ask "what was that project with Sarah?" and it finds the right context.
+Most AI assistants are stateless. They forget everything between sessions. Bernd uses Mixedbread as a semantic filesystem to give your AI persistent, searchable memory. Ask "what was that project with Sarah?" and it finds the right context by meaning, not keywords.
 
-**Transparent memory** Unlike most AI agents with opaque, hidden memory systems, everything Bernd knows is stored in one place - your Mixedbread store. You can browse it, search it, edit it, or delete it anytime through the [Mixedbread platform](https://mixedbread.com). Full visibility and control over what your AI remembers.
+This repo is both a working product and a reference implementation. The core memory system is ~200 lines of Python — see [`semantic_fs.py`](backend/tools/semantic_fs.py).
+
+### Transparent Memory
+
+Unlike AI agents with opaque memory systems, everything Bernd knows is stored in your Mixedbread store. Browse it, search it, edit it, or delete it anytime through the [Mixedbread dashboard](https://mixedbread.com). Full visibility and control.
+
+## What is Mixedbread
+
+[Mixedbread](https://mixedbread.com) is infrastructure for building AI applications with semantic understanding. Upload any file — text, images, PDFs, audio, video — and Mixedbread automatically indexes it for semantic search. Query by meaning, not keywords.
+
+In Bernd, we use Mixedbread as the storage and retrieval layer: every todo, note, and memory is a file in a Mixedbread store, instantly searchable by the AI agent.
 
 ## The Semantic Filesystem
 
-The core idea: treat a [Mixedbread store](https://mixedbread.com) like a filesystem where every file is automatically embedded and searchable by meaning.
+The core idea: treat a [Mixedbread store](https://mixedbread.com) like a filesystem where every file is automatically embedded and searchable.
 
 ### How It Works
 
 Mixedbread stores let you upload files with an `external_id` and `metadata`. We use this to build a filesystem abstraction:
 
-1. **Path as external_id** - The file path (e.g., `/todos/buy-groceries.md`) becomes the `external_id`, enabling direct CRUD operations by path
-2. **Path in metadata** - We also store the path in metadata, enabling prefix filtering on search (e.g., search only within `/memories/`)
-3. **Automatic indexing** - Once uploaded, files are automatically embedded and indexed by Mixedbread
-4. **Flexible search scope** - Agents can search a subfolder (`prefix="/todos/"`) or the entire store (`prefix="/"`)
-
-```python
-# From backend/tools/semantic_fs.py
-
-def write(self, path: str, content: str, metadata: dict = None):
-    file_id = path.replace("/", "__")  # /todos/task.md -> todos__task.md
-
-    meta = metadata or {}
-    meta["path"] = path  # Store path for search filtering
-
-    self.mixedbread.stores.files.upload(
-        store_identifier=self.store_name,
-        file=(filename, content, mime_type),
-        metadata=meta,
-        external_id=file_id,  # Path as external_id for direct access
-    )
-
-def search(self, query: str, prefix: str = "/", top_k: int = 10):
-    # Filter by path prefix using metadata
-    metadata_filter = {"key": "path", "operator": "starts_with", "value": prefix}
-
-    return self.mixedbread.stores.search(
-        store_identifiers=[self.store_name],
-        query=query,
-        filters=metadata_filter,
-    )
-```
+1. **Path as external_id** — The file path (e.g., `/todos/buy-groceries.md`) becomes the `external_id`, enabling direct CRUD operations by path
+2. **Path in metadata** — We also store the path in metadata, enabling prefix filtering (e.g., search only within `/memories/`)
+3. **Automatic indexing** — Files are automatically embedded and indexed by Mixedbread
+4. **Flexible search scope** — Search a subfolder (`prefix="/todos/"`) or the entire store (`prefix="/"`)
 
 ### Store Structure
 
@@ -65,68 +57,47 @@ def search(self, query: str, prefix: str = "/", top_k: int = 10):
 
 ### Operations
 
-| Method | What it does |
-|--------|--------------|
+| Method | Description |
+|--------|-------------|
 | `write(path, content, metadata)` | Upload with path as external_id, auto-indexed |
-| `read(path)` | Retrieve by external_id (path) |
+| `read(path)` | Retrieve by external_id |
 | `list(prefix)` | List files matching path prefix |
-| `search(query, prefix)` | Semantic search with metadata filter on path |
+| `search(query, prefix)` | Semantic search with optional path filter |
 | `delete(path)` | Remove by external_id |
 
-The magic is in `search()` - it uses Mixedbread's semantic search to find files by meaning, scoped to any folder. Search for "Q4 planning" in `/notes/` and find notes that mention "fourth quarter strategy" even without exact keyword matches.
+The key is `search()` — it uses Mixedbread's semantic search to find files by meaning, scoped to any folder. Search for "Q4 planning" in `/notes/` and find notes mentioning "fourth quarter strategy" without exact keyword matches.
 
-## Architecture
-
-```
-User Message
-    │
-    ▼
-Agent Loop (backend/agent/core.py)
-    │
-    ▼
-OpenAI Responses API (function calling)
-    │
-    ▼
-Tool Handlers (backend/agent/handlers.py)
-    │
-    ▼
-SemanticFS (backend/tools/semantic_fs.py)
-    │
-    ▼
-Mixedbread API (storage + semantic search)
-```
-
-The agent loop receives a user message, calls OpenAI with available tools, executes any tool calls through handlers that use SemanticFS, and returns the response. SemanticFS abstracts Mixedbread's API into simple filesystem-like operations.
-
-## Key Files for Developers
-
-If you want to understand how this works, study these files:
+## Key Files
 
 | File | Purpose |
 |------|---------|
-| `backend/tools/semantic_fs.py` | The SemanticFS class - abstracts Mixedbread into path-based CRUD + semantic search |
-| `backend/agent/tools.py` | Tool schemas that tell OpenAI what functions are available |
-| `backend/agent/handlers.py` | Implements each tool using SemanticFS |
-| `backend/agent/core.py` | The agent loop managing OpenAI's tool-calling flow |
-| `backend/agent/prompts.py` | System prompt that loads user profile from `/memories/user.md` |
+| [`backend/tools/semantic_fs.py`](backend/tools/semantic_fs.py) | SemanticFS class — path-based CRUD + semantic search over Mixedbread |
+| [`backend/agent/tools.py`](backend/agent/tools.py) | OpenAI function schemas |
+| [`backend/agent/handlers.py`](backend/agent/handlers.py) | Tool implementations using SemanticFS |
+| [`backend/agent/core.py`](backend/agent/core.py) | Agent loop managing OpenAI's tool-calling flow |
+| [`backend/agent/prompts.py`](backend/agent/prompts.py) | System prompt that loads user profile from `/memories/user.md` |
 
 ## Quick Start
 
 ### Prerequisites
 
 - Python 3.12+
+- [uv](https://github.com/astral-sh/uv)
 - [Bun](https://bun.sh) (for frontend)
-- [uv](https://github.com/astral-sh/uv) (Python package manager)
-- OpenAI API key
+- [OpenAI API key](https://platform.openai.com)
+- [Mixedbread account](https://mixedbread.com) (free)
 - Google Cloud OAuth credentials (optional, for calendar)
 
 ### Installation
 
 ```bash
-# Install Python dependencies
+git clone https://github.com/mixedbread-ai/bernd.git
+cd bernd
+
+# Python dependencies
 uv sync
 
-# Install UI dependencies
+# Frontend dependencies
 cd ui && bun install && cd ..
 ```
 
@@ -136,7 +107,7 @@ cd ui && bun install && cd ..
 cp .env.example .env
 ```
 
-Edit `.env` with your API keys:
+Edit `.env`:
 
 ```
 OPENAI_API_KEY=your-openai-key
@@ -149,13 +120,13 @@ GOOGLE_REDIRECT_URI=http://localhost:8000/auth/google/callback
 
 ### Running
 
-**Option 1: CLI**
+**CLI:**
 
 ```bash
 uv run agent.py
 ```
 
-**Option 2: Web UI**
+**Web UI:**
 
 ```bash
 # Terminal 1: API server
@@ -165,32 +136,22 @@ uv run uvicorn backend.main:app --reload
 cd ui && bun run dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000)
+Open [http://localhost:3000](http://localhost:3000) and sign in with your Mixedbread account.
 
 ## Tools
 
 | Tool | Description |
 |------|-------------|
-| `add_todo` | Create a todo (auto-syncs to calendar if due date set) |
+| `add_todo` | Create a todo (syncs to calendar if due date set) |
 | `get_todos` | List all todos |
 | `search_todos` | Semantic search across todos |
 | `update_todo` | Update status, title, etc. |
 | `remove_todo` | Delete a todo |
-| `memory` | Store/retrieve/search memories about the user |
+| `memory` | Store, retrieve, and search memories |
 | `files` | General semantic filesystem access |
 | `calendar` | Google Calendar integration |
-| `web_search` | Search the web via Mixedbread public store "mixedbread/web" |
+| `web_search` | Search the web via Mixedbread |
 | `fetch` | Extract content from URLs |
-
-## Why Mixedbread
-
-Mixedbread makes this architecture possible:
-
-- **Multi-modal file support** - Text, images, PDFs, videos, audio - [all automatically indexed](https://www.mixedbread.com/docs/stores/ingest/file-types). Agents can dump any file type just like a real filesystem should work.
-
-- **Semantic search with filtering** - [Full semantic search](https://www.mixedbread.com/docs/stores/search) over text, images, video, and audio using natural language. Filter by metadata (path prefix, status, tags) to scope searches to exactly what you need.
-
-- **Global transparency** - One store for everything about you, controlled by you. Browse, search, and edit your AI's memory anytime through the Mixedbread platform. No black-box memory systems.
 
 ## API Endpoints
 
@@ -204,7 +165,11 @@ Mixedbread makes this architecture possible:
 
 ## Built With
 
-- [OpenAI](https://openai.com) - GPT with Responses API for function calling
-- [Mixedbread](https://mixedbread.com) - Semantic storage and search
-- [FastAPI](https://fastapi.tiangolo.com) - Python backend
-- [Next.js](https://nextjs.org) - React frontend
+- [OpenAI](https://openai.com) — GPT with Responses API
+- [Mixedbread](https://mixedbread.com) — Semantic storage and search
+- [FastAPI](https://fastapi.tiangolo.com) — Python backend
+- [Next.js](https://nextjs.org) — React frontend
+
+## License
+
+MIT
