@@ -27,7 +27,7 @@ Unlike AI agents with opaque memory systems, everything Bernd knows is stored in
 
 ### What is Mixedbread
 
-[Mixedbread](https://mixedbread.com) is a multilingual semantic search API for your data — upload [any file](https://www.mixedbread.com/docs/stores/ingest/file-types) and Mixedbread automatically indexes it, making it searchable by meaning.
+[Mixedbread](https://mixedbread.com) is a multilingual semantic search API for your data — upload [any file](https://www.mixedbread.com/docs/stores/ingest/file-types) (text, PDFs, images, slides, code, audio, video) and Mixedbread automatically indexes it, making it searchable by meaning.
 
 ## How It Works
 
