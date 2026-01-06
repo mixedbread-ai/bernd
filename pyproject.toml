@@ -1,0 +1,25 @@
+[project]
+name = "bernd"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "dotenv>=0.9.9",
+    "fastapi>=0.124.2",
+    "google-api-python-client>=2.187.0",
+    "google-auth>=2.43.0",
+    "mixedbread>=0.41.0",
+    "openai>=2.9.0",
+    "parse>=1.20.2",
+    "prompt-toolkit>=3.0.52",
+    "python-multipart>=0.0.20",
+    "rich>=14.2.0",
+    "setuptools>=80.9.0",
+    "slack-bolt>=1.27.0",
+    "slack-sdk>=3.39.0",
+    "uvicorn>=0.38.0",
+    "httpx>=0.28.0",
+    "magic-html @ git+https://github.com/opendatalab/magic-html",
+    "cryptography>=44.0.0",
+]
