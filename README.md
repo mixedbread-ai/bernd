@@ -3,7 +3,7 @@
     <img src="public/logo_mb.svg" alt="Bernd" width="96" height="96" />
   </a>
   <h1>Bernd</h1>
-  <p><em>An AI chief of staff with transparent, persistent, searchable memory. Built with OpenAI + Mixedbread.</em></p>
+  <p><em>An AI chief of staff with transparent, persistent, searchable memory. Built with Repspone API + Mixedbread.</em></p>
   <a href="https://opensource.org/licenses/MIT"><img src="https://img.shields.io/badge/License-MIT-blue.svg" alt="License: MIT" /></a>
   <a href="https://bernd.mixedbread.com"><img src="https://img.shields.io/badge/Dashboard-Try%20it%20now-brightgreen" alt="Dashboard: Try it now" /></a>
   <a href="https://join.slack.com/t/mixedbreadcommunity/shared_invite/zt-3kagj5m36-wwM_hryIFby7B2wlcOaHaQ"><img src="https://img.shields.io/badge/Slack-Join%20Community-4A154B?logo=slack" alt="Slack Community" /></a>
@@ -15,7 +15,7 @@
 
 Bernd is an AI assistant that remembers everything you tell it — and lets you see exactly what it knows.
 
-Most AI assistants are stateless — they forget everything between sessions. Bernd uses Mixedbread to give your AI persistent, searchable memory. Ask "what was that project with Sarah?" and it finds the right context by meaning, not keywords.
+Most AI assistants are stateless, they forget everything between sessions. Bernd uses Mixedbread to give your AI persistent, searchable memory by treating Mixedbread as a filesystem with extremely smart search. Ask "what was that project with Sarah?" and it finds the right context based on previous information and conversation.
 
 Unlike AI agents with opaque memory systems, everything Bernd knows is stored in your Mixedbread store. Browse it, search it, edit it, or delete it anytime through the [Mixedbread dashboard](https://mixedbread.com). Full visibility and control.
 
@@ -27,11 +27,11 @@ Unlike AI agents with opaque memory systems, everything Bernd knows is stored in
 
 ### What is Mixedbread
 
-[Mixedbread](https://mixedbread.com) is a multilingual semantic search API for your data — upload [any file](https://www.mixedbread.com/docs/stores/ingest/file-types) (text, PDFs, images, slides, code, audio, video) and Mixedbread automatically indexes it, making it searchable by meaning.
+[Mixedbread](https://mixedbread.com) is a multilingual semantic search API for your data, upload [any file](https://www.mixedbread.com/docs/stores/ingest/file-types) (text, PDFs, images, slides, code, audio, video) and Mixedbread automatically indexes it, making it searchable by meaning.
 
 ## How It Works
 
-We treat a Mixedbread store like a filesystem — file paths become `external_id`s, and every file is automatically embedded and searchable.
+We treat a Mixedbread store like a filesystem, file paths become `external_id`s, and every file is searchable.
 
 ```
 /todos/                     # Todo items
@@ -84,8 +84,6 @@ Edit `.env`:
 OPENAI_API_KEY=your-openai-key
 
 # Optional: Google Calendar
-GOOGLE_CLIENT_ID=
-GOOGLE_CLIENT_SECRET=
 GOOGLE_REDIRECT_URI=http://localhost:8000/auth/google/callback
 ```
 
