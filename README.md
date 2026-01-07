@@ -125,6 +125,10 @@ Open [http://localhost:3000](http://localhost:3000) and sign in with your Mixedb
 - [FastAPI](https://fastapi.tiangolo.com) — Python backend
 - [Next.js](https://nextjs.org) — React frontend
 
+## Support
+
+For usage questions, feedback, or other support, please reach out on the [Mixedbread Slack](https://join.slack.com/t/mixedbreadcommunity/shared_invite/zt-3kagj5m36-wwM_hryIFby7B2wlcOaHaQ).
+
 ## License
 
-MIT
+Apache-2.0. See the [LICENSE](https://opensource.org/licenses/Apache-2.0) file for details.
