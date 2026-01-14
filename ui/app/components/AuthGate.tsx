@@ -3,6 +3,7 @@
 import { useEffect, ReactNode } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import { useAuth } from "../context/AuthContext";
+import { Loading } from "./Loading";
 
 export function AuthGate({ children }: { children: ReactNode }) {
   const { isAuthenticated, isPending } = useAuth();
@@ -21,11 +22,7 @@ export function AuthGate({ children }: { children: ReactNode }) {
 
   // Show loading state while checking session
   if (isPending) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-background">
-        <div className="text-muted">...</div>
-      </div>
-    );
+    return <Loading />;
   }
 
   if (pathname === "/sign-in") {
@@ -34,11 +31,7 @@ export function AuthGate({ children }: { children: ReactNode }) {
 
   // Show loading state while redirecting
   if (!isAuthenticated) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-background">
-        <div className="text-muted">...</div>
-      </div>
-    );
+    return <Loading />;
   }
 
   return <>{children}</>;

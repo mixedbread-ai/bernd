@@ -1,7 +1,7 @@
 "use client";
 
 import { createContext, useContext, ReactNode } from "react";
-import { useSession, authClient } from "../lib/auth";
+import { useSession, authClient, Organization } from "../lib/auth";
 
 interface User {
   id: string;
@@ -14,6 +14,7 @@ interface Session {
   id: string;
   userId: string;
   expiresAt: Date;
+  activeOrganization?: Organization | null;
 }
 
 interface AuthContextType {

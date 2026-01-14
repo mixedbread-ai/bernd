@@ -1,6 +1,7 @@
 "use client";
 
 import { createAuthClient } from "better-auth/react";
+import { organizationClient } from "better-auth/client/plugins";
 
 const BASE_URL = process.env.NEXT_PUBLIC_AUTH_BASE_URL || "http://localhost:3001/api/auth";
 
@@ -25,6 +26,7 @@ export const authClient = createAuthClient({
   fetchOptions: {
     credentials: "include",
   },
+  plugins: [organizationClient()],
 });
 
 export const { useSession, signIn, signOut } = authClient;

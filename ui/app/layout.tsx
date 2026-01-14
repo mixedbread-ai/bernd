@@ -4,6 +4,7 @@ import "./globals.css";
 import { ThemeProvider } from "./context/ThemeContext";
 import { AuthProvider } from "./context/AuthContext";
 import { AuthGate } from "./components/AuthGate";
+import { OrgGate } from "./components/OrgGate";
 import { AuthenticatedLayout } from "./components/AuthenticatedLayout";
 
 const geistMono = Geist_Mono({
@@ -27,7 +28,9 @@ export default function RootLayout({
         <ThemeProvider>
           <AuthProvider>
             <AuthGate>
-              <AuthenticatedLayout>{children}</AuthenticatedLayout>
+              <OrgGate>
+                <AuthenticatedLayout>{children}</AuthenticatedLayout>
+              </OrgGate>
             </AuthGate>
           </AuthProvider>
         </ThemeProvider>
