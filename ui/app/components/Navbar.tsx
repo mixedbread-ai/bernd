@@ -13,6 +13,7 @@ import {
   LogOutIcon,
 } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
+import { OrgSwitcher } from "./OrgSwitcher";
 
 const navItems = [
   { href: "/", label: "todos", key: "t", icon: CircleCheckIcon },
@@ -62,7 +63,7 @@ export function Navbar() {
       {/* Desktop sidebar */}
       <nav className="hidden md:flex fixed left-0 top-0 h-screen w-44 flex-col border-r border-border px-6 py-8 bg-background">
         <div className="mb-12">
-          <span className="text-sm font-medium tracking-wide text-foreground">bernd</span>
+          <OrgSwitcher />
         </div>
 
         <ul className="space-y-1">

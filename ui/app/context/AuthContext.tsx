@@ -14,6 +14,7 @@ interface Session {
   id: string;
   userId: string;
   expiresAt: Date;
+  activeOrganizationId?: string | null;
 }
 
 interface AuthContextType {
