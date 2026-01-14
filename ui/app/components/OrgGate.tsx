@@ -1,23 +1,22 @@
 "use client";
 
-import { useEffect, useState, ReactNode, useRef } from "react";
+import { useEffect, useState, ReactNode } from "react";
 import { usePathname } from "next/navigation";
 import { useAuth } from "../context/AuthContext";
 import { authClient } from "../lib/auth";
 import { Loading } from "./Loading";
 import { getDefaultOrganization } from "@/lib/utils/org";
+import { useOrgSwitch } from "../context/OrgSwitchContext";
 
 export function OrgGate({ children }: { children: ReactNode }) {
   const { isAuthenticated, isPending: authPending, user, session } = useAuth();
+  const { isSwitching } = useOrgSwitch();
   const [isReady, setIsReady] = useState(false);
   const pathname = usePathname();
-  const hasChecked = useRef(false);
   const isSignIn = pathname === "/sign-in";
 
   useEffect(() => {
-    if (isSignIn || authPending || !isAuthenticated || hasChecked.current) return;
-
-    hasChecked.current = true;
+    if (isSignIn || authPending || !isAuthenticated) return;
 
     async function ensureOrg() {
       try {
@@ -49,7 +48,7 @@ export function OrgGate({ children }: { children: ReactNode }) {
     return children;
   }
 
-  if (authPending || !isReady) {
+  if (authPending || !isReady || isSwitching) {
     return <Loading />;
   }
 

@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import * as DropdownMenu from "@radix-ui/react-dropdown-menu";
 import { ChevronsUpDownIcon, CheckIcon } from "lucide-react";
 import { authClient } from "../lib/auth";
+import { useOrgSwitch } from "../context/OrgSwitchContext";
 
 interface Organization {
   id: string;
@@ -13,6 +14,7 @@ interface Organization {
 
 export function OrgSwitcher() {
   const { data: activeOrg, isPending: isActiveOrgPending } = authClient.useActiveOrganization();
+  const { setIsSwitching } = useOrgSwitch();
   const [orgs, setOrgs] = useState<Organization[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -27,6 +29,7 @@ export function OrgSwitcher() {
 
   const handleSwitch = async (orgId: string) => {
     if (orgId === activeOrg?.id) return;
+    setIsSwitching(true);
     await authClient.organization.setActive({ organizationId: orgId });
     window.location.reload();
   };
@@ -40,7 +43,7 @@ export function OrgSwitcher() {
       </div>
 
       {isLoading || isActiveOrgPending ? (
-        <div className="mt-1 h-4 w-20 bg-border/50 rounded animate-pulse" />
+        <div className="mt-1 h-5 w-20 bg-border/50 rounded animate-pulse" />
       ) : showDropdown ? (
         <DropdownMenu.Root>
           <DropdownMenu.Trigger asChild>
