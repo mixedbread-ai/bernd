@@ -32,7 +32,7 @@ export function OrgGate({ children }: { children: ReactNode }) {
           if (newOrg) {
             await authClient.organization.setActive({ organizationId: newOrg.id });
           }
-        } else if (!session?.activeOrganization) {
+        } else if (!session?.activeOrganizationId) {
           await authClient.organization.setActive({ organizationId: orgs[0].id });
         }
       } catch (error) {
@@ -43,7 +43,7 @@ export function OrgGate({ children }: { children: ReactNode }) {
     }
 
     ensureOrg();
-  }, [isSignIn, authPending, isAuthenticated, user?.email, user?.name, session?.activeOrganization]);
+  }, [isSignIn, authPending, isAuthenticated, user?.email, user?.name, session?.activeOrganizationId]);
 
   if (isSignIn) {
     return children;
