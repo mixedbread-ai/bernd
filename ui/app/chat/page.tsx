@@ -1,21 +1,19 @@
-import { serverApi, API_ENDPOINTS } from "../lib/api.server";
-import { ChatSummary } from "../types";
+import { getFS } from "@/lib/context";
+import { getChats } from "@/lib/data/chats";
+import type { ChatSummary } from "../../types";
 import ChatClient from "./ChatClient";
 
-async function getChats(): Promise<ChatSummary[]> {
-  try {
-    const res = await serverApi.get(API_ENDPOINTS.chats);
-    if (!res.ok) {
-      return [];
-    }
-    return res.json();
-  } catch {
-    return [];
-  }
+async function fetchChats(): Promise<ChatSummary[]> {
+	try {
+		const fs = await getFS();
+		return getChats(fs);
+	} catch {
+		return [];
+	}
 }
 
 export default async function ChatPage() {
-  const chats = await getChats();
+	const chats = await fetchChats();
 
-  return <ChatClient initialChats={chats} />;
+	return <ChatClient initialChats={chats} />;
 }

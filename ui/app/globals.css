@@ -2,163 +2,165 @@
 @plugin "@tailwindcss/typography";
 
 :root {
-  --background: #faf9f7;
-  --foreground: #1a1a1a;
-  --muted: #a8a8a8;
-  --accent: #c45d3a;
-  --border: #e8e6e3;
-  --surface: #ffffff;
-  --surface-hover: #f0efed;
-  --user-bubble: #e8e6e3;
+	--background: #faf9f7;
+	--foreground: #1a1a1a;
+	--muted: #a8a8a8;
+	--accent: #c45d3a;
+	--border: #e8e6e3;
+	--surface: #ffffff;
+	--surface-hover: #f0efed;
+	--user-bubble: #e8e6e3;
 }
 
 .dark {
-  --background: #0f0f0f;
-  --foreground: #e8e6e3;
-  --muted: #6b6b6b;
-  --accent: #e07a5a;
-  --border: #2a2a2a;
-  --surface: #1a1a1a;
-  --surface-hover: #252525;
-  --user-bubble: #2a2a2a;
+	--background: #0f0f0f;
+	--foreground: #e8e6e3;
+	--muted: #6b6b6b;
+	--accent: #e07a5a;
+	--border: #2a2a2a;
+	--surface: #1a1a1a;
+	--surface-hover: #252525;
+	--user-bubble: #2a2a2a;
 }
 
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --color-muted: var(--muted);
-  --color-accent: var(--accent);
-  --color-border: var(--border);
-  --color-surface: var(--surface);
-  --color-surface-hover: var(--surface-hover);
-  --color-user-bubble: var(--user-bubble);
-  --font-mono: var(--font-geist-mono);
+	--color-background: var(--background);
+	--color-foreground: var(--foreground);
+	--color-muted: var(--muted);
+	--color-accent: var(--accent);
+	--color-border: var(--border);
+	--color-surface: var(--surface);
+	--color-surface-hover: var(--surface-hover);
+	--color-user-bubble: var(--user-bubble);
+	--font-mono: var(--font-geist-mono);
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: var(--font-mono), monospace;
-  transition: background-color 0.2s, color 0.2s;
+	background: var(--background);
+	color: var(--foreground);
+	font-family: var(--font-mono), monospace;
+	transition:
+		background-color 0.2s,
+		color 0.2s;
 }
 
 ::selection {
-  background: var(--accent);
-  color: var(--background);
+	background: var(--accent);
+	color: var(--background);
 }
 
 ::-webkit-scrollbar {
-  width: 6px;
+	width: 6px;
 }
 
 ::-webkit-scrollbar-track {
-  background: var(--background);
+	background: var(--background);
 }
 
 ::-webkit-scrollbar-thumb {
-  background: var(--border);
+	background: var(--border);
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: var(--muted);
+	background: var(--muted);
 }
 
 /* Prose typography dark mode fixes */
 .dark .prose {
-  --tw-prose-body: var(--foreground);
-  --tw-prose-headings: var(--foreground);
-  --tw-prose-bold: var(--foreground);
-  --tw-prose-links: var(--accent);
-  --tw-prose-code: var(--foreground);
-  --tw-prose-quotes: var(--foreground);
+	--tw-prose-body: var(--foreground);
+	--tw-prose-headings: var(--foreground);
+	--tw-prose-bold: var(--foreground);
+	--tw-prose-links: var(--accent);
+	--tw-prose-code: var(--foreground);
+	--tw-prose-quotes: var(--foreground);
 }
 
 .dark .prose strong {
-  color: var(--foreground);
+	color: var(--foreground);
 }
 
 .dark .prose b {
-  color: var(--foreground);
+	color: var(--foreground);
 }
 
 .dark .prose code {
-  color: var(--foreground);
-  background: var(--surface);
+	color: var(--foreground);
+	background: var(--surface);
 }
 
 .dark .prose pre {
-  background: var(--surface);
+	background: var(--surface);
 }
 
 .dark .prose a {
-  color: var(--accent);
+	color: var(--accent);
 }
 
 /* Mobile safe areas for iOS */
 .safe-area-bottom {
-  padding-bottom: env(safe-area-inset-bottom, 0px);
+	padding-bottom: env(safe-area-inset-bottom, 0px);
 }
 
 /* Prevent text selection on mobile nav */
 nav {
-  -webkit-tap-highlight-color: transparent;
+	-webkit-tap-highlight-color: transparent;
 }
 
 /* Smooth scrolling */
 html {
-  scroll-behavior: smooth;
-  -webkit-overflow-scrolling: touch;
+	scroll-behavior: smooth;
+	-webkit-overflow-scrolling: touch;
 }
 
 /* Fix long text/links wrapping */
 .prose {
-  word-break: break-word;
-  overflow-wrap: anywhere;
-  max-width: 100%;
+	word-break: break-word;
+	overflow-wrap: anywhere;
+	max-width: 100%;
 }
 
 .prose p {
-  word-break: break-word;
-  overflow-wrap: anywhere;
+	word-break: break-word;
+	overflow-wrap: anywhere;
 }
 
 .prose a {
-  word-break: break-all;
-  color: var(--accent);
-  text-decoration: underline;
+	word-break: break-all;
+	color: var(--accent);
+	text-decoration: underline;
 }
 
 .prose a:hover {
-  opacity: 0.8;
+	opacity: 0.8;
 }
 
 /* Dropdown animations */
 @keyframes dropdown-in {
-  from {
-    opacity: 0;
-    transform: scale(0.95);
-  }
-  to {
-    opacity: 1;
-    transform: scale(1);
-  }
+	from {
+		opacity: 0;
+		transform: scale(0.95);
+	}
+	to {
+		opacity: 1;
+		transform: scale(1);
+	}
 }
 
 @keyframes dropdown-out {
-  from {
-    opacity: 1;
-    transform: scale(1);
-  }
-  to {
-    opacity: 0;
-    transform: scale(0.95);
-  }
+	from {
+		opacity: 1;
+		transform: scale(1);
+	}
+	to {
+		opacity: 0;
+		transform: scale(0.95);
+	}
 }
 
 .animate-dropdown-in {
-  animation: dropdown-in 0.15s ease-out;
+	animation: dropdown-in 0.15s ease-out;
 }
 
 .animate-dropdown-out {
-  animation: dropdown-out 0.1s ease-in;
+	animation: dropdown-out 0.1s ease-in;
 }
