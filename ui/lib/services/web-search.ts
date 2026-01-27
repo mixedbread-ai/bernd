@@ -35,7 +35,7 @@ export class WebSearch {
       const url = (metadata.url as string) ?? item.filename ?? "";
 
       return {
-        title: title || url,
+        title,
         url,
         content,
         score: item.score ?? 0,

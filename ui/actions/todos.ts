@@ -1,22 +1,15 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import {
-  FileType,
-  PATHS,
-  Priority,
-  type PriorityType,
-  TodoStatus,
-  type TodoStatusType,
-} from "@/lib/constants";
+import { PATHS, type Priority, type TodoStatus } from "@/lib/constants";
 import { getFS, getGoogleCalendar } from "@/lib/context";
 
 export interface TodoCreate {
   title: string;
   description?: string;
   due_date?: string;
-  priority?: PriorityType;
-  status?: TodoStatusType;
+  priority?: Priority;
+  status?: TodoStatus;
   tags?: string[];
 }
 
@@ -24,8 +17,8 @@ export interface TodoUpdate {
   new_title?: string;
   description?: string;
   due_date?: string;
-  priority?: PriorityType;
-  status?: TodoStatusType;
+  priority?: Priority;
+  status?: TodoStatus;
   tags?: string[];
 }
 
@@ -37,10 +30,10 @@ export async function createTodo(
 
   const content = `# ${data.title}\n\n${data.description ?? ""}`;
   const metadata: Record<string, unknown> = {
-    type: FileType.TODO,
+    type: "todo",
     due_date: data.due_date ?? "",
-    priority: data.priority ?? Priority.MEDIUM,
-    status: data.status ?? TodoStatus.PENDING,
+    priority: data.priority ?? "medium",
+    status: data.status ?? "pending",
     tags: data.tags ?? [],
   };
 
@@ -87,17 +80,17 @@ export async function updateTodo(
   const eventId = existingMeta.calendar_event_id as string | undefined;
 
   const metadata: Record<string, unknown> = {
-    type: FileType.TODO,
+    type: "todo",
     due_date: data.due_date ?? "",
-    priority: data.priority ?? Priority.MEDIUM,
-    status: data.status ?? TodoStatus.PENDING,
+    priority: data.priority ?? "medium",
+    status: data.status ?? "pending",
     tags: data.tags ?? [],
   };
 
   // Handle calendar event
   let calResult: unknown;
   if (gcal) {
-    if (data.status === TodoStatus.COMPLETED && eventId) {
+    if (data.status === "completed" && eventId) {
       // Delete calendar event when todo is completed
       calResult = await gcal.deleteEvent(eventId);
     } else if (eventId && data.due_date) {
@@ -109,11 +102,7 @@ export async function updateTodo(
         durationMinutes: 30,
       });
       metadata.calendar_event_id = eventId;
-    } else if (
-      !eventId &&
-      data.due_date &&
-      data.status !== TodoStatus.COMPLETED
-    ) {
+    } else if (!eventId && data.due_date && data.status !== "completed") {
       // Create new event if todo didn't have one but now has due_date
       calResult = await gcal.createEvent({
         title: newTitle,

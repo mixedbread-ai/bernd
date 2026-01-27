@@ -1,13 +1,7 @@
 // Pure functions for fetching todos data
 
 import type { Todo } from "@/types";
-import {
-  PATHS,
-  Priority,
-  type PriorityType,
-  TodoStatus,
-  type TodoStatusType,
-} from "../constants";
+import { PATHS, type Priority, type TodoStatus } from "../constants";
 import type {
   FileListItem,
   SearchResult,
@@ -21,16 +15,16 @@ function pathToId(path: string): string {
 }
 
 function sortTodos(todos: Todo[]): Todo[] {
-  const statusOrder: Record<TodoStatusType, number> = {
-    [TodoStatus.IN_PROGRESS]: 0,
-    [TodoStatus.PENDING]: 1,
-    [TodoStatus.COMPLETED]: 2,
+  const statusOrder: Record<TodoStatus, number> = {
+    in_progress: 0,
+    pending: 1,
+    completed: 2,
   };
 
-  const priorityOrder: Record<PriorityType, number> = {
-    [Priority.HIGH]: 0,
-    [Priority.MEDIUM]: 1,
-    [Priority.LOW]: 2,
+  const priorityOrder: Record<Priority, number> = {
+    high: 0,
+    medium: 1,
+    low: 2,
   };
 
   return todos.sort((a, b) => {
@@ -61,8 +55,8 @@ function fileToTodo(file: FileListItem): Todo {
     title: file.path.split("/").pop()?.replace(".md", "") ?? "",
     description: (metadata.description as string) ?? undefined,
     due_date: (metadata.due_date as string) ?? undefined,
-    priority: (metadata.priority as PriorityType) ?? Priority.MEDIUM,
-    status: (metadata.status as TodoStatusType) ?? TodoStatus.PENDING,
+    priority: (metadata.priority as Priority) ?? "medium",
+    status: (metadata.status as TodoStatus) ?? "pending",
     tags: (metadata.tags as string[]) ?? undefined,
     calendar_event_id: (metadata.calendar_event_id as string) ?? undefined,
     created_at: (metadata.created_at as string) ?? undefined,
@@ -76,8 +70,8 @@ function searchResultToTodo(result: SearchResult): Todo {
     title: result.path.split("/").pop()?.replace(".md", "") ?? "",
     description: (metadata.description as string) ?? undefined,
     due_date: (metadata.due_date as string) ?? undefined,
-    priority: (metadata.priority as PriorityType) ?? Priority.MEDIUM,
-    status: (metadata.status as TodoStatusType) ?? TodoStatus.PENDING,
+    priority: (metadata.priority as Priority) ?? "medium",
+    status: (metadata.status as TodoStatus) ?? "pending",
     tags: (metadata.tags as string[]) ?? undefined,
     calendar_event_id: (metadata.calendar_event_id as string) ?? undefined,
     created_at: (metadata.created_at as string) ?? undefined,
@@ -105,8 +99,8 @@ export async function getTodo(
     title: id,
     description: result.content.replace(/^#.*\n\n?/, ""), // Remove markdown title
     due_date: (metadata.due_date as string) ?? undefined,
-    priority: (metadata.priority as PriorityType) ?? Priority.MEDIUM,
-    status: (metadata.status as TodoStatusType) ?? TodoStatus.PENDING,
+    priority: (metadata.priority as Priority) ?? "medium",
+    status: (metadata.status as TodoStatus) ?? "pending",
     tags: (metadata.tags as string[]) ?? undefined,
     calendar_event_id: (metadata.calendar_event_id as string) ?? undefined,
     created_at: (metadata.created_at as string) ?? undefined,

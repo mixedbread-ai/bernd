@@ -4,7 +4,7 @@ import { Readability } from "@mozilla/readability";
 import { tool } from "ai";
 import { JSDOM } from "jsdom";
 import { z } from "zod";
-import { FileType, PATHS, Priority, TodoStatus } from "../constants";
+import { PATHS } from "../constants";
 import type { GoogleCalendar } from "../services/google-calendar";
 import type { SemanticFS } from "../services/semantic-fs";
 import { WebSearch } from "../services/web-search";
@@ -39,10 +39,10 @@ export function createTools(
       }) => {
         const content = `# ${title}\n\n${description ?? ""}`;
         const metadata: Record<string, unknown> = {
-          type: FileType.TODO,
+          type: "todo",
           due_date: due_date ?? "",
-          priority: priority ?? Priority.MEDIUM,
-          status: status ?? TodoStatus.PENDING,
+          priority: priority ?? "medium",
+          status: status ?? "pending",
           tags: tags ?? [],
         };
 
@@ -149,10 +149,10 @@ export function createTools(
         const eventId = existingMeta.calendar_event_id as string | undefined;
 
         const metadata: Record<string, unknown> = {
-          type: FileType.TODO,
+          type: "todo",
           due_date: due_date ?? "",
-          priority: priority ?? Priority.MEDIUM,
-          status: status ?? TodoStatus.PENDING,
+          priority: priority ?? "medium",
+          status: status ?? "pending",
           tags: tags ?? [],
         };
 
@@ -160,7 +160,7 @@ export function createTools(
         const gcal = getGcal();
         let calResult: unknown;
         if (gcal) {
-          if (status === TodoStatus.COMPLETED && eventId) {
+          if (status === "completed" && eventId) {
             calResult = await gcal.deleteEvent(eventId);
           } else if (eventId && due_date) {
             calResult = await gcal.updateEvent(eventId, {
@@ -170,7 +170,7 @@ export function createTools(
               durationMinutes: 30,
             });
             metadata.calendar_event_id = eventId;
-          } else if (!eventId && due_date && status !== TodoStatus.COMPLETED) {
+          } else if (!eventId && due_date && status !== "completed") {
             calResult = await gcal.createEvent({
               title: finalTitle,
               description: description ?? "",
@@ -248,7 +248,7 @@ Commands:
 
           case "create":
             return fs.write(targetPath, content ?? "", {
-              type: FileType.MEMORY,
+              type: "memory",
             });
 
           case "delete":
@@ -279,7 +279,7 @@ Commands:
             return fs.write(
               targetPath,
               lines.join("\n"),
-              "error" in result ? { type: FileType.MEMORY } : result.metadata,
+              "error" in result ? { type: "memory" } : result.metadata,
             );
           }
 
