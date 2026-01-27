@@ -4,55 +4,55 @@ import { createContext, type ReactNode, useContext } from "react";
 import { authClient, useSession } from "../lib/auth";
 
 interface User {
-	id: string;
-	name: string;
-	email: string;
-	image?: string | null;
+  id: string;
+  name: string;
+  email: string;
+  image?: string | null;
 }
 
 interface Session {
-	id: string;
-	userId: string;
-	expiresAt: Date;
-	activeOrganizationId?: string | null;
+  id: string;
+  userId: string;
+  expiresAt: Date;
+  activeOrganizationId?: string | null;
 }
 
 interface AuthContextType {
-	user: User | null;
-	session: Session | null;
-	isAuthenticated: boolean;
-	isPending: boolean;
-	logout: () => Promise<void>;
+  user: User | null;
+  session: Session | null;
+  isAuthenticated: boolean;
+  isPending: boolean;
+  logout: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
-	const { data, isPending } = useSession();
+  const { data, isPending } = useSession();
 
-	const logout = async () => {
-		await authClient.signOut();
-	};
+  const logout = async () => {
+    await authClient.signOut();
+  };
 
-	return (
-		<AuthContext.Provider
-			value={{
-				user: data?.user ?? null,
-				session: data?.session ?? null,
-				isAuthenticated: !!data?.session,
-				isPending,
-				logout,
-			}}
-		>
-			{children}
-		</AuthContext.Provider>
-	);
+  return (
+    <AuthContext.Provider
+      value={{
+        user: data?.user ?? null,
+        session: data?.session ?? null,
+        isAuthenticated: !!data?.session,
+        isPending,
+        logout,
+      }}
+    >
+      {children}
+    </AuthContext.Provider>
+  );
 }
 
 export function useAuth() {
-	const context = useContext(AuthContext);
-	if (context === undefined) {
-		throw new Error("useAuth must be used within an AuthProvider");
-	}
-	return context;
+  const context = useContext(AuthContext);
+  if (context === undefined) {
+    throw new Error("useAuth must be used within an AuthProvider");
+  }
+  return context;
 }

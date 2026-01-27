@@ -3,11 +3,11 @@
 import { useTheme as useNextTheme } from "next-themes";
 
 export function useTheme() {
-	const { theme, setTheme } = useNextTheme();
+  const { theme, setTheme } = useNextTheme();
 
-	function toggleTheme() {
-		setTheme(theme === "light" ? "dark" : "light");
-	}
+  function toggleTheme() {
+    setTheme(theme === "light" ? "dark" : "light");
+  }
 
-	return { theme: theme as "light" | "dark" | undefined, toggleTheme };
+  return { theme: theme as "light" | "dark" | undefined, toggleTheme };
 }

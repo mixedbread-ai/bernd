@@ -4,30 +4,30 @@ import { PATHS } from "../constants";
 import type { SemanticFS } from "../services/semantic-fs";
 
 export async function loadUserProfile(fs: SemanticFS): Promise<string> {
-	const result = await fs.read(PATHS.USER_PROFILE);
-	if ("error" in result) {
-		return "";
-	}
-	return result.content;
+  const result = await fs.read(PATHS.USER_PROFILE);
+  if ("error" in result) {
+    return "";
+  }
+  return result.content;
 }
 
 export async function getSystemPrompt(fs: SemanticFS): Promise<string> {
-	const userProfile = await loadUserProfile(fs);
-	const today = new Date().toLocaleDateString("en-US", {
-		weekday: "long",
-		year: "numeric",
-		month: "2-digit",
-		day: "2-digit",
-	});
+  const userProfile = await loadUserProfile(fs);
+  const today = new Date().toLocaleDateString("en-US", {
+    weekday: "long",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  });
 
-	const profileSection = userProfile
-		? `
+  const profileSection = userProfile
+    ? `
 ## User Profile
 ${userProfile}
 `
-		: "";
+    : "";
 
-	return `You are Bernd, a personal chief of staff. Today is ${today}.
+  return `You are Bernd, a personal chief of staff. Today is ${today}.
 
 You help your principal stay organized and productive.
 
