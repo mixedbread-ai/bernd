@@ -9,7 +9,6 @@ wheels/
 # Virtual environments
 .venv
 slack_stuff/
-data/
 secret/
 .env
 .bernd_history

@@ -1,0 +1,67 @@
+// Pure functions for semantic search across all content
+import type { SemanticFS } from "../services/semantic-fs";
+
+export interface SearchAllResult {
+	path: string;
+	score: number;
+	content: string;
+	metadata: Record<string, unknown>;
+	type: "todo" | "note" | "memory" | "file" | "chat";
+}
+
+function inferType(
+	path: string,
+	metadata: Record<string, unknown>,
+): SearchAllResult["type"] {
+	if (metadata.type) {
+		return metadata.type as SearchAllResult["type"];
+	}
+
+	if (path.startsWith("/todos/")) return "todo";
+	if (path.startsWith("/notes/")) return "note";
+	if (path.startsWith("/memories/")) return "memory";
+	if (path.startsWith("/chats/")) return "chat";
+	return "file";
+}
+
+export async function searchAll(
+	fs: SemanticFS,
+	query: string,
+	topK = 20,
+): Promise<SearchAllResult[]> {
+	// Search across all content
+	const results = await fs.search(query, "/", topK);
+
+	return results.map((result) => ({
+		path: result.path,
+		score: result.score,
+		content: result.content,
+		metadata: result.metadata,
+		type: inferType(result.path, result.metadata),
+	}));
+}
+
+export async function searchByType(
+	fs: SemanticFS,
+	query: string,
+	type: SearchAllResult["type"],
+	topK = 10,
+): Promise<SearchAllResult[]> {
+	const prefixMap: Record<SearchAllResult["type"], string> = {
+		todo: "/todos",
+		note: "/notes",
+		memory: "/memories",
+		file: "/files",
+		chat: "/chats",
+	};
+
+	const results = await fs.search(query, prefixMap[type], topK);
+
+	return results.map((result) => ({
+		path: result.path,
+		score: result.score,
+		content: result.content,
+		metadata: result.metadata,
+		type,
+	}));
+}
