@@ -3,10 +3,10 @@
 import { usePathname } from "next/navigation";
 import { type ReactNode, useEffect, useState } from "react";
 import { getDefaultOrganization } from "@/lib/utils/org";
-import { useAuth } from "../context/AuthContext";
-import { useOrgSwitch } from "../context/OrgSwitchContext";
+import { useAuth } from "../context/auth-context";
+import { useOrgSwitch } from "../context/org-switch-context";
 import { authClient } from "../lib/auth";
-import { Loading } from "./Loading";
+import { Loading } from "./loading";
 
 export function OrgGate({ children }: { children: ReactNode }) {
   const { isAuthenticated, isPending: authPending, user, session } = useAuth();

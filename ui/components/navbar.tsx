@@ -12,8 +12,8 @@ import {
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect } from "react";
-import { useAuth } from "../context/AuthContext";
-import { OrgSwitcher } from "./OrgSwitcher";
+import { useAuth } from "../context/auth-context";
+import { OrgSwitcher } from "./org-switcher";
 
 const navItems = [
   { href: "/", label: "todos", key: "t", icon: CircleCheckIcon },

@@ -1,7 +1,7 @@
 import { getFS } from "@/lib/context";
 import { getChats } from "@/lib/data/chats";
 import type { ChatSummary } from "../../types";
-import ChatClient from "./ChatClient";
+import { ChatClient } from "./chat-client";
 
 async function fetchChats(): Promise<ChatSummary[]> {
   try {

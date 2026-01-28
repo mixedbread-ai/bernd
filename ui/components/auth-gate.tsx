@@ -2,8 +2,8 @@
 
 import { usePathname, useRouter } from "next/navigation";
 import { type ReactNode, useEffect } from "react";
-import { useAuth } from "../context/AuthContext";
-import { Loading } from "./Loading";
+import { useAuth } from "../context/auth-context";
+import { Loading } from "./loading";
 
 export function AuthGate({ children }: { children: ReactNode }) {
   const { isAuthenticated, isPending } = useAuth();

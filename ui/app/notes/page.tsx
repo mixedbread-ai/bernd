@@ -1,4 +1,4 @@
-import NotesClient from "@/components/NotesClient";
+import { NotesClient } from "@/components/notes-client";
 import { getFS } from "@/lib/context";
 import { getNotes } from "@/lib/data/notes";
 

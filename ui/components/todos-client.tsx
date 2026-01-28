@@ -80,7 +80,7 @@ interface TodosClientProps {
   initialTodos: Todo[];
 }
 
-export default function TodosClient({ initialTodos }: TodosClientProps) {
+export function TodosClient({ initialTodos }: TodosClientProps) {
   const [todos, setTodos] =
     useState<(Todo & { content?: string })[]>(initialTodos);
   const [filter, setFilter] = useState<

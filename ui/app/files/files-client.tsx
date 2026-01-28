@@ -47,7 +47,7 @@ interface FilesClientProps {
   initialPath: string;
 }
 
-export default function FilesClient({
+export function FilesClient({
   initialItems,
   initialPath,
 }: FilesClientProps) {

@@ -19,7 +19,7 @@ import {
   handleChatKeyDown,
   handlePasteWithImages,
   useChat,
-} from "../../hooks/useChat";
+} from "../../hooks/use-chat";
 import type { ChatSummary, ToolCall } from "../../types";
 
 const markdownComponents: Components = {
@@ -34,7 +34,7 @@ interface ChatClientProps {
   initialChats: ChatSummary[];
 }
 
-export default function ChatClient({ initialChats }: ChatClientProps) {
+export function ChatClient({ initialChats }: ChatClientProps) {
   const [chatId, setChatId] = useState<string | null>(null);
   const [chats, setChats] = useState<ChatSummary[]>(initialChats);
   const [chatSearch, setChatSearch] = useState("");
@@ -72,6 +72,7 @@ export default function ChatClient({ initialChats }: ChatClientProps) {
   }, []);
 
   // Auto-scroll only when not manually scrolled up
+  // biome-ignore lint/correctness/useExhaustiveDependencies: -
   useEffect(() => {
     if (!userScrolledUp) {
       scrollToBottom();

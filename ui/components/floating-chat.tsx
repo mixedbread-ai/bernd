@@ -8,7 +8,7 @@ import {
   handleChatKeyDown,
   handlePasteWithImages,
   useChat,
-} from "../hooks/useChat";
+} from "../hooks/use-chat";
 import type { Message, ToolCall } from "../types";
 import {
   ImageModal,

@@ -3,7 +3,7 @@
 import * as DropdownMenu from "@radix-ui/react-dropdown-menu";
 import { CheckIcon, ChevronsUpDownIcon } from "lucide-react";
 import { useEffect, useState } from "react";
-import { useOrgSwitch } from "../context/OrgSwitchContext";
+import { useOrgSwitch } from "../context/org-switch-context";
 import { authClient } from "../lib/auth";
 
 interface Organization {

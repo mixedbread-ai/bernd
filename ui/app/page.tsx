@@ -1,4 +1,4 @@
-import TodosClient from "@/components/TodosClient";
+import { TodosClient } from "@/components/todos-client";
 import { getFS } from "@/lib/context";
 import { getTodos } from "@/lib/data/todos";
 

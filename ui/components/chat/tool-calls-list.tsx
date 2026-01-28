@@ -1,7 +1,7 @@
 "use client";
 
 import type { ToolCall } from "../../types";
-import { ToolCallItem } from "./ToolCallItem";
+import { ToolCallItem } from "./tool-call-item";
 
 interface ToolCallsListProps {
   toolCalls: ToolCall[];

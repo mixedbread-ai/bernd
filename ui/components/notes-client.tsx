@@ -16,7 +16,7 @@ interface NotesClientProps {
   initialNotes: Note[];
 }
 
-export default function NotesClient({ initialNotes }: NotesClientProps) {
+export function NotesClient({ initialNotes }: NotesClientProps) {
   const [notes, setNotes] = useState<Note[]>(initialNotes);
   const [selectedNote, setSelectedNote] = useState<Note | null>(null);
   const [content, setContent] = useState("");

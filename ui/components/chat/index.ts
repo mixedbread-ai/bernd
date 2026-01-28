@@ -1,7 +1,7 @@
 // Chat-related shared components
-export { CopyButton } from "./CopyButton";
-export { ImageModal } from "./ImageModal";
-export { ImagePreview } from "./ImagePreview";
-export { MessageImages } from "./MessageImages";
-export { ToolCallItem } from "./ToolCallItem";
-export { ToolCallsList } from "./ToolCallsList";
+export { CopyButton } from "./copy-button";
+export { ImageModal } from "./image-modal";
+export { ImagePreview } from "./image-preview";
+export { MessageImages } from "./message-images";
+export { ToolCallItem } from "./tool-call-item";
+export { ToolCallsList } from "./tool-calls-list";
