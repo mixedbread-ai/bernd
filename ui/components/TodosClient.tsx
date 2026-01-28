@@ -8,25 +8,30 @@ import {
   type TodoUpdate,
   updateTodo,
 } from "../actions/todos";
+import { formatRelativeDate } from "../lib/utils/format";
 import type { Todo } from "../types";
 
-function formatDate(iso: string): string {
-  if (!iso) return "";
-  const d = new Date(iso);
-  const now = new Date();
-  const diff = d.getTime() - now.getTime();
-  const days = Math.ceil(diff / (1000 * 60 * 60 * 24));
-
-  if (days < 0) return `${Math.abs(days)}d ago`;
-  if (days === 0) return "today";
-  if (days === 1) return "tmrw";
-  if (days < 7) return `${days}d`;
-  return d.toLocaleDateString("en-US", { month: "short", day: "numeric" });
-}
-
 type SortOption = "priority" | "due_date" | "created" | "alphabetical";
+type Priority = "low" | "medium" | "high";
 
 const PRIORITY_ORDER: Record<string, number> = { high: 0, medium: 1, low: 2 };
+
+function getPriorityIndicatorClass(
+  status: string,
+  priority: Priority,
+): string {
+  if (status === "completed") {
+    return "bg-transparent";
+  }
+  switch (priority) {
+    case "high":
+      return "bg-accent";
+    case "medium":
+      return "bg-foreground";
+    case "low":
+      return "bg-muted";
+  }
+}
 
 function sortTodosList<T extends Todo>(todos: T[], sortBy: SortOption): T[] {
   return [...todos].sort((a, b) => {
@@ -90,15 +95,11 @@ export default function TodosClient({ initialTodos }: TodosClientProps) {
   const [formData, setFormData] = useState<TodoFormData>(emptyFormData);
   const [isPending, startTransition] = useTransition();
 
-  const toggleExpand = (id: string) => {
-    if (expanded === id) {
-      setExpanded(null);
-      return;
-    }
-    setExpanded(id);
-  };
+  function toggleExpand(id: string) {
+    setExpanded((prev) => (prev === id ? null : id));
+  }
 
-  const toggleComplete = (e: React.MouseEvent, todo: Todo) => {
+  function toggleComplete(e: React.MouseEvent, todo: Todo) {
     e.stopPropagation();
     const newStatus = todo.status === "completed" ? "pending" : "completed";
 
@@ -110,8 +111,8 @@ export default function TodosClient({ initialTodos }: TodosClientProps) {
     startTransition(async () => {
       try {
         await updateTodo(todo.id, { status: newStatus } as TodoUpdate);
-      } catch (e) {
-        console.error("Failed to update todo", e);
+      } catch (err) {
+        console.error("Failed to update todo", err);
         // Revert on error
         setTodos((prev) =>
           prev.map((t) =>
@@ -120,9 +121,9 @@ export default function TodosClient({ initialTodos }: TodosClientProps) {
         );
       }
     });
-  };
+  }
 
-  const handleDelete = (e: React.MouseEvent, id: string) => {
+  function handleDelete(e: React.MouseEvent, id: string) {
     e.stopPropagation();
     if (!confirm("Delete this todo?")) return;
 
@@ -132,19 +133,16 @@ export default function TodosClient({ initialTodos }: TodosClientProps) {
     startTransition(async () => {
       try {
         await deleteTodo(id);
-      } catch (e) {
-        console.error("Failed to delete todo", e);
+      } catch (err) {
+        console.error("Failed to delete todo", err);
         if (todoToDelete) {
           setTodos((prev) => [...prev, todoToDelete]);
         }
       }
     });
-  };
+  }
 
-  const startEdit = (
-    e: React.MouseEvent,
-    todo: Todo & { content?: string },
-  ) => {
+  function startEdit(e: React.MouseEvent, todo: Todo & { content?: string }) {
     e.stopPropagation();
     setEditingId(todo.id);
     setFormData({
@@ -154,9 +152,9 @@ export default function TodosClient({ initialTodos }: TodosClientProps) {
       due_date: todo.due_date || "",
     });
     setShowForm(true);
-  };
+  }
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (!formData.title.trim()) return;
 
@@ -215,17 +213,17 @@ export default function TodosClient({ initialTodos }: TodosClientProps) {
         setShowForm(false);
         setEditingId(null);
         setFormData(emptyFormData);
-      } catch (e) {
-        console.error("Failed to save todo", e);
+      } catch (err) {
+        console.error("Failed to save todo", err);
       }
     });
-  };
+  }
 
-  const cancelForm = () => {
+  function cancelForm() {
     setShowForm(false);
     setEditingId(null);
     setFormData(emptyFormData);
-  };
+  }
 
   const filtered = sortTodosList(
     todos.filter((t) => filter === "all" || t.status === filter),
@@ -408,15 +406,7 @@ export default function TodosClient({ initialTodos }: TodosClientProps) {
 
                   {/* Priority indicator */}
                   <span
-                    className={`mt-1.5 h-2 w-2 shrink-0 rounded-full ${
-                      todo.status === "completed"
-                        ? "bg-transparent"
-                        : todo.priority === "high"
-                          ? "bg-accent"
-                          : todo.priority === "medium"
-                            ? "bg-foreground"
-                            : "bg-muted"
-                    }`}
+                    className={`mt-1.5 h-2 w-2 shrink-0 rounded-full ${getPriorityIndicatorClass(todo.status, todo.priority)}`}
                   />
 
                   <div className="flex-1 min-w-0">
@@ -451,7 +441,7 @@ export default function TodosClient({ initialTodos }: TodosClientProps) {
                   </div>
 
                   <span className="shrink-0 text-sm text-muted">
-                    {formatDate(todo.due_date || "")}
+                    {formatRelativeDate(todo.due_date || "")}
                   </span>
                 </div>
                 {expanded === todo.id && (

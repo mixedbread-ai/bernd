@@ -1,8 +1,21 @@
 "use client";
 
-import { ChevronRightIcon, ImageIcon, Loader2Icon } from "lucide-react";
+import { ImageIcon } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import ReactMarkdown, { type Components } from "react-markdown";
+import {
+  fileToImageAttachment,
+  handleChatKeyDown,
+  handlePasteWithImages,
+  useChat,
+} from "../hooks/useChat";
+import type { Message, ToolCall } from "../types";
+import {
+  ImageModal,
+  ImagePreview,
+  MessageImages,
+  ToolCallsList,
+} from "./chat";
 
 const markdownComponents: Components = {
   a: ({ href, children }) => (
@@ -12,116 +25,21 @@ const markdownComponents: Components = {
   ),
 };
 
-import {
-  fileToImageAttachment,
-  handleChatKeyDown,
-  handlePasteWithImages,
-  useChat,
-} from "../hooks/useChat";
-import type { ImageAttachment, Message, ToolCall } from "../types";
-
-function ImagePreview({
-  images,
-  onRemove,
-}: {
-  images: ImageAttachment[];
-  onRemove: (index: number) => void;
-}) {
-  if (images.length === 0) return null;
-
-  return (
-    <div className="flex gap-2 mb-2 flex-wrap">
-      {images.map((img, i) => (
-        <div key={i} className="relative group">
-          <img
-            src={img.data}
-            alt={`Attachment ${i + 1}`}
-            className="h-12 w-12 object-cover rounded-lg border border-border"
-          />
-          <button
-            type="button"
-            onClick={() => onRemove(i)}
-            className="absolute -top-1 -right-1 w-4 h-4 text-white rounded-full text-xs flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity bg-accent"
-          >
-            ×
-          </button>
-        </div>
-      ))}
-    </div>
-  );
-}
-
-function MessageImages({
-  images,
-  onImageClick,
-}: {
-  images?: ImageAttachment[];
-  onImageClick?: (src: string) => void;
-}) {
-  if (!images || images.length === 0) return null;
-
-  return (
-    <div className="flex gap-2 mb-2 flex-wrap">
-      {images.map((img, i) => (
-        <img
-          key={i}
-          src={img.data}
-          alt={`Image ${i + 1}`}
-          onClick={() => onImageClick?.(img.data)}
-          className="max-h-32 max-w-full rounded-lg cursor-pointer hover:opacity-90 transition-opacity border border-border"
-        />
-      ))}
-    </div>
-  );
-}
-
-function ImageModal({ src, onClose }: { src: string; onClose: () => void }) {
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === "Escape") {
-        e.stopPropagation();
-        onClose();
-      }
-    };
-    window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [onClose]);
-
-  return (
-    <div
-      className="fixed inset-0 bg-black/80 z-[60] flex items-center justify-center p-4"
-      onClick={onClose}
-    >
-      <button
-        type="button"
-        onClick={onClose}
-        className="absolute top-4 right-4 text-white/80 hover:text-white text-2xl"
-      >
-        ×
-      </button>
-      <img
-        src={src}
-        alt="Expanded view"
-        className="max-h-[90vh] max-w-[90vw] object-contain rounded-lg"
-        onClick={(e) => e.stopPropagation()}
-      />
-    </div>
-  );
-}
-
-function MessageBubble({
-  msg,
-  onCopy,
-  onImageClick,
-}: {
+interface MessageBubbleProps {
   msg: Message;
   onCopy: (text: string) => void;
   onImageClick?: (src: string) => void;
-}) {
+}
+
+function MessageBubble({ msg, onCopy, onImageClick }: MessageBubbleProps) {
   if (msg.role === "user") {
     return (
       <div className="px-3 py-2 rounded-2xl max-w-[80%] text-sm bg-user-bubble text-foreground">
-        <MessageImages images={msg.images} onImageClick={onImageClick} />
+        <MessageImages
+          images={msg.images}
+          onImageClick={onImageClick}
+          maxHeight="small"
+        />
         <div className="prose prose-sm max-w-none text-foreground">
           <ReactMarkdown components={markdownComponents}>
             {msg.content}
@@ -152,65 +70,12 @@ function MessageBubble({
   );
 }
 
-function ToolCallItem({ toolCall }: { toolCall: ToolCall }) {
-  const [isOpen, setIsOpen] = useState(false);
-  const hasResult = toolCall.result !== undefined;
-
-  return (
-    <div>
-      <button
-        type="button"
-        onClick={() => setIsOpen(!isOpen)}
-        className="flex items-center gap-1 text-xs font-mono text-muted hover:text-foreground transition-colors"
-      >
-        <span className="text-accent">→</span>
-        <span>{toolCall.name}</span>
-        {!hasResult && <Loader2Icon size={10} className="ml-1 animate-spin" />}
-        <ChevronRightIcon
-          size={10}
-          className={`ml-0.5 transition-transform duration-200 ${isOpen ? "rotate-90" : ""}`}
-        />
-      </button>
-
-      {isOpen && (
-        <div className="mt-1.5 ml-3 pl-2 border-l border-border space-y-2 text-xs">
-          <div>
-            <div className="text-[10px] text-muted mb-0.5">input</div>
-            <pre className="font-mono text-foreground/80 overflow-x-auto">
-              {JSON.stringify(toolCall.args, null, 2)}
-            </pre>
-          </div>
-          {hasResult && (
-            <div>
-              <div className="text-[10px] text-muted mb-0.5">output</div>
-              <pre className="font-mono text-foreground/80 overflow-x-auto max-h-32 overflow-y-auto">
-                {JSON.stringify(toolCall.result, null, 2)}
-              </pre>
-            </div>
-          )}
-        </div>
-      )}
-    </div>
-  );
-}
-
-function ToolCallsList({ toolCalls }: { toolCalls: ToolCall[] }) {
-  return (
-    <div className="mb-2 space-y-1">
-      {toolCalls.map((tc, j) => (
-        <ToolCallItem key={tc.call_id || j} toolCall={tc} />
-      ))}
-    </div>
-  );
-}
-
-function StreamingMessage({
-  toolCalls,
-  content,
-}: {
+interface StreamingMessageProps {
   toolCalls: ToolCall[];
   content: string;
-}) {
+}
+
+function StreamingMessage({ toolCalls, content }: StreamingMessageProps) {
   return (
     <div className="flex justify-start">
       <div className="max-w-[85%]">
@@ -291,15 +156,15 @@ export function FloatingChat() {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, []);
 
-  const handleKeyDownLocal = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+  function handleKeyDownLocal(e: React.KeyboardEvent<HTMLTextAreaElement>) {
     handleChatKeyDown(e, input, setInput, () => sendMessage());
-  };
+  }
 
-  const handlePaste = async (e: React.ClipboardEvent) => {
+  async function handlePaste(e: React.ClipboardEvent) {
     await handlePasteWithImages(e, addImage);
-  };
+  }
 
-  const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  async function handleFileSelect(e: React.ChangeEvent<HTMLInputElement>) {
     const files = e.target.files;
     if (!files) return;
 
@@ -312,7 +177,7 @@ export function FloatingChat() {
     if (fileInputRef.current) {
       fileInputRef.current.value = "";
     }
-  };
+  }
 
   const handleCopy = useCallback(async (text: string) => {
     await navigator.clipboard.writeText(text);
@@ -388,7 +253,7 @@ export function FloatingChat() {
 
         {/* Input */}
         <div className="p-3 border-t border-border">
-          <ImagePreview images={images} onRemove={removeImage} />
+          <ImagePreview images={images} onRemove={removeImage} size="small" />
           <div className="relative">
             <textarea
               ref={inputRef}

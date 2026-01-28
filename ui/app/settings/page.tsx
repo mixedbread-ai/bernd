@@ -7,22 +7,11 @@ import { API_ENDPOINTS } from "../../config";
 import { useAuth } from "../../context/AuthContext";
 import { useTheme } from "../../context/ThemeContext";
 import { api } from "../../lib/api";
+import { formatFullDate } from "../../lib/utils/format";
 
 interface GoogleAuthStatus {
   connected: boolean;
   connected_at?: string;
-}
-
-function formatDate(iso: string): string {
-  if (!iso) return "";
-  const d = new Date(iso);
-  return d.toLocaleDateString("en-US", {
-    month: "short",
-    day: "numeric",
-    year: "numeric",
-    hour: "numeric",
-    minute: "2-digit",
-  });
 }
 
 export default function SettingsPage() {
@@ -127,7 +116,7 @@ export default function SettingsPage() {
                         {googleStatus.connected_at && (
                           <span>
                             {" "}
-                            since {formatDate(googleStatus.connected_at)}
+                            since {formatFullDate(googleStatus.connected_at)}
                           </span>
                         )}
                       </>

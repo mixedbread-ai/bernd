@@ -13,6 +13,7 @@ import {
   uploadBinaryFile,
   uploadFile,
 } from "../../actions/files";
+import { formatFileSize } from "../../lib/utils/format";
 import type { FileItem } from "./page";
 
 interface PreviewData {
@@ -20,13 +21,6 @@ interface PreviewData {
   content?: string;
   blobUrl?: string;
   loading: boolean;
-}
-
-function formatSize(bytes?: number): string {
-  if (!bytes) return "";
-  if (bytes < 1024) return `${bytes} B`;
-  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
-  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
 }
 
 function getFileIcon(mimeType?: string): string {
@@ -440,7 +434,7 @@ export default function FilesClient({
                         {item.name}
                       </div>
                       <div className="text-xs text-muted">
-                        {formatSize(item.size)}
+                        {formatFileSize(item.size)}
                       </div>
                     </div>
                   </button>

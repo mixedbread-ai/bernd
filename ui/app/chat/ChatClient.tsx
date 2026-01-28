@@ -1,14 +1,26 @@
 "use client";
 
-import {
-  ChevronRightIcon,
-  ClockIcon,
-  ImageIcon,
-  Loader2Icon,
-  XIcon,
-} from "lucide-react";
+import { ClockIcon, ImageIcon, XIcon } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import ReactMarkdown, { type Components } from "react-markdown";
+import {
+  deleteChat as deleteChatAction,
+  getChatAction,
+} from "../../actions/chats";
+import {
+  CopyButton,
+  ImageModal,
+  ImagePreview,
+  MessageImages,
+  ToolCallsList,
+} from "../../components/chat";
+import {
+  fileToImageAttachment,
+  handleChatKeyDown,
+  handlePasteWithImages,
+  useChat,
+} from "../../hooks/useChat";
+import type { ChatSummary, ToolCall } from "../../types";
 
 const markdownComponents: Components = {
   a: ({ href, children }) => (
@@ -17,173 +29,6 @@ const markdownComponents: Components = {
     </a>
   ),
 };
-
-import { deleteChat as deleteChatAction } from "../../actions/chats";
-import {
-  fileToImageAttachment,
-  handleChatKeyDown,
-  handlePasteWithImages,
-  useChat,
-} from "../../hooks/useChat";
-import type { ChatSummary, ImageAttachment, ToolCall } from "../../types";
-
-function CopyButton({ text }: { text: string }) {
-  const [copied, setCopied] = useState(false);
-
-  const handleCopy = useCallback(async () => {
-    await navigator.clipboard.writeText(text);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
-  }, [text]);
-
-  return (
-    <button
-      type="button"
-      onClick={handleCopy}
-      className="text-xs transition-colors text-muted"
-    >
-      {copied ? "copied" : "copy"}
-    </button>
-  );
-}
-
-function ToolCallItem({ toolCall }: { toolCall: ToolCall }) {
-  const [isOpen, setIsOpen] = useState(false);
-  const hasResult = toolCall.result !== undefined;
-
-  return (
-    <div>
-      <button
-        type="button"
-        onClick={() => setIsOpen(!isOpen)}
-        className="flex items-center gap-1 text-xs font-mono text-muted hover:text-foreground transition-colors"
-      >
-        <span className="text-accent">→</span>
-        <span>{toolCall.name}</span>
-        {!hasResult && <Loader2Icon size={10} className="ml-1 animate-spin" />}
-        <ChevronRightIcon
-          size={10}
-          className={`ml-0.5 transition-transform duration-200 ${isOpen ? "rotate-90" : ""}`}
-        />
-      </button>
-
-      {isOpen && (
-        <div className="mt-1.5 ml-3 pl-2 border-l border-border space-y-2 text-xs">
-          <div>
-            <div className="text-[10px] text-muted mb-0.5">input</div>
-            <pre className="font-mono text-foreground/80 overflow-x-auto">
-              {JSON.stringify(toolCall.args, null, 2)}
-            </pre>
-          </div>
-          {hasResult && (
-            <div>
-              <div className="text-[10px] text-muted mb-0.5">output</div>
-              <pre className="font-mono text-foreground/80 overflow-x-auto max-h-48 overflow-y-auto">
-                {JSON.stringify(toolCall.result, null, 2)}
-              </pre>
-            </div>
-          )}
-        </div>
-      )}
-    </div>
-  );
-}
-
-function ToolCallsList({ toolCalls }: { toolCalls: ToolCall[] }) {
-  return (
-    <div className="mb-2 space-y-1">
-      {toolCalls.map((tc, j) => (
-        <ToolCallItem key={tc.call_id || j} toolCall={tc} />
-      ))}
-    </div>
-  );
-}
-
-function ImagePreview({
-  images,
-  onRemove,
-}: {
-  images: ImageAttachment[];
-  onRemove: (index: number) => void;
-}) {
-  if (images.length === 0) return null;
-
-  return (
-    <div className="flex gap-2 mb-2 flex-wrap">
-      {images.map((img, i) => (
-        <div key={i} className="relative group">
-          <img
-            src={img.data}
-            alt={`Attachment ${i + 1}`}
-            className="h-16 w-16 object-cover rounded-lg border border-border"
-          />
-          <button
-            type="button"
-            onClick={() => onRemove(i)}
-            className="absolute -top-1 -right-1 w-5 h-5 text-white rounded-full text-xs flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity bg-accent"
-          >
-            ×
-          </button>
-        </div>
-      ))}
-    </div>
-  );
-}
-
-function MessageImages({
-  images,
-  onImageClick,
-}: {
-  images?: ImageAttachment[];
-  onImageClick?: (src: string) => void;
-}) {
-  if (!images || images.length === 0) return null;
-
-  return (
-    <div className="flex gap-2 mb-2 flex-wrap">
-      {images.map((img, i) => (
-        <img
-          key={i}
-          src={img.data}
-          alt={`Image ${i + 1}`}
-          onClick={() => onImageClick?.(img.data)}
-          className="max-h-48 max-w-full rounded-lg cursor-pointer hover:opacity-90 transition-opacity border border-border"
-        />
-      ))}
-    </div>
-  );
-}
-
-function ImageModal({ src, onClose }: { src: string; onClose: () => void }) {
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === "Escape") onClose();
-    };
-    window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [onClose]);
-
-  return (
-    <div
-      className="fixed inset-0 bg-black/80 z-50 flex items-center justify-center p-4"
-      onClick={onClose}
-    >
-      <button
-        type="button"
-        onClick={onClose}
-        className="absolute top-4 right-4 text-white/80 hover:text-white text-2xl"
-      >
-        ×
-      </button>
-      <img
-        src={src}
-        alt="Expanded view"
-        className="max-h-[90vh] max-w-[90vw] object-contain rounded-lg"
-        onClick={(e) => e.stopPropagation()}
-      />
-    </div>
-  );
-}
 
 interface ChatClientProps {
   initialChats: ChatSummary[];
@@ -212,6 +57,7 @@ export default function ChatClient({ initialChats }: ChatClientProps) {
     streamingContent,
     sendMessage,
     clearChat,
+    loadChat: loadChatMessages,
   } = useChat({
     onChatSaved: (newChatId) => {
       setChatId(newChatId);
@@ -239,59 +85,61 @@ export default function ChatClient({ initialChats }: ChatClientProps) {
       const lastMsg = messages[messages.length - 1];
       if (lastMsg.role === "user") {
         // Reset scroll state when user sends a new message
-        // Using setTimeout to avoid synchronous setState in effect
         setTimeout(() => setUserScrolledUp(false), 0);
       }
     }
     prevMessagesLengthRef.current = messages.length;
   }, [messages]);
 
-  const handleScroll = () => {
+  function handleScroll() {
     if (!scrollContainerRef.current) return;
     const { scrollTop, scrollHeight, clientHeight } =
       scrollContainerRef.current;
     const isNearBottom = scrollHeight - scrollTop - clientHeight < 150;
     setUserScrolledUp(!isNearBottom);
-  };
+  }
 
-  const loadChat = async (id: string) => {
-    // In the new architecture, chat loading is handled by useChat
-    // We just need to set the chat ID and clear current state
-    clearChat();
-    setChatId(id);
+  async function loadChat(id: string) {
     setShowHistory(false);
-    // TODO: Implement proper chat loading from the new data layer
-  };
+    try {
+      const chat = await getChatAction(id);
+      if (chat) {
+        setChatId(id);
+        loadChatMessages(id, chat.messages);
+      }
+    } catch (err) {
+      console.error("Failed to load chat", err);
+    }
+  }
 
-  const startNewChat = () => {
+  function startNewChat() {
     clearChat();
     setChatId(null);
     setShowHistory(false);
-  };
+  }
 
-  const deleteChat = async (id: string, e: React.MouseEvent) => {
+  async function deleteChat(id: string, e: React.MouseEvent) {
     e.stopPropagation();
     try {
       await deleteChatAction(id);
       if (chatId === id) {
         startNewChat();
       }
-      // Refresh the chat list
       setChats((prev) => prev.filter((c) => c.id !== id));
     } catch (err) {
       console.error("Failed to delete chat", err);
     }
-  };
+  }
 
-  const handleKeyDownLocal = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+  function handleKeyDownLocal(e: React.KeyboardEvent<HTMLTextAreaElement>) {
     handleChatKeyDown(e, input, setInput, () => sendMessage(chatId));
-  };
+  }
 
-  const handlePaste = async (e: React.ClipboardEvent) => {
+  async function handlePaste(e: React.ClipboardEvent) {
     await handlePasteWithImages(e, addImage);
-  };
+  }
 
-  const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  async function handleFileSelect(e: React.ChangeEvent<HTMLInputElement>) {
     const files = e.target.files;
     if (!files) return;
 
@@ -304,7 +152,7 @@ export default function ChatClient({ initialChats }: ChatClientProps) {
     if (fileInputRef.current) {
       fileInputRef.current.value = "";
     }
-  };
+  }
 
   const filteredChats = chats.filter((chat) =>
     chat.title.toLowerCase().includes(chatSearch.toLowerCase()),
@@ -313,7 +161,7 @@ export default function ChatClient({ initialChats }: ChatClientProps) {
   // Input element
   const inputElement = (
     <div className="w-full">
-      <ImagePreview images={images} onRemove={removeImage} />
+      <ImagePreview images={images} onRemove={removeImage} size="medium" />
       <div className="relative">
         <textarea
           value={input}
@@ -554,35 +402,10 @@ export default function ChatClient({ initialChats }: ChatClientProps) {
           ))}
 
           {loading && (
-            <div className="mb-6 flex justify-start">
-              <div className="max-w-[85%]">
-                {streamingToolCalls.length > 0 && (
-                  <ToolCallsList toolCalls={streamingToolCalls} />
-                )}
-                {streamingContent ? (
-                  <div className="prose prose-sm max-w-none text-foreground">
-                    <ReactMarkdown components={markdownComponents}>
-                      {streamingContent}
-                    </ReactMarkdown>
-                  </div>
-                ) : (
-                  <div className="flex items-center gap-1">
-                    <div
-                      className="w-2 h-2 rounded-full animate-bounce bg-accent"
-                      style={{ animationDelay: "0ms" }}
-                    />
-                    <div
-                      className="w-2 h-2 rounded-full animate-bounce bg-accent"
-                      style={{ animationDelay: "150ms" }}
-                    />
-                    <div
-                      className="w-2 h-2 rounded-full animate-bounce bg-accent"
-                      style={{ animationDelay: "300ms" }}
-                    />
-                  </div>
-                )}
-              </div>
-            </div>
+            <StreamingIndicator
+              toolCalls={streamingToolCalls}
+              content={streamingContent}
+            />
           )}
 
           <div ref={messagesEndRef} />
@@ -606,6 +429,43 @@ export default function ChatClient({ initialChats }: ChatClientProps) {
           onClose={() => setExpandedImage(null)}
         />
       )}
+    </div>
+  );
+}
+
+interface StreamingIndicatorProps {
+  toolCalls: ToolCall[];
+  content: string;
+}
+
+function StreamingIndicator({ toolCalls, content }: StreamingIndicatorProps) {
+  return (
+    <div className="mb-6 flex justify-start">
+      <div className="max-w-[85%]">
+        {toolCalls.length > 0 && <ToolCallsList toolCalls={toolCalls} />}
+        {content ? (
+          <div className="prose prose-sm max-w-none text-foreground">
+            <ReactMarkdown components={markdownComponents}>
+              {content}
+            </ReactMarkdown>
+          </div>
+        ) : (
+          <div className="flex items-center gap-1">
+            <div
+              className="w-2 h-2 rounded-full animate-bounce bg-accent"
+              style={{ animationDelay: "0ms" }}
+            />
+            <div
+              className="w-2 h-2 rounded-full animate-bounce bg-accent"
+              style={{ animationDelay: "150ms" }}
+            />
+            <div
+              className="w-2 h-2 rounded-full animate-bounce bg-accent"
+              style={{ animationDelay: "300ms" }}
+            />
+          </div>
+        )}
+      </div>
     </div>
   );
 }

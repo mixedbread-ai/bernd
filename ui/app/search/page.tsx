@@ -4,17 +4,14 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { searchAction } from "@/actions/search";
 import type { SearchAllResult } from "@/lib/data/search";
 
+const TYPE_COLORS: Record<string, string> = {
+  todo: "bg-accent",
+  memory: "bg-[#3a7bc4]",
+  note: "bg-[#3ac45d]",
+};
+
 function getTypeColor(type: string): string {
-  switch (type) {
-    case "todo":
-      return "bg-accent";
-    case "memory":
-      return "bg-[#3a7bc4]";
-    case "note":
-      return "bg-[#3ac45d]";
-    default:
-      return "bg-muted";
-  }
+  return TYPE_COLORS[type] ?? "bg-muted";
 }
 
 export default function SearchPage() {

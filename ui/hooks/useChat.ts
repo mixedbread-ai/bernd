@@ -31,6 +31,7 @@ interface UseChatReturn {
   streamingContent: string;
   sendMessage: (chatId?: string | null) => Promise<void>;
   clearChat: () => void;
+  loadChat: (chatId: string, messages: Message[]) => void;
 }
 
 // Helper to extract text and tool calls from message parts
@@ -71,6 +72,37 @@ function convertToMessage(message: unknown): Message {
     role: msg.role as "user" | "assistant",
     content: text,
     toolCalls: toolCalls.length > 0 ? toolCalls : undefined,
+  };
+}
+
+// Convert our Message format to AI SDK format
+function convertToAIMessage(
+  message: Message,
+  index: number,
+): { id: string; role: string; parts: unknown[] } {
+  const parts: unknown[] = [];
+
+  // Add text part
+  if (message.content) {
+    parts.push({ type: "text", text: message.content });
+  }
+
+  // Add tool call parts for assistant messages
+  if (message.role === "assistant" && message.toolCalls) {
+    for (const tc of message.toolCalls) {
+      parts.push({
+        type: `tool-${tc.name}`,
+        toolCallId: tc.call_id ?? `tool-${index}-${tc.name}`,
+        input: tc.args,
+        output: tc.result,
+      });
+    }
+  }
+
+  return {
+    id: `msg-${index}`,
+    role: message.role,
+    parts,
   };
 }
 
@@ -150,12 +182,25 @@ export function useChat(options: UseChatOptions = {}): UseChatReturn {
     setLocalInput("");
   }, [aiSetMessages]);
 
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const setMessages = useCallback((_: Message[]) => {
-    // For now, we don't support setting messages directly
-    // This would require converting back to AI SDK format which is complex
-    console.warn("setMessages is not fully supported in the new useChat hook");
-  }, []);
+  const setMessages = useCallback(
+    (msgs: Message[]) => {
+      const aiMsgs = msgs.map(convertToAIMessage);
+      aiSetMessages(aiMsgs as Parameters<typeof aiSetMessages>[0]);
+    },
+    [aiSetMessages],
+  );
+
+  const loadChat = useCallback(
+    (chatId: string, msgs: Message[]) => {
+      setCurrentChatId(chatId);
+      chatIdRef.current = chatId;
+      const aiMsgs = msgs.map(convertToAIMessage);
+      aiSetMessages(aiMsgs as Parameters<typeof aiSetMessages>[0]);
+      setImages([]);
+      setLocalInput("");
+    },
+    [aiSetMessages],
+  );
 
   const sendMessage = useCallback(
     async (chatId?: string | null) => {
@@ -197,6 +242,7 @@ export function useChat(options: UseChatOptions = {}): UseChatReturn {
     streamingContent,
     sendMessage,
     clearChat,
+    loadChat,
   };
 }
 

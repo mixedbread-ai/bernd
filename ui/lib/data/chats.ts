@@ -50,11 +50,16 @@ export async function getChat(
   }
 
   try {
-    const data = JSON.parse(result.content);
+    // Messages stored as array, title in metadata (Python backend format)
+    const messages = JSON.parse(result.content);
+    const title = isChatMetadata(result.metadata)
+      ? result.metadata.title
+      : "Untitled Chat";
+
     return {
       id,
-      title: data.title ?? "Untitled Chat",
-      messages: data.messages ?? [],
+      title,
+      messages,
       created_at: result.metadata.created_at ?? undefined,
       updated_at: result.metadata.updated_at ?? undefined,
     };
@@ -69,7 +74,8 @@ export async function saveChat(
   title: string,
   messages: Message[],
 ): Promise<{ status: string; path: string }> {
-  const content = JSON.stringify({ title, messages }, null, 2);
+  // Save messages as array, title in metadata (Python backend format)
+  const content = JSON.stringify(messages);
   const metadata: Omit<ChatMetadata, "path" | "created_at" | "updated_at"> = {
     type: "chat",
     title,
