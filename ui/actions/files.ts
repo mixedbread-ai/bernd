@@ -3,6 +3,11 @@
 import { revalidatePath } from "next/cache";
 import { PATHS } from "@/lib/constants";
 import { getFS } from "@/lib/context";
+import {
+  type FileUploadMetadata,
+  type FolderMarkerMetadata,
+  isFileUploadMetadata,
+} from "@/types";
 import type { FileItem } from "../app/files/page";
 
 export async function listFilesAction(path: string): Promise<FileItem[]> {
@@ -31,13 +36,14 @@ export async function listFilesAction(path: string): Promise<FileItem[]> {
         type: "folder",
       });
     } else {
+      const meta = file.metadata;
       items.push({
         name,
         path: file.path,
         type: "file",
-        size: file.metadata.size as number | undefined,
-        mime_type: file.metadata.mime_type as string | undefined,
-        created_at: file.metadata.created_at as string | undefined,
+        size: isFileUploadMetadata(meta) ? meta.size : undefined,
+        mime_type: isFileUploadMetadata(meta) ? meta.mime_type : undefined,
+        created_at: meta.created_at ?? undefined,
       });
     }
   }
@@ -62,9 +68,10 @@ export async function downloadFileAction(
     return { error: result.error };
   }
 
+  const meta = result.metadata;
   return {
     content: result.content,
-    mimeType: (result.metadata.mime_type as string) || "text/plain",
+    mimeType: isFileUploadMetadata(meta) ? meta.mime_type : "text/plain",
   };
 }
 
@@ -81,10 +88,12 @@ export async function downloadBinaryFileAction(
   // Convert ArrayBuffer to array of numbers for serialization
   const data = Array.from(new Uint8Array(result.data));
 
+  const meta = result.metadata;
   return {
     data,
-    mimeType:
-      (result.metadata.mime_type as string) || "application/octet-stream",
+    mimeType: isFileUploadMetadata(meta)
+      ? meta.mime_type
+      : "application/octet-stream",
   };
 }
 
@@ -101,14 +110,17 @@ export async function uploadFile(
     : `${PATHS.FILES}${path}`;
   const filename = fullPath.split("/").pop() ?? "unnamed";
 
-  const result = await fs.write(fullPath, content, {
+  const fileMetadata: Omit<
+    FileUploadMetadata,
+    "path" | "created_at" | "updated_at"
+  > = {
     type: "file",
     mime_type: (metadata?.mime_type as string) ?? "text/plain",
     size: (metadata?.size as number) ?? content.length,
     is_base64: false,
     original_name: (metadata?.original_name as string) ?? filename,
-    created_at: new Date().toISOString(),
-  });
+  };
+  const result = await fs.write(fullPath, content, fileMetadata);
 
   revalidatePath("/files");
   return result;
@@ -128,14 +140,17 @@ export async function uploadBinaryFile(
     : `${PATHS.FILES}${path}`;
   const filename = fullPath.split("/").pop() ?? "unnamed";
 
-  const result = await fs.writeBinary(fullPath, data, mimeType, {
+  const fileMetadata: Omit<
+    FileUploadMetadata,
+    "path" | "created_at" | "updated_at"
+  > = {
     type: "file",
     mime_type: mimeType,
     size: (metadata?.size as number) ?? data.byteLength,
     is_base64: true,
     original_name: (metadata?.original_name as string) ?? filename,
-    created_at: new Date().toISOString(),
-  });
+  };
+  const result = await fs.writeBinary(fullPath, data, mimeType, fileMetadata);
 
   revalidatePath("/files");
   return result;
@@ -159,10 +174,13 @@ export async function createFolder(
     created_at: createdAt,
   });
 
-  await fs.write(`${fullPath}/folder_meta.json`, content, {
+  const folderMetadata: Omit<
+    FolderMarkerMetadata,
+    "path" | "created_at" | "updated_at"
+  > = {
     type: "folder_marker",
-    created_at: createdAt,
-  });
+  };
+  await fs.write(`${fullPath}/folder_meta.json`, content, folderMetadata);
 
   revalidatePath("/files");
   return { status: "created", path: fullPath };

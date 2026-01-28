@@ -1,11 +1,8 @@
 // Pure functions for fetching files data
 
+import type { FileMetadata } from "@/types";
 import { PATHS } from "../constants";
-import type {
-  FileListItem,
-  FileMetadata,
-  SemanticFS,
-} from "../services/semantic-fs";
+import type { FileListItem, SemanticFS } from "../services/semantic-fs";
 
 export interface FileEntry {
   path: string;
@@ -79,7 +76,9 @@ export async function downloadFile(
 export async function downloadBinaryFile(
   fs: SemanticFS,
   path: string,
-): Promise<{ data: ArrayBuffer; metadata: FileMetadata } | { error: string }> {
+): Promise<
+  { data: ArrayBuffer; metadata: FileMetadata } | { error: string }
+> {
   const result = await fs.readBinary(path);
   if ("error" in result) {
     return result;

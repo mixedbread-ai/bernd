@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { PATHS } from "@/lib/constants";
 import { getFS } from "@/lib/context";
-import type { Note } from "@/types";
+import { isNoteMetadata, type Note, type NoteMetadata } from "@/types";
 
 export interface NoteCreate {
   title: string;
@@ -29,11 +29,15 @@ export async function createNote(
   const noteId = generateNoteId();
   const content = data.content || " ";
 
-  const result = await fs.write(`${PATHS.NOTES}/${noteId}.md`, content, {
+  const metadata: Omit<NoteMetadata, "path" | "created_at" | "updated_at"> = {
     type: "note",
     title: data.title,
-    updated_at: new Date().toISOString(),
-  });
+  };
+  const result = await fs.write(
+    `${PATHS.NOTES}/${noteId}.md`,
+    content,
+    metadata,
+  );
 
   revalidatePath("/notes");
   return { ...result, id: noteId };
@@ -47,11 +51,11 @@ export async function updateNote(
 
   const content = data.content || " ";
 
-  const result = await fs.write(`${PATHS.NOTES}/${id}.md`, content, {
+  const metadata: Omit<NoteMetadata, "path" | "created_at" | "updated_at"> = {
     type: "note",
-    title: data.title,
-    updated_at: new Date().toISOString(),
-  });
+    title: data.title ?? "",
+  };
+  const result = await fs.write(`${PATHS.NOTES}/${id}.md`, content, metadata);
 
   revalidatePath("/notes");
   return result;
@@ -80,10 +84,14 @@ export async function getNoteAction(id: string): Promise<Note | null> {
     return null;
   }
 
+  const metadata = result.metadata;
+  if (!isNoteMetadata(metadata)) {
+    throw new Error(`Expected note metadata, got ${metadata.type}`);
+  }
   return {
     id,
-    title: result.metadata.title as string,
+    title: metadata.title,
     content: result.content,
-    updated_at: (result.metadata.updated_at as string) ?? undefined,
+    updated_at: metadata.updated_at ?? undefined,
   };
 }

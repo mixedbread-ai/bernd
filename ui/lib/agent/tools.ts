@@ -4,6 +4,7 @@ import { Readability } from "@mozilla/readability";
 import { tool } from "ai";
 import { JSDOM } from "jsdom";
 import { z } from "zod";
+import { isTodoMetadata } from "@/types";
 import { PATHS } from "../constants";
 import type { GoogleCalendar } from "../services/google-calendar";
 import type { SemanticFS } from "../services/semantic-fs";
@@ -104,10 +105,11 @@ export function createTools(
       execute: async ({ title }) => {
         // Get existing todo to check for calendar event
         const existing = await fs.read(`${PATHS.TODOS}/${title}.md`);
+        const existingMeta = "error" in existing ? null : existing.metadata;
         const eventId =
-          "error" in existing
-            ? undefined
-            : (existing.metadata.calendar_event_id as string | undefined);
+          existingMeta && isTodoMetadata(existingMeta)
+            ? existingMeta.calendar_event_id
+            : undefined;
 
         // Delete calendar event if exists
         const gcal = getGcal();
@@ -145,8 +147,11 @@ export function createTools(
 
         // Get existing todo metadata
         const existing = await fs.read(`${PATHS.TODOS}/${title}.md`);
-        const existingMeta = "error" in existing ? {} : existing.metadata;
-        const eventId = existingMeta.calendar_event_id as string | undefined;
+        const existingMeta = "error" in existing ? null : existing.metadata;
+        const eventId =
+          existingMeta && isTodoMetadata(existingMeta)
+            ? existingMeta.calendar_event_id
+            : undefined;
 
         const metadata: Record<string, unknown> = {
           type: "todo",

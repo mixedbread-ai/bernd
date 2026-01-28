@@ -1,27 +1,26 @@
 // Pure functions for semantic search across all content
+import type { FileMetadata } from "@/types";
 import type { SemanticFS } from "../services/semantic-fs";
 
 export interface SearchAllResult {
   path: string;
   score: number;
   content: string;
-  metadata: Record<string, unknown>;
+  metadata: FileMetadata;
   type: "todo" | "note" | "memory" | "file" | "chat";
 }
 
-function inferType(
-  path: string,
-  metadata: Record<string, unknown>,
-): SearchAllResult["type"] {
-  if (metadata.type) {
-    return metadata.type as SearchAllResult["type"];
+function inferType(metadata: FileMetadata): SearchAllResult["type"] {
+  switch (metadata.type) {
+    case "todo":
+    case "note":
+    case "memory":
+    case "chat":
+    case "file":
+      return metadata.type;
+    default:
+      return "file";
   }
-
-  if (path.startsWith("/todos/")) return "todo";
-  if (path.startsWith("/notes/")) return "note";
-  if (path.startsWith("/memories/")) return "memory";
-  if (path.startsWith("/chats/")) return "chat";
-  return "file";
 }
 
 export async function searchAll(
@@ -37,7 +36,7 @@ export async function searchAll(
     score: result.score,
     content: result.content,
     metadata: result.metadata,
-    type: inferType(result.path, result.metadata),
+    type: inferType(result.metadata),
   }));
 }
 

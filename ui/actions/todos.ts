@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { PATHS, type Priority, type TodoStatus } from "@/lib/constants";
 import { getFS, getGoogleCalendar } from "@/lib/context";
+import { isTodoMetadata, type TodoMetadata } from "@/types";
 
 export interface TodoCreate {
   title: string;
@@ -47,7 +48,7 @@ export async function createTodo(
   const gcal = await getGoogleCalendar();
 
   const content = `# ${data.title}\n\n${data.description ?? ""}`;
-  const metadata: Record<string, unknown> = {
+  const metadata: Omit<TodoMetadata, "path" | "created_at" | "updated_at"> = {
     type: "todo",
     title: data.title,
     due_date: data.due_date ?? "",
@@ -67,7 +68,7 @@ export async function createTodo(
     });
     const calObj = calResult as Record<string, unknown>;
     if (calObj?.event_id) {
-      metadata.calendar_event_id = calObj.event_id;
+      metadata.calendar_event_id = calObj.event_id as string;
     }
   }
 
@@ -92,8 +93,11 @@ export async function updateTodo(
 
   // Get existing todo metadata and extract current title from content
   const existing = await fs.read(`${PATHS.TODOS}/${id}.md`);
-  const existingMeta = "error" in existing ? {} : existing.metadata;
-  const eventId = existingMeta.calendar_event_id as string | undefined;
+  const existingMeta = "error" in existing ? null : existing.metadata;
+  const eventId =
+    existingMeta && isTodoMetadata(existingMeta)
+      ? existingMeta.calendar_event_id
+      : undefined;
 
   // Extract current title from file content (# Title header)
   let currentTitle = id;
@@ -107,7 +111,9 @@ export async function updateTodo(
   const newTitle = data.new_title ?? currentTitle;
   const content = `# ${newTitle}\n\n${data.description ?? ""}`;
 
-  const metadata: Record<string, unknown> = {
+  const metadata: Omit<TodoMetadata, "path" | "created_at" | "updated_at"> & {
+    calendar_event_id?: string;
+  } = {
     type: "todo",
     title: newTitle,
     due_date: data.due_date ?? "",
@@ -141,7 +147,7 @@ export async function updateTodo(
       });
       const calObj = calResult as Record<string, unknown>;
       if (calObj?.event_id) {
-        metadata.calendar_event_id = calObj.event_id;
+        metadata.calendar_event_id = calObj.event_id as string;
       }
     }
   }
@@ -175,10 +181,11 @@ export async function deleteTodo(
 
   // Get existing todo to check for calendar event
   const existing = await fs.read(`${PATHS.TODOS}/${id}.md`);
+  const existingMeta = "error" in existing ? null : existing.metadata;
   const eventId =
-    "error" in existing
-      ? undefined
-      : (existing.metadata.calendar_event_id as string | undefined);
+    existingMeta && isTodoMetadata(existingMeta)
+      ? existingMeta.calendar_event_id
+      : undefined;
 
   // Delete calendar event if exists
   if (gcal && eventId) {

@@ -1,6 +1,5 @@
 export type TodoStatus = "pending" | "in_progress" | "completed";
 export type Priority = "low" | "medium" | "high";
-export type FileType = "todo" | "memory" | "chat";
 
 // Path prefixes for semantic filesystem
 export const PATHS = {

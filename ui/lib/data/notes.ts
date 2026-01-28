@@ -1,6 +1,7 @@
 // Pure functions for fetching notes data
 
-import type { Note } from "@/types";
+import type { Note, NoteMetadata } from "@/types";
+import { isNoteMetadata } from "@/types";
 import { PATHS } from "../constants";
 import type { FileListItem, SemanticFS } from "../services/semantic-fs";
 
@@ -9,14 +10,25 @@ function pathToId(path: string): string {
   return filename.replace(".md", "");
 }
 
+function noteMetadataToNote(
+  id: string,
+  metadata: NoteMetadata,
+  content?: string,
+): Note {
+  return {
+    id,
+    title: metadata.title,
+    content,
+    updated_at: metadata.updated_at,
+  };
+}
+
 function fileToNote(file: FileListItem): Note {
   const metadata = file.metadata;
-  return {
-    id: pathToId(file.path),
-    title: metadata.title as string,
-    content: undefined, // Content not loaded in list view
-    updated_at: (metadata.updated_at as string) ?? undefined,
-  };
+  if (isNoteMetadata(metadata)) {
+    return noteMetadataToNote(pathToId(file.path), metadata);
+  }
+  throw new Error(`Expected note metadata, got ${metadata.type}`);
 }
 
 export async function getNotes(fs: SemanticFS, limit = 50): Promise<Note[]> {
@@ -41,12 +53,12 @@ export async function getNote(
     return null;
   }
 
-  return {
-    id,
-    title: result.metadata.title as string,
-    content: result.content,
-    updated_at: (result.metadata.updated_at as string) ?? undefined,
-  };
+  const metadata = result.metadata;
+  if (!isNoteMetadata(metadata)) {
+    throw new Error(`Expected note metadata, got ${metadata.type}`);
+  }
+
+  return noteMetadataToNote(id, metadata, result.content);
 }
 
 export async function searchNotes(
@@ -55,10 +67,15 @@ export async function searchNotes(
   topK = 10,
 ): Promise<Note[]> {
   const results = await fs.search(query, PATHS.NOTES, topK);
-  return results.map((result) => ({
-    id: pathToId(result.path),
-    title: result.metadata.title as string,
-    content: result.content,
-    updated_at: (result.metadata.updated_at as string) ?? undefined,
-  }));
+  return results.map((result) => {
+    const metadata = result.metadata;
+    if (isNoteMetadata(metadata)) {
+      return noteMetadataToNote(
+        pathToId(result.path),
+        metadata,
+        result.content,
+      );
+    }
+    throw new Error(`Expected note metadata, got ${metadata.type}`);
+  });
 }

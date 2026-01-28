@@ -1,6 +1,6 @@
 // Pure functions for fetching chats data
 
-import type { ChatSummary, Message } from "@/types";
+import { type ChatMetadata, type ChatSummary, isChatMetadata, type Message } from "@/types";
 import { PATHS } from "../constants";
 import type { FileListItem, SemanticFS } from "../services/semantic-fs";
 
@@ -11,11 +11,14 @@ function pathToId(path: string): string {
 
 function fileToChatSummary(file: FileListItem): ChatSummary {
   const metadata = file.metadata;
-  return {
-    id: pathToId(file.path),
-    title: (metadata.title as string) ?? "Untitled Chat",
-    message_count: (metadata.message_count as number) ?? 0,
-  };
+  if (isChatMetadata(metadata)) {
+    return {
+      id: pathToId(file.path),
+      title: metadata.title,
+      message_count: metadata.message_count,
+    };
+  }
+  throw new Error(`Expected chat metadata, got ${metadata.type}`);
 }
 
 export async function getChats(
@@ -52,8 +55,8 @@ export async function getChat(
       id,
       title: data.title ?? "Untitled Chat",
       messages: data.messages ?? [],
-      created_at: (result.metadata.created_at as string) ?? undefined,
-      updated_at: (result.metadata.updated_at as string) ?? undefined,
+      created_at: result.metadata.created_at ?? undefined,
+      updated_at: result.metadata.updated_at ?? undefined,
     };
   } catch {
     return null;
@@ -67,9 +70,10 @@ export async function saveChat(
   messages: Message[],
 ): Promise<{ status: string; path: string }> {
   const content = JSON.stringify({ title, messages }, null, 2);
-  return fs.write(`${PATHS.CHATS}/${id}.json`, content, {
+  const metadata: Omit<ChatMetadata, "path" | "created_at" | "updated_at"> = {
     type: "chat",
     title,
     message_count: messages.length,
-  });
+  };
+  return fs.write(`${PATHS.CHATS}/${id}.json`, content, metadata);
 }

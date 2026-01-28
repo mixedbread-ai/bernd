@@ -1,3 +1,4 @@
+import { isFileUploadMetadata } from "@/types";
 import { PATHS } from "../../lib/constants";
 import { getFS } from "../../lib/context";
 import FilesClient from "./FilesClient";
@@ -35,13 +36,14 @@ async function getFiles(path: string): Promise<FileItem[]> {
         type: "folder",
       });
     } else {
+      const meta = file.metadata;
       items.push({
         name,
         path: file.path,
         type: "file",
-        size: file.metadata.size as number | undefined,
-        mime_type: file.metadata.mime_type as string | undefined,
-        created_at: file.metadata.created_at as string | undefined,
+        size: isFileUploadMetadata(meta) ? meta.size : undefined,
+        mime_type: isFileUploadMetadata(meta) ? meta.mime_type : undefined,
+        created_at: meta.created_at ?? undefined,
       });
     }
   }

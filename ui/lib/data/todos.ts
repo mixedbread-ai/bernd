@@ -1,6 +1,7 @@
 // Pure functions for fetching todos data
 
-import type { Todo } from "@/types";
+import type { Todo, TodoMetadata } from "@/types";
+import { isTodoMetadata } from "@/types";
 import { PATHS, type Priority, type TodoStatus } from "../constants";
 import type {
   FileListItem,
@@ -48,19 +49,26 @@ function sortTodos(todos: Todo[]): Todo[] {
   });
 }
 
+function todoMetadataToTodo(id: string, metadata: TodoMetadata): Todo {
+  return {
+    id,
+    title: metadata.title ?? id,
+    description: undefined,
+    due_date: metadata.due_date ?? undefined,
+    priority: metadata.priority ?? "medium",
+    status: metadata.status ?? "pending",
+    tags: metadata.tags ?? undefined,
+    calendar_event_id: metadata.calendar_event_id ?? undefined,
+    created_at: metadata.created_at ?? undefined,
+  };
+}
+
 function fileToTodo(file: FileListItem): Todo {
   const metadata = file.metadata;
-  return {
-    id: pathToId(file.path),
-    title: (metadata.title as string) ?? pathToId(file.path),
-    description: (metadata.description as string) ?? undefined,
-    due_date: (metadata.due_date as string) ?? undefined,
-    priority: (metadata.priority as Priority) ?? "medium",
-    status: (metadata.status as TodoStatus) ?? "pending",
-    tags: (metadata.tags as string[]) ?? undefined,
-    calendar_event_id: (metadata.calendar_event_id as string) ?? undefined,
-    created_at: (metadata.created_at as string) ?? undefined,
-  };
+  if (isTodoMetadata(metadata)) {
+    return todoMetadataToTodo(pathToId(file.path), metadata);
+  }
+  throw new Error(`Expected todo metadata, got ${metadata.type}`);
 }
 
 function extractTitleFromContent(content: string): string | null {
@@ -70,19 +78,16 @@ function extractTitleFromContent(content: string): string | null {
 
 function searchResultToTodo(result: SearchResult): Todo {
   const metadata = result.metadata;
-  const fallbackTitle =
-    extractTitleFromContent(result.content) ?? pathToId(result.path);
-  return {
-    id: pathToId(result.path),
-    title: (metadata.title as string) ?? fallbackTitle,
-    description: (metadata.description as string) ?? undefined,
-    due_date: (metadata.due_date as string) ?? undefined,
-    priority: (metadata.priority as Priority) ?? "medium",
-    status: (metadata.status as TodoStatus) ?? "pending",
-    tags: (metadata.tags as string[]) ?? undefined,
-    calendar_event_id: (metadata.calendar_event_id as string) ?? undefined,
-    created_at: (metadata.created_at as string) ?? undefined,
-  };
+  const id = pathToId(result.path);
+  const fallbackTitle = extractTitleFromContent(result.content) ?? id;
+
+  if (isTodoMetadata(metadata)) {
+    return {
+      ...todoMetadataToTodo(id, metadata),
+      title: metadata.title ?? fallbackTitle,
+    };
+  }
+  throw new Error(`Expected todo metadata, got ${metadata.type}`);
 }
 
 export async function getTodos(fs: SemanticFS, limit = 50): Promise<Todo[]> {
@@ -101,17 +106,17 @@ export async function getTodo(
   }
 
   const metadata = result.metadata;
+  if (!isTodoMetadata(metadata)) {
+    throw new Error(`Expected todo metadata, got ${metadata.type}`);
+  }
+
   const fallbackTitle = extractTitleFromContent(result.content) ?? id;
+  const description = result.content.replace(/^#.*\n\n?/, ""); // Remove markdown title
+
   return {
-    id,
-    title: (metadata.title as string) ?? fallbackTitle,
-    description: result.content.replace(/^#.*\n\n?/, ""), // Remove markdown title
-    due_date: (metadata.due_date as string) ?? undefined,
-    priority: (metadata.priority as Priority) ?? "medium",
-    status: (metadata.status as TodoStatus) ?? "pending",
-    tags: (metadata.tags as string[]) ?? undefined,
-    calendar_event_id: (metadata.calendar_event_id as string) ?? undefined,
-    created_at: (metadata.created_at as string) ?? undefined,
+    ...todoMetadataToTodo(id, metadata),
+    title: metadata.title ?? fallbackTitle,
+    description,
   };
 }
 

@@ -63,12 +63,12 @@ function extractFromParts(parts: unknown[]): {
 }
 
 // Convert AI SDK message to our Message format
-function convertToMessage(msg: unknown): Message {
-  const m = msg as { id?: string; role: string; parts?: unknown[] };
-  const { text, toolCalls } = extractFromParts(m.parts ?? []);
+function convertToMessage(message: unknown): Message {
+  const msg = message as { id?: string; role: string; parts?: unknown[] };
+  const { text, toolCalls } = extractFromParts(msg.parts ?? []);
 
   return {
-    role: m.role as "user" | "assistant",
+    role: msg.role as "user" | "assistant",
     content: text,
     toolCalls: toolCalls.length > 0 ? toolCalls : undefined,
   };
@@ -162,8 +162,7 @@ export function useChat(options: UseChatOptions = {}): UseChatReturn {
       if ((!localInput.trim() && images.length === 0) || loading) return;
 
       // Generate a new chat ID if we don't have one
-      const effectiveChatId =
-        chatId ?? chatIdRef.current ?? generateChatId();
+      const effectiveChatId = chatId ?? chatIdRef.current ?? generateChatId();
 
       // Update ref immediately (sync) so transport has correct value
       chatIdRef.current = effectiveChatId;

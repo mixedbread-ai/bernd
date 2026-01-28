@@ -1,13 +1,7 @@
 // Semantic filesystem backed by Mixedbread
 import Mixedbread from "@mixedbread/sdk";
 
-export interface FileMetadata {
-  path?: string;
-  type?: string;
-  created_at?: string;
-  updated_at?: string;
-  [key: string]: unknown;
-}
+import type { FileMetadata } from "@/types";
 
 export interface FileResult {
   path: string;
@@ -82,7 +76,7 @@ export class SemanticFS {
   async write(
     path: string,
     content: string,
-    metadata?: Record<string, unknown>,
+    metadata?: Partial<FileMetadata>,
   ): Promise<{ status: string; path: string }> {
     await this.ensureStore();
     const fileId = this.pathToId(path);
@@ -267,7 +261,7 @@ export class SemanticFS {
     path: string,
     data: ArrayBuffer,
     mimeType: string,
-    metadata?: Record<string, unknown>,
+    metadata?: Partial<FileMetadata>,
   ): Promise<{ status: string; path: string }> {
     await this.ensureStore();
     const fileId = this.pathToId(path);
