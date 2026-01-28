@@ -13,7 +13,7 @@ function fileToNote(file: FileListItem): Note {
   const metadata = file.metadata;
   return {
     id: pathToId(file.path),
-    title: file.path.split("/").pop()?.replace(".md", "") ?? "",
+    title: metadata.title as string,
     content: undefined, // Content not loaded in list view
     updated_at: (metadata.updated_at as string) ?? undefined,
   };
@@ -43,7 +43,7 @@ export async function getNote(
 
   return {
     id,
-    title: id,
+    title: result.metadata.title as string,
     content: result.content,
     updated_at: (result.metadata.updated_at as string) ?? undefined,
   };
@@ -57,7 +57,7 @@ export async function searchNotes(
   const results = await fs.search(query, PATHS.NOTES, topK);
   return results.map((result) => ({
     id: pathToId(result.path),
-    title: result.path.split("/").pop()?.replace(".md", "") ?? "",
+    title: result.metadata.title as string,
     content: result.content,
     updated_at: (result.metadata.updated_at as string) ?? undefined,
   }));

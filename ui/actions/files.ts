@@ -19,6 +19,9 @@ export async function listFilesAction(path: string): Promise<FileItem[]> {
     const name = parts[0];
     const isFolder = parts.length > 1;
 
+    // Skip folder marker files
+    if (name === "folder_meta.json") continue;
+
     if (isFolder) {
       if (seen.has(name)) continue;
       seen.add(name);
@@ -96,10 +99,15 @@ export async function uploadFile(
   const fullPath = path.startsWith(PATHS.FILES)
     ? path
     : `${PATHS.FILES}${path}`;
+  const filename = fullPath.split("/").pop() ?? "unnamed";
 
   const result = await fs.write(fullPath, content, {
     type: "file",
-    ...metadata,
+    mime_type: (metadata?.mime_type as string) ?? "text/plain",
+    size: (metadata?.size as number) ?? content.length,
+    is_base64: false,
+    original_name: (metadata?.original_name as string) ?? filename,
+    created_at: new Date().toISOString(),
   });
 
   revalidatePath("/files");
@@ -118,11 +126,15 @@ export async function uploadBinaryFile(
   const fullPath = path.startsWith(PATHS.FILES)
     ? path
     : `${PATHS.FILES}${path}`;
+  const filename = fullPath.split("/").pop() ?? "unnamed";
 
   const result = await fs.writeBinary(fullPath, data, mimeType, {
     type: "file",
     mime_type: mimeType,
-    ...metadata,
+    size: (metadata?.size as number) ?? data.byteLength,
+    is_base64: true,
+    original_name: (metadata?.original_name as string) ?? filename,
+    created_at: new Date().toISOString(),
   });
 
   revalidatePath("/files");
@@ -138,14 +150,22 @@ export async function createFolder(
   const fullPath = path.startsWith(PATHS.FILES)
     ? path
     : `${PATHS.FILES}${path}`;
+  const folderName = fullPath.split("/").pop() ?? "folder";
+  const createdAt = new Date().toISOString();
 
-  // Create a placeholder file to represent the folder
-  const result = await fs.write(`${fullPath}/.folder`, " ", {
+  const content = JSON.stringify({
     type: "folder",
+    name: folderName,
+    created_at: createdAt,
+  });
+
+  await fs.write(`${fullPath}/folder_meta.json`, content, {
+    type: "folder_marker",
+    created_at: createdAt,
   });
 
   revalidatePath("/files");
-  return result;
+  return { status: "created", path: fullPath };
 }
 
 export async function deleteFile(

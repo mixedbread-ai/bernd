@@ -143,13 +143,13 @@ export default function FilesClient({
           await uploadFile(fullPath, content, {
             mime_type: mimeType,
             size: file.size,
-            filename: file.name,
+            original_name: file.name,
           });
         } else {
           const buffer = await file.arrayBuffer();
           await uploadBinaryFile(fullPath, buffer, mimeType, {
             size: file.size,
-            filename: file.name,
+            original_name: file.name,
           });
         }
       }
@@ -291,7 +291,7 @@ export default function FilesClient({
       try {
         await uploadFile(`${currentPath}/${fileName}`, newFile.content, {
           mime_type: "text/markdown",
-          filename: fileName,
+          original_name: fileName,
         });
         setNewFile(null);
         fetchFiles(currentPath);

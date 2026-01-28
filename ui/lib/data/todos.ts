@@ -52,7 +52,7 @@ function fileToTodo(file: FileListItem): Todo {
   const metadata = file.metadata;
   return {
     id: pathToId(file.path),
-    title: file.path.split("/").pop()?.replace(".md", "") ?? "",
+    title: (metadata.title as string) ?? pathToId(file.path),
     description: (metadata.description as string) ?? undefined,
     due_date: (metadata.due_date as string) ?? undefined,
     priority: (metadata.priority as Priority) ?? "medium",
@@ -63,11 +63,18 @@ function fileToTodo(file: FileListItem): Todo {
   };
 }
 
+function extractTitleFromContent(content: string): string | null {
+  const match = content.match(/^# (.+)$/m);
+  return match ? match[1] : null;
+}
+
 function searchResultToTodo(result: SearchResult): Todo {
   const metadata = result.metadata;
+  const fallbackTitle =
+    extractTitleFromContent(result.content) ?? pathToId(result.path);
   return {
     id: pathToId(result.path),
-    title: result.path.split("/").pop()?.replace(".md", "") ?? "",
+    title: (metadata.title as string) ?? fallbackTitle,
     description: (metadata.description as string) ?? undefined,
     due_date: (metadata.due_date as string) ?? undefined,
     priority: (metadata.priority as Priority) ?? "medium",
@@ -94,9 +101,10 @@ export async function getTodo(
   }
 
   const metadata = result.metadata;
+  const fallbackTitle = extractTitleFromContent(result.content) ?? id;
   return {
     id,
-    title: id,
+    title: (metadata.title as string) ?? fallbackTitle,
     description: result.content.replace(/^#.*\n\n?/, ""), // Remove markdown title
     due_date: (metadata.due_date as string) ?? undefined,
     priority: (metadata.priority as Priority) ?? "medium",

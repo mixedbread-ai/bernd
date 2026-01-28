@@ -15,18 +15,28 @@ export interface NoteUpdate {
   content?: string;
 }
 
+function generateNoteId(): string {
+  const now = new Date();
+  const pad = (n: number) => n.toString().padStart(2, "0");
+  return `${now.getFullYear()}${pad(now.getMonth() + 1)}${pad(now.getDate())}_${pad(now.getHours())}${pad(now.getMinutes())}${pad(now.getSeconds())}`;
+}
+
 export async function createNote(
   data: NoteCreate,
-): Promise<{ status: string; path: string }> {
+): Promise<{ status: string; path: string; id: string }> {
   const fs = await getFS();
 
-  const content = data.content ?? "";
-  const result = await fs.write(`${PATHS.NOTES}/${data.title}.md`, content, {
+  const noteId = generateNoteId();
+  const content = data.content || " ";
+
+  const result = await fs.write(`${PATHS.NOTES}/${noteId}.md`, content, {
     type: "note",
+    title: data.title,
+    updated_at: new Date().toISOString(),
   });
 
   revalidatePath("/notes");
-  return result;
+  return { ...result, id: noteId };
 }
 
 export async function updateNote(
@@ -35,16 +45,12 @@ export async function updateNote(
 ): Promise<{ status: string; path: string }> {
   const fs = await getFS();
 
-  const newTitle = data.title ?? id;
-  const content = data.content ?? "";
+  const content = data.content || " ";
 
-  // Delete old file if title changed
-  if (newTitle !== id) {
-    await fs.delete(`${PATHS.NOTES}/${id}.md`);
-  }
-
-  const result = await fs.write(`${PATHS.NOTES}/${newTitle}.md`, content, {
+  const result = await fs.write(`${PATHS.NOTES}/${id}.md`, content, {
     type: "note",
+    title: data.title,
+    updated_at: new Date().toISOString(),
   });
 
   revalidatePath("/notes");
@@ -76,7 +82,7 @@ export async function getNoteAction(id: string): Promise<Note | null> {
 
   return {
     id,
-    title: id,
+    title: result.metadata.title as string,
     content: result.content,
     updated_at: (result.metadata.updated_at as string) ?? undefined,
   };

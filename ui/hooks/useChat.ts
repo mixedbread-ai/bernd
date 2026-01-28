@@ -5,6 +5,13 @@ import { DefaultChatTransport } from "ai";
 import { useCallback, useMemo, useRef, useState } from "react";
 import type { ImageAttachment, Message, ToolCall } from "../types";
 
+// Generate chat ID in Python backend format: YYYYMMDD_HHMMSS
+function generateChatId(): string {
+  const now = new Date();
+  const pad = (n: number) => n.toString().padStart(2, "0");
+  return `${now.getFullYear()}${pad(now.getMonth() + 1)}${pad(now.getDate())}_${pad(now.getHours())}${pad(now.getMinutes())}${pad(now.getSeconds())}`;
+}
+
 interface UseChatOptions {
   chatId?: string | null;
   onChatSaved?: (chatId: string) => void;
@@ -156,7 +163,7 @@ export function useChat(options: UseChatOptions = {}): UseChatReturn {
 
       // Generate a new chat ID if we don't have one
       const effectiveChatId =
-        chatId ?? chatIdRef.current ?? `chat-${Date.now()}`;
+        chatId ?? chatIdRef.current ?? generateChatId();
 
       // Update ref immediately (sync) so transport has correct value
       chatIdRef.current = effectiveChatId;
