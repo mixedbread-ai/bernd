@@ -76,7 +76,13 @@ export default function ChatClient({ initialChats }: ChatClientProps) {
     if (!userScrolledUp) {
       scrollToBottom();
     }
-  }, [userScrolledUp, scrollToBottom]);
+  }, [
+    messages,
+    streamingContent,
+    streamingToolCalls,
+    userScrolledUp,
+    scrollToBottom,
+  ]);
 
   // Track previous messages to detect new user messages
   const prevMessagesLengthRef = useRef(messages.length);
