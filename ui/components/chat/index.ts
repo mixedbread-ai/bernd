@@ -1,4 +1,3 @@
-// Chat-related shared components
 export { CopyButton } from "./copy-button";
 export { ImageModal } from "./image-modal";
 export { ImagePreview } from "./image-preview";

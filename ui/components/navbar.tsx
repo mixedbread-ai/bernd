@@ -68,7 +68,10 @@ export function Navbar() {
 
         <ul className="space-y-1">
           {navItems.map((item) => {
-            const isActive = pathname === item.href;
+            const isActive =
+              item.href === "/"
+                ? pathname === "/"
+                : pathname.startsWith(item.href);
             return (
               <li key={item.href}>
                 <Link
@@ -107,7 +110,10 @@ export function Navbar() {
       <nav className="md:hidden fixed bottom-0 left-0 right-0 border-t border-border z-30 safe-area-bottom bg-background">
         <div className="flex items-center justify-around py-2 px-2">
           {navItems.map((item) => {
-            const isActive = pathname === item.href;
+            const isActive =
+              item.href === "/"
+                ? pathname === "/"
+                : pathname.startsWith(item.href);
             const Icon = item.icon;
             return (
               <Link

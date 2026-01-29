@@ -1,26 +1,25 @@
 "use client";
 
-import { ClockIcon, ImageIcon, XIcon } from "lucide-react";
+import { ClockIcon, ImageIcon } from "lucide-react";
+import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useRef, useState } from "react";
 import ReactMarkdown, { type Components } from "react-markdown";
-import {
-  deleteChatAction,
-  getChatAction,
-} from "../../actions/chats";
 import {
   CopyButton,
   ImageModal,
   ImagePreview,
   MessageImages,
   ToolCallsList,
-} from "../../components/chat";
+} from "@/components/chat";
+import { useChatHistory } from "@/context/chat-history-context";
 import {
   fileToImageAttachment,
   handleChatKeyDown,
   handlePasteWithImages,
   useChat,
-} from "../../hooks/use-chat";
-import type { ChatSummary, ToolCall } from "../../types";
+} from "@/hooks/use-chat";
+import type { Chat } from "@/lib/data/chats";
+import type { ToolCall } from "@/types";
 
 const markdownComponents: Components = {
   a: ({ href, children }) => (
@@ -31,14 +30,13 @@ const markdownComponents: Components = {
 };
 
 interface ChatClientProps {
-  initialChats: ChatSummary[];
+  initialChat?: Chat;
 }
 
-export function ChatClient({ initialChats }: ChatClientProps) {
-  const [chatId, setChatId] = useState<string | null>(null);
-  const [chats, setChats] = useState<ChatSummary[]>(initialChats);
-  const [chatSearch, setChatSearch] = useState("");
-  const [showHistory, setShowHistory] = useState(false);
+export function ChatClient({ initialChat }: ChatClientProps) {
+  const router = useRouter();
+  const { setIsHistoryOpen, chats } = useChatHistory();
+  const [chatId, setChatId] = useState<string | null>(initialChat?.id ?? null);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const [userScrolledUp, setUserScrolledUp] = useState(false);
@@ -61,8 +59,18 @@ export function ChatClient({ initialChats }: ChatClientProps) {
   } = useChat({
     onChatSaved: (newChatId) => {
       setChatId(newChatId);
+      window.history.pushState(null, "", `/chat/${newChatId}`);
     },
   });
+
+  // Load initial chat messages when provided via server component
+  const initialChatLoadedRef = useRef(false);
+  useEffect(() => {
+    if (initialChat && !initialChatLoadedRef.current) {
+      initialChatLoadedRef.current = true;
+      loadChatMessages(initialChat.id, initialChat.messages);
+    }
+  }, [initialChat, loadChatMessages]);
 
   const scrollToBottom = useCallback(() => {
     if (scrollContainerRef.current) {
@@ -106,36 +114,10 @@ export function ChatClient({ initialChats }: ChatClientProps) {
     setUserScrolledUp(!isNearBottom);
   }
 
-  async function loadChat(id: string) {
-    setShowHistory(false);
-    try {
-      const chat = await getChatAction(id);
-      if (chat) {
-        setChatId(id);
-        loadChatMessages(id, chat.messages);
-      }
-    } catch (err) {
-      console.error("Failed to load chat", err);
-    }
-  }
-
   function startNewChat() {
     clearChat();
     setChatId(null);
-    setShowHistory(false);
-  }
-
-  async function deleteChat(id: string, e: React.MouseEvent) {
-    e.stopPropagation();
-    try {
-      await deleteChatAction(id);
-      if (chatId === id) {
-        startNewChat();
-      }
-      setChats((prev) => prev.filter((c) => c.id !== id));
-    } catch (err) {
-      console.error("Failed to delete chat", err);
-    }
+    router.push("/chat");
   }
 
   function handleKeyDownLocal(e: React.KeyboardEvent<HTMLTextAreaElement>) {
@@ -160,10 +142,6 @@ export function ChatClient({ initialChats }: ChatClientProps) {
       fileInputRef.current.value = "";
     }
   }
-
-  const filteredChats = chats.filter((chat) =>
-    chat.title.toLowerCase().includes(chatSearch.toLowerCase()),
-  );
 
   // Input element
   const inputElement = (
@@ -205,79 +183,15 @@ export function ChatClient({ initialChats }: ChatClientProps) {
     </div>
   );
 
-  // History panel
-  const historyPanel = showHistory && (
-    <div className="fixed inset-0 z-40" onClick={() => setShowHistory(false)}>
-      <div
-        className="absolute left-0 md:left-44 top-0 h-full w-72 shadow-xl p-4 overflow-hidden flex flex-col bg-background border-r border-border"
-        onClick={(e) => e.stopPropagation()}
-      >
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="text-sm font-medium text-foreground">History</h2>
-          <button
-            type="button"
-            onClick={startNewChat}
-            className="text-xs transition-colors hover:opacity-70 text-accent"
-          >
-            + new
-          </button>
-        </div>
-
-        <input
-          type="text"
-          value={chatSearch}
-          onChange={(e) => setChatSearch(e.target.value)}
-          placeholder="Search..."
-          className="w-full rounded-lg px-3 py-2 text-xs outline-none transition-colors mb-3 bg-surface border border-border text-foreground"
-        />
-
-        <div className="flex-1 overflow-y-auto -mx-2">
-          {filteredChats.length === 0 ? (
-            <p className="text-xs px-2 text-muted">No chats yet</p>
-          ) : (
-            <ul className="space-y-0.5">
-              {filteredChats.map((chat) => (
-                <li key={chat.id} className="group/item relative">
-                  <button
-                    type="button"
-                    onClick={() => loadChat(chat.id)}
-                    className={`w-full text-left px-3 py-2 pr-8 text-xs rounded-lg transition-colors ${
-                      chatId === chat.id
-                        ? "bg-surface-hover text-foreground"
-                        : "text-muted"
-                    }`}
-                  >
-                    <div className="truncate">{chat.title}</div>
-                    <div className="text-[10px] mt-0.5 text-muted">
-                      {chat.message_count} messages
-                    </div>
-                  </button>
-                  <button
-                    type="button"
-                    onClick={(e) => deleteChat(chat.id, e)}
-                    className="absolute right-2 top-1/2 -translate-y-1/2 p-1 opacity-0 group-hover/item:opacity-100 transition-opacity hover:opacity-70 text-accent"
-                    title="Delete"
-                  >
-                    <XIcon size={12} />
-                  </button>
-                </li>
-              ))}
-            </ul>
-          )}
-        </div>
-      </div>
-    </div>
-  );
-
   // Empty state
   if (messages.length === 0 && !loading) {
     return (
       <div className="min-h-screen flex flex-col bg-background">
         {/* Top bar */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-border">
+        <div className="flex items-center justify-between px-6 py-3 border-b border-border">
           <button
             type="button"
-            onClick={() => setShowHistory(true)}
+            onClick={() => setIsHistoryOpen(true)}
             className="flex items-center gap-2 text-sm transition-colors hover:opacity-70 text-muted"
           >
             <ClockIcon size={16} />
@@ -311,7 +225,7 @@ export function ChatClient({ initialChats }: ChatClientProps) {
                     <button
                       type="button"
                       key={chat.id}
-                      onClick={() => loadChat(chat.id)}
+                      onClick={() => router.push(`/chat/${chat.id}`)}
                       className="text-xs px-3 py-1.5 rounded-full transition-colors truncate max-w-[200px] hover:opacity-80 bg-surface border border-border text-muted"
                     >
                       {chat.title}
@@ -320,7 +234,7 @@ export function ChatClient({ initialChats }: ChatClientProps) {
                   {chats.length > 3 && (
                     <button
                       type="button"
-                      onClick={() => setShowHistory(true)}
+                      onClick={() => setIsHistoryOpen(true)}
                       className="text-xs px-3 py-1.5 rounded-full transition-colors hover:opacity-80 bg-surface border border-border text-muted"
                     >
                       +{chats.length - 3} more
@@ -332,7 +246,6 @@ export function ChatClient({ initialChats }: ChatClientProps) {
           </div>
         </div>
 
-        {historyPanel}
         {expandedImage && (
           <ImageModal
             src={expandedImage}
@@ -350,11 +263,14 @@ export function ChatClient({ initialChats }: ChatClientProps) {
       <div className="flex items-center justify-between px-6 py-3 backdrop-blur sticky top-0 z-10 border-b border-border bg-background">
         <button
           type="button"
-          onClick={() => setShowHistory(true)}
+          onClick={() => setIsHistoryOpen(true)}
           className="flex items-center gap-2 text-sm transition-colors hover:opacity-70 text-muted"
         >
           <ClockIcon size={16} />
           <span className="hidden sm:inline">History</span>
+          {chats.length > 0 && (
+            <span className="text-xs text-muted">({chats.length})</span>
+          )}
         </button>
 
         <button
@@ -429,7 +345,6 @@ export function ChatClient({ initialChats }: ChatClientProps) {
         <div className="max-w-2xl mx-auto">{inputElement}</div>
       </div>
 
-      {historyPanel}
       {expandedImage && (
         <ImageModal
           src={expandedImage}

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { authClient } from "../../lib/auth";
+import { authClient } from "@/lib/auth";
 
 export default function SignInPage() {
   const [loadingProvider, setLoadingProvider] = useState<string | null>(null);

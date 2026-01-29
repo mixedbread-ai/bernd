@@ -3,11 +3,11 @@
 import { CalendarIcon, MoonIcon, SunIcon } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
-import { API_ENDPOINTS } from "../../config";
-import { useAuth } from "../../context/auth-context";
-import { useTheme } from "../../context/theme-context";
-import { api } from "../../lib/api";
-import { formatFullDate } from "../../lib/utils/format";
+import { API_ENDPOINTS } from "@/config";
+import { useAuth } from "@/context/auth-context";
+import { useTheme } from "@/context/theme-context";
+import { api } from "@/lib/api";
+import { formatFullDate } from "@/lib/utils/format";
 
 interface GoogleAuthStatus {
   connected: boolean;

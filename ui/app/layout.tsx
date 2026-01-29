@@ -2,11 +2,11 @@ import type { Metadata } from "next";
 import { Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { ThemeProvider } from "next-themes";
-import { AuthenticatedLayout } from "@/components/authenticated-layout";
 import { AuthGate } from "@/components/auth-gate";
+import { AuthenticatedLayout } from "@/components/authenticated-layout";
 import { OrgGate } from "@/components/org-gate";
+import { AuthProvider } from "@/context/auth-context";
 import { OrgSwitchProvider } from "@/context/org-switch-context";
-import { AuthProvider } from "../context/auth-context";
 
 const geistMono = Geist_Mono({
   variable: "--font-geist-mono",

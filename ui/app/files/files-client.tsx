@@ -12,8 +12,8 @@ import {
   listFilesAction,
   uploadBinaryFileAction,
   uploadFileAction,
-} from "../../actions/files";
-import { formatFileSize } from "../../lib/utils/format";
+} from "@/actions/files";
+import { formatFileSize } from "@/lib/utils/format";
 import type { FileItem } from "./page";
 
 interface PreviewData {
