@@ -61,12 +61,8 @@ export async function listFiles(
 export async function downloadFile(
   fs: SemanticFS,
   path: string,
-): Promise<{ content: string; metadata: FileMetadata } | { error: string }> {
+): Promise<{ content: string; metadata: FileMetadata }> {
   const result = await fs.read(path);
-  if ("error" in result) {
-    return result;
-  }
-
   return {
     content: result.content,
     metadata: result.metadata,
@@ -76,14 +72,8 @@ export async function downloadFile(
 export async function downloadBinaryFile(
   fs: SemanticFS,
   path: string,
-): Promise<
-  { data: ArrayBuffer; metadata: FileMetadata } | { error: string }
-> {
+): Promise<{ data: ArrayBuffer; metadata: FileMetadata }> {
   const result = await fs.readBinary(path);
-  if ("error" in result) {
-    return result;
-  }
-
   return {
     data: result.data,
     metadata: result.metadata,

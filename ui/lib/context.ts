@@ -67,12 +67,8 @@ interface StoredGoogleTokens extends GoogleTokens {
 async function loadGoogleTokens(
   fs: SemanticFS,
 ): Promise<StoredGoogleTokens | null> {
-  const result = await fs.read(PATHS.GOOGLE_AUTH);
-  if ("error" in result) {
-    return null;
-  }
-
   try {
+    const result = await fs.read(PATHS.GOOGLE_AUTH);
     return JSON.parse(result.content) as StoredGoogleTokens;
   } catch {
     return null;

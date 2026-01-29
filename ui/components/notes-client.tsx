@@ -4,10 +4,10 @@ import { ArrowLeftIcon, TrashIcon } from "lucide-react";
 import { useCallback, useRef, useState, useTransition } from "react";
 import ReactMarkdown from "react-markdown";
 import {
-  createNote,
-  deleteNote,
+  createNoteAction,
+  deleteNoteAction,
   getNoteAction,
-  updateNote,
+  updateNoteAction,
 } from "../actions/notes";
 import { formatTimeAgo } from "../lib/utils/format";
 import type { Note } from "../types";
@@ -46,7 +46,7 @@ export function NotesClient({ initialNotes }: NotesClientProps) {
     async (noteId: string, newTitle: string, newContent: string) => {
       setSaving(true);
       try {
-        await updateNote(noteId, { title: newTitle, content: newContent });
+        await updateNoteAction(noteId, { title: newTitle, content: newContent });
         // Update local state
         setNotes((prev) =>
           prev.map((n) =>
@@ -104,7 +104,7 @@ export function NotesClient({ initialNotes }: NotesClientProps) {
     startTransition(async () => {
       try {
         const newTitle = "Untitled";
-        await createNote({ title: newTitle, content: "" });
+        await createNoteAction({ title: newTitle, content: "" });
         const newNote: Note = {
           id: newTitle,
           title: newTitle,
@@ -126,7 +126,7 @@ export function NotesClient({ initialNotes }: NotesClientProps) {
     e.stopPropagation();
     startTransition(async () => {
       try {
-        await deleteNote(noteId);
+        await deleteNoteAction(noteId);
         if (selectedNote?.id === noteId) {
           setSelectedNote(null);
           setContent("");

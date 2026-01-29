@@ -100,24 +100,25 @@ export async function getTodo(
   fs: SemanticFS,
   id: string,
 ): Promise<Todo | null> {
-  const result = await fs.read(`${PATHS.TODOS}/${id}.md`);
-  if ("error" in result) {
+  try {
+    const result = await fs.read(`${PATHS.TODOS}/${id}.md`);
+
+    const metadata = result.metadata;
+    if (!isTodoMetadata(metadata)) {
+      throw new Error(`Expected todo metadata, got ${metadata.type}`);
+    }
+
+    const fallbackTitle = extractTitleFromContent(result.content) ?? id;
+    const description = result.content.replace(/^#.*\n\n?/, ""); // Remove markdown title
+
+    return {
+      ...todoMetadataToTodo(id, metadata),
+      title: metadata.title ?? fallbackTitle,
+      description,
+    };
+  } catch {
     return null;
   }
-
-  const metadata = result.metadata;
-  if (!isTodoMetadata(metadata)) {
-    throw new Error(`Expected todo metadata, got ${metadata.type}`);
-  }
-
-  const fallbackTitle = extractTitleFromContent(result.content) ?? id;
-  const description = result.content.replace(/^#.*\n\n?/, ""); // Remove markdown title
-
-  return {
-    ...todoMetadataToTodo(id, metadata),
-    title: metadata.title ?? fallbackTitle,
-    description,
-  };
 }
 
 export async function searchTodos(

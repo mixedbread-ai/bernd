@@ -10,30 +10,18 @@ export async function getChatAction(id: string): Promise<Chat | null> {
   return getChat(fs, id);
 }
 
-export async function deleteChat(
-  id: string,
-): Promise<{ status: string; path: string }> {
+export async function deleteChatAction(id: string) {
   const fs = await getFS();
 
-  const result = await fs.delete(`${PATHS.CHATS}/${id}.json`);
+  await fs.delete(`${PATHS.CHATS}/${id}.json`);
 
   revalidatePath("/chat");
-
-  if ("error" in result) {
-    return { status: "error", path: `${PATHS.CHATS}/${id}.json` };
-  }
-  return result;
 }
 
-export async function clearAllChats(): Promise<{
-  status: string;
-  prefix: string;
-  deleted: number;
-}> {
+export async function clearAllChatsAction() {
   const fs = await getFS();
 
-  const result = await fs.clearPrefix(PATHS.CHATS);
+  await fs.clearPrefix(PATHS.CHATS);
 
   revalidatePath("/chat");
-  return result;
 }

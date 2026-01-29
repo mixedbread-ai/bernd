@@ -4,11 +4,12 @@ import { PATHS } from "../constants";
 import type { SemanticFS } from "../services/semantic-fs";
 
 export async function loadUserProfile(fs: SemanticFS): Promise<string> {
-  const result = await fs.read(PATHS.USER_PROFILE);
-  if ("error" in result) {
+  try {
+    const result = await fs.read(PATHS.USER_PROFILE);
+    return result.content;
+  } catch {
     return "";
   }
-  return result.content;
 }
 
 export async function getSystemPrompt(fs: SemanticFS): Promise<string> {

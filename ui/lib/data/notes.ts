@@ -48,17 +48,18 @@ export async function getNote(
   fs: SemanticFS,
   id: string,
 ): Promise<Note | null> {
-  const result = await fs.read(`${PATHS.NOTES}/${id}.md`);
-  if ("error" in result) {
+  try {
+    const result = await fs.read(`${PATHS.NOTES}/${id}.md`);
+
+    const metadata = result.metadata;
+    if (!isNoteMetadata(metadata)) {
+      throw new Error(`Expected note metadata, got ${metadata.type}`);
+    }
+
+    return noteMetadataToNote(id, metadata, result.content);
+  } catch {
     return null;
   }
-
-  const metadata = result.metadata;
-  if (!isNoteMetadata(metadata)) {
-    throw new Error(`Expected note metadata, got ${metadata.type}`);
-  }
-
-  return noteMetadataToNote(id, metadata, result.content);
 }
 
 export async function searchNotes(

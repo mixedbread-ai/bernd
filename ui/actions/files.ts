@@ -60,13 +60,9 @@ export async function listFilesAction(path: string): Promise<FileItem[]> {
 
 export async function downloadFileAction(
   path: string,
-): Promise<{ content: string; mimeType: string } | { error: string }> {
+): Promise<{ content: string; mimeType: string }> {
   const fs = await getFS();
   const result = await fs.read(path);
-
-  if ("error" in result) {
-    return { error: result.error };
-  }
 
   const meta = result.metadata;
   return {
@@ -77,13 +73,9 @@ export async function downloadFileAction(
 
 export async function downloadBinaryFileAction(
   path: string,
-): Promise<{ data: number[]; mimeType: string } | { error: string }> {
+): Promise<{ data: number[]; mimeType: string }> {
   const fs = await getFS();
   const result = await fs.readBinary(path);
-
-  if ("error" in result) {
-    return { error: result.error };
-  }
 
   // Convert ArrayBuffer to array of numbers for serialization
   const data = Array.from(new Uint8Array(result.data));
@@ -97,11 +89,11 @@ export async function downloadBinaryFileAction(
   };
 }
 
-export async function uploadFile(
+export async function uploadFileAction(
   path: string,
   content: string,
   metadata?: Record<string, unknown>,
-): Promise<{ status: string; path: string }> {
+) {
   const fs = await getFS();
 
   // Ensure path starts with /files/
@@ -120,18 +112,17 @@ export async function uploadFile(
     is_base64: false,
     original_name: (metadata?.original_name as string) ?? filename,
   };
-  const result = await fs.write(fullPath, content, fileMetadata);
+  await fs.write(fullPath, content, fileMetadata);
 
   revalidatePath("/files");
-  return result;
 }
 
-export async function uploadBinaryFile(
+export async function uploadBinaryFileAction(
   path: string,
   data: ArrayBuffer,
   mimeType: string,
   metadata?: Record<string, unknown>,
-): Promise<{ status: string; path: string }> {
+) {
   const fs = await getFS();
 
   // Ensure path starts with /files/
@@ -150,15 +141,12 @@ export async function uploadBinaryFile(
     is_base64: true,
     original_name: (metadata?.original_name as string) ?? filename,
   };
-  const result = await fs.writeBinary(fullPath, data, mimeType, fileMetadata);
+  await fs.writeBinary(fullPath, data, mimeType, fileMetadata);
 
   revalidatePath("/files");
-  return result;
 }
 
-export async function createFolder(
-  path: string,
-): Promise<{ status: string; path: string }> {
+export async function createFolderAction(path: string) {
   const fs = await getFS();
 
   // Ensure path starts with /files/
@@ -183,31 +171,20 @@ export async function createFolder(
   await fs.write(`${fullPath}/folder_meta.json`, content, folderMetadata);
 
   revalidatePath("/files");
-  return { status: "created", path: fullPath };
 }
 
-export async function deleteFile(
-  path: string,
-): Promise<{ status: string; path: string }> {
+export async function deleteFileAction(path: string) {
   const fs = await getFS();
 
-  const result = await fs.delete(path);
+  await fs.delete(path);
 
   revalidatePath("/files");
-
-  if ("error" in result) {
-    return { status: "error", path };
-  }
-  return result;
 }
 
-export async function deleteFolder(
-  path: string,
-): Promise<{ status: string; prefix: string; deleted: number }> {
+export async function deleteFolderAction(path: string) {
   const fs = await getFS();
 
-  const result = await fs.clearPrefix(path);
+  await fs.clearPrefix(path);
 
   revalidatePath("/files");
-  return result;
 }

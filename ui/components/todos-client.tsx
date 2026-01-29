@@ -2,11 +2,11 @@
 
 import { useState, useTransition } from "react";
 import {
-  createTodo,
-  deleteTodo,
+  createTodoAction,
+  deleteTodoAction,
   type TodoCreate,
   type TodoUpdate,
-  updateTodo,
+  updateTodoAction,
 } from "../actions/todos";
 import { formatRelativeDate } from "../lib/utils/format";
 import type { Todo } from "../types";
@@ -110,7 +110,7 @@ export function TodosClient({ initialTodos }: TodosClientProps) {
 
     startTransition(async () => {
       try {
-        await updateTodo(todo.id, { status: newStatus } as TodoUpdate);
+        await updateTodoAction(todo.id, { status: newStatus } as TodoUpdate);
       } catch (err) {
         console.error("Failed to update todo", err);
         // Revert on error
@@ -132,7 +132,7 @@ export function TodosClient({ initialTodos }: TodosClientProps) {
 
     startTransition(async () => {
       try {
-        await deleteTodo(id);
+        await deleteTodoAction(id);
       } catch (err) {
         console.error("Failed to delete todo", err);
         if (todoToDelete) {
@@ -169,7 +169,7 @@ export function TodosClient({ initialTodos }: TodosClientProps) {
             priority: formData.priority,
             due_date: formData.due_date || undefined,
           };
-          await updateTodo(editingId, updateData);
+          await updateTodoAction(editingId, updateData);
 
           // Update local state
           setTodos((prev) =>
@@ -194,7 +194,7 @@ export function TodosClient({ initialTodos }: TodosClientProps) {
             priority: formData.priority,
             due_date: formData.due_date || undefined,
           };
-          await createTodo(createData);
+          await createTodoAction(createData);
 
           // Add to local state
           setTodos((prev) => [

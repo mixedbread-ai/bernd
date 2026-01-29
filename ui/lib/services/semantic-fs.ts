@@ -9,10 +9,6 @@ export interface FileResult {
   metadata: FileMetadata;
 }
 
-export interface FileError {
-  error: string;
-}
-
 export interface FileListItem {
   path: string;
   metadata: FileMetadata;
@@ -127,43 +123,32 @@ export class SemanticFS {
     return { status: "ok", path };
   }
 
-  async read(path: string): Promise<FileResult | FileError> {
+  async read(path: string): Promise<FileResult> {
     await this.ensureStore();
     const fileId = this.pathToId(path);
 
-    try {
-      const resp = await this.client.stores.files.retrieve(fileId, {
-        store_identifier: this.storeName,
-      });
+    const resp = await this.client.stores.files.retrieve(fileId, {
+      store_identifier: this.storeName,
+    });
 
-      const contentResp = await this.client.files.content(resp.id);
-      const content = await contentResp.text();
+    const contentResp = await this.client.files.content(resp.id);
+    const content = await contentResp.text();
 
-      return {
-        path,
-        content,
-        metadata: (resp.metadata as FileMetadata) ?? {},
-      };
-    } catch (e) {
-      console.error(`[SemanticFS] Error reading ${path}:`, e);
-      return { error: `Not found: ${path}` };
-    }
+    return {
+      path,
+      content,
+      metadata: (resp.metadata as FileMetadata) ?? {},
+    };
   }
 
-  async delete(
-    path: string,
-  ): Promise<{ status: string; path: string } | FileError> {
+  async delete(path: string): Promise<{ status: string; path: string }> {
     await this.ensureStore();
     const fileId = this.pathToId(path);
 
-    try {
-      await this.client.stores.files.delete(fileId, {
-        store_identifier: this.storeName,
-      });
-      return { status: "deleted", path };
-    } catch {
-      return { error: `Not found: ${path}` };
-    }
+    await this.client.stores.files.delete(fileId, {
+      store_identifier: this.storeName,
+    });
+    return { status: "deleted", path };
   }
 
   async list(prefix = "/", limit = 100): Promise<FileListItem[]> {
@@ -212,35 +197,30 @@ export class SemanticFS {
           }
         : undefined;
 
-    try {
-      const resp = await this.client.stores.search({
-        store_identifiers: [this.storeName],
-        query,
-        top_k: topK,
-        filters,
-      });
+    const resp = await this.client.stores.search({
+      store_identifiers: [this.storeName],
+      query,
+      top_k: topK,
+      filters,
+    });
 
-      return (resp.data ?? []).map((item) => {
-        const metadata = (item.metadata as FileMetadata) ?? {};
-        const path = metadata.path ?? `/${item.filename ?? ""}`;
+    return (resp.data ?? []).map((item) => {
+      const metadata = (item.metadata as FileMetadata) ?? {};
+      const path = metadata.path ?? `/${item.filename ?? ""}`;
 
-        // Handle different chunk types
-        let content = "";
-        if ("text" in item && typeof item.text === "string") {
-          content = item.text;
-        }
+      // Handle different chunk types
+      let content = "";
+      if ("text" in item && typeof item.text === "string") {
+        content = item.text;
+      }
 
-        return {
-          path,
-          content,
-          score: item.score ?? 0,
-          metadata,
-        };
-      });
-    } catch (e) {
-      console.error("[SemanticFS] Search error:", e);
-      return [];
-    }
+      return {
+        path,
+        content,
+        score: item.score ?? 0,
+        metadata,
+      };
+    });
   }
 
   async clearPrefix(
@@ -296,28 +276,21 @@ export class SemanticFS {
 
   async readBinary(
     path: string,
-  ): Promise<
-    { path: string; data: ArrayBuffer; metadata: FileMetadata } | FileError
-  > {
+  ): Promise<{ path: string; data: ArrayBuffer; metadata: FileMetadata }> {
     await this.ensureStore();
     const fileId = this.pathToId(path);
 
-    try {
-      const resp = await this.client.stores.files.retrieve(fileId, {
-        store_identifier: this.storeName,
-      });
+    const resp = await this.client.stores.files.retrieve(fileId, {
+      store_identifier: this.storeName,
+    });
 
-      const contentResp = await this.client.files.content(resp.id);
-      const data = await contentResp.arrayBuffer();
+    const contentResp = await this.client.files.content(resp.id);
+    const data = await contentResp.arrayBuffer();
 
-      return {
-        path,
-        data,
-        metadata: (resp.metadata as FileMetadata) ?? {},
-      };
-    } catch (e) {
-      console.error(`[SemanticFS] Error reading binary ${path}:`, e);
-      return { error: `Not found: ${path}` };
-    }
+    return {
+      path,
+      data,
+      metadata: (resp.metadata as FileMetadata) ?? {},
+    };
   }
 }

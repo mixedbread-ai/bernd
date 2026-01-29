@@ -44,12 +44,9 @@ export async function getChat(
   fs: SemanticFS,
   id: string,
 ): Promise<Chat | null> {
-  const result = await fs.read(`${PATHS.CHATS}/${id}.json`);
-  if ("error" in result) {
-    return null;
-  }
-
   try {
+    const result = await fs.read(`${PATHS.CHATS}/${id}.json`);
+
     // Messages stored as array, title in metadata (Python backend format)
     const messages = JSON.parse(result.content);
     const title = isChatMetadata(result.metadata)

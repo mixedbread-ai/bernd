@@ -4,7 +4,7 @@ import { Readability } from "@mozilla/readability";
 import { tool } from "ai";
 import { JSDOM } from "jsdom";
 import { z } from "zod";
-import { isTodoMetadata } from "@/types";
+import { type FileMetadata, isTodoMetadata } from "@/types";
 import { PATHS } from "../constants";
 import type { GoogleCalendar } from "../services/google-calendar";
 import type { SemanticFS } from "../services/semantic-fs";
@@ -104,12 +104,15 @@ export function createTools(
       }),
       execute: async ({ title }) => {
         // Get existing todo to check for calendar event
-        const existing = await fs.read(`${PATHS.TODOS}/${title}.md`);
-        const existingMeta = "error" in existing ? null : existing.metadata;
-        const eventId =
-          existingMeta && isTodoMetadata(existingMeta)
-            ? existingMeta.calendar_event_id
+        let eventId: string | undefined;
+        try {
+          const existing = await fs.read(`${PATHS.TODOS}/${title}.md`);
+          eventId = isTodoMetadata(existing.metadata)
+            ? existing.metadata.calendar_event_id
             : undefined;
+        } catch {
+          // Todo doesn't exist yet
+        }
 
         // Delete calendar event if exists
         const gcal = getGcal();
@@ -146,12 +149,15 @@ export function createTools(
         const content = `# ${finalTitle}\n\n${description ?? ""}`;
 
         // Get existing todo metadata
-        const existing = await fs.read(`${PATHS.TODOS}/${title}.md`);
-        const existingMeta = "error" in existing ? null : existing.metadata;
-        const eventId =
-          existingMeta && isTodoMetadata(existingMeta)
-            ? existingMeta.calendar_event_id
+        let eventId: string | undefined;
+        try {
+          const existing = await fs.read(`${PATHS.TODOS}/${title}.md`);
+          eventId = isTodoMetadata(existing.metadata)
+            ? existing.metadata.calendar_event_id
             : undefined;
+        } catch {
+          // Todo doesn't exist yet
+        }
 
         const metadata: Record<string, unknown> = {
           type: "todo",
@@ -264,7 +270,6 @@ Commands:
 
           case "str_replace": {
             const result = await fs.read(targetPath);
-            if ("error" in result) return result;
             const newContent = result.content.replace(
               old_str ?? "",
               new_str ?? "",
@@ -273,8 +278,15 @@ Commands:
           }
 
           case "insert": {
-            const result = await fs.read(targetPath);
-            const existingContent = "error" in result ? "" : result.content;
+            let existingContent = "";
+            let existingMetadata: Partial<FileMetadata> = { type: "memory" };
+            try {
+              const result = await fs.read(targetPath);
+              existingContent = result.content;
+              existingMetadata = result.metadata;
+            } catch {
+              // File doesn't exist, use defaults
+            }
             const lines = existingContent.split("\n");
             const idx = Math.max(
               0,
@@ -284,7 +296,7 @@ Commands:
             return fs.write(
               targetPath,
               lines.join("\n"),
-              "error" in result ? { type: "memory" } : result.metadata,
+              existingMetadata,
             );
           }
 
@@ -388,48 +400,52 @@ Commands:
           };
         }
 
-        switch (command) {
-          case "list":
-            return gcal.listEvents({
-              maxResults: max_results ?? 10,
-              timeMin: time_min,
-              timeMax: time_max,
-            });
+        try {
+          switch (command) {
+            case "list":
+              return await gcal.listEvents({
+                maxResults: max_results ?? 10,
+                timeMin: time_min,
+                timeMax: time_max,
+              });
 
-          case "create":
-            if (!title) return { error: "title is required for create" };
-            if (!start_time)
-              return { error: "start_time is required for create" };
-            return gcal.createEvent({
-              title,
-              description: description ?? "",
-              startTime: start_time,
-              endTime: end_time,
-              durationMinutes: duration_minutes ?? 60,
-              location: location ?? "",
-              attendees,
-              sendNotifications: send_notifications ?? true,
-            });
+            case "create":
+              if (!title) return { error: "title is required for create" };
+              if (!start_time)
+                return { error: "start_time is required for create" };
+              return await gcal.createEvent({
+                title,
+                description: description ?? "",
+                startTime: start_time,
+                endTime: end_time,
+                durationMinutes: duration_minutes ?? 60,
+                location: location ?? "",
+                attendees,
+                sendNotifications: send_notifications ?? true,
+              });
 
-          case "update":
-            if (!event_id) return { error: "event_id is required for update" };
-            return gcal.updateEvent(event_id, {
-              title,
-              description,
-              startTime: start_time,
-              endTime: end_time,
-              durationMinutes: duration_minutes ?? 60,
-              location,
-              attendees,
-              sendNotifications: send_notifications ?? true,
-            });
+            case "update":
+              if (!event_id) return { error: "event_id is required for update" };
+              return await gcal.updateEvent(event_id, {
+                title,
+                description,
+                startTime: start_time,
+                endTime: end_time,
+                durationMinutes: duration_minutes ?? 60,
+                location,
+                attendees,
+                sendNotifications: send_notifications ?? true,
+              });
 
-          case "delete":
-            if (!event_id) return { error: "event_id is required for delete" };
-            return gcal.deleteEvent(event_id);
+            case "delete":
+              if (!event_id) return { error: "event_id is required for delete" };
+              return await gcal.deleteEvent(event_id);
 
-          default:
-            return { error: `Unknown command: ${command}` };
+            default:
+              return { error: `Unknown command: ${command}` };
+          }
+        } catch (e) {
+          return { error: String(e) };
         }
       },
     }),
@@ -510,7 +526,6 @@ Commands:
 
           case "update": {
             const result = await fs.read(targetPath);
-            if ("error" in result) return result;
             const newContent = result.content.replace(
               old_str ?? "",
               new_str ?? "",

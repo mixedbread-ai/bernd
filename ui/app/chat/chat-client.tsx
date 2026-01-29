@@ -4,7 +4,7 @@ import { ClockIcon, ImageIcon, XIcon } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import ReactMarkdown, { type Components } from "react-markdown";
 import {
-  deleteChat as deleteChatAction,
+  deleteChatAction,
   getChatAction,
 } from "../../actions/chats";
 import {

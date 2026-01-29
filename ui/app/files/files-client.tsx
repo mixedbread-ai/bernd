@@ -4,14 +4,14 @@ import { ArrowLeftIcon, DownloadIcon, Trash2Icon, XIcon } from "lucide-react";
 import { useCallback, useEffect, useRef, useState, useTransition } from "react";
 import ReactMarkdown from "react-markdown";
 import {
-  createFolder,
-  deleteFile,
-  deleteFolder,
+  createFolderAction,
+  deleteFileAction,
+  deleteFolderAction,
   downloadBinaryFileAction,
   downloadFileAction,
   listFilesAction,
-  uploadBinaryFile,
-  uploadFile,
+  uploadBinaryFileAction,
+  uploadFileAction,
 } from "../../actions/files";
 import { formatFileSize } from "../../lib/utils/format";
 import type { FileItem } from "./page";
@@ -134,14 +134,14 @@ export function FilesClient({
           mimeType === "application/javascript"
         ) {
           const content = await file.text();
-          await uploadFile(fullPath, content, {
+          await uploadFileAction(fullPath, content, {
             mime_type: mimeType,
             size: file.size,
             original_name: file.name,
           });
         } else {
           const buffer = await file.arrayBuffer();
-          await uploadBinaryFile(fullPath, buffer, mimeType, {
+          await uploadBinaryFileAction(fullPath, buffer, mimeType, {
             size: file.size,
             original_name: file.name,
           });
@@ -164,7 +164,7 @@ export function FilesClient({
 
     startTransition(async () => {
       try {
-        await createFolder(`${currentPath}/${newFolderName.trim()}`);
+        await createFolderAction(`${currentPath}/${newFolderName.trim()}`);
         setNewFolderName("");
         setShowNewFolder(false);
         fetchFiles(currentPath);
@@ -186,9 +186,9 @@ export function FilesClient({
     startTransition(async () => {
       try {
         if (item.type === "folder") {
-          await deleteFolder(item.path);
+          await deleteFolderAction(item.path);
         } else {
-          await deleteFile(item.path);
+          await deleteFileAction(item.path);
         }
         fetchFiles(currentPath);
       } catch (e) {
@@ -204,10 +204,6 @@ export function FilesClient({
 
       if (mimeType.startsWith("text/") || mimeType === "application/json") {
         const result = await downloadFileAction(item.path);
-        if ("error" in result) {
-          alert("Download failed.");
-          return;
-        }
         const blob = new Blob([result.content], { type: result.mimeType });
         const url = URL.createObjectURL(blob);
         const a = document.createElement("a");
@@ -217,10 +213,6 @@ export function FilesClient({
         URL.revokeObjectURL(url);
       } else {
         const result = await downloadBinaryFileAction(item.path);
-        if ("error" in result) {
-          alert("Download failed.");
-          return;
-        }
         const bytes = new Uint8Array(result.data);
         const blob = new Blob([bytes], { type: result.mimeType });
         const url = URL.createObjectURL(blob);
@@ -249,22 +241,12 @@ export function FilesClient({
 
       if (mimeType.startsWith("image/") || mimeType === "application/pdf") {
         const result = await downloadBinaryFileAction(item.path);
-        if ("error" in result) {
-          setPreview(null);
-          alert("Failed to load preview.");
-          return;
-        }
         const bytes = new Uint8Array(result.data);
         const blob = new Blob([bytes], { type: result.mimeType });
         const blobUrl = URL.createObjectURL(blob);
         setPreview({ item, blobUrl, loading: false });
       } else {
         const result = await downloadFileAction(item.path);
-        if ("error" in result) {
-          setPreview(null);
-          alert("Failed to load preview.");
-          return;
-        }
         setPreview({ item, content: result.content, loading: false });
       }
     } catch (e) {
@@ -283,7 +265,7 @@ export function FilesClient({
 
     startTransition(async () => {
       try {
-        await uploadFile(`${currentPath}/${fileName}`, newFile.content, {
+        await uploadFileAction(`${currentPath}/${fileName}`, newFile.content, {
           mime_type: "text/markdown",
           original_name: fileName,
         });

@@ -21,9 +21,7 @@ function generateNoteId(): string {
   return `${now.getFullYear()}${pad(now.getMonth() + 1)}${pad(now.getDate())}_${pad(now.getHours())}${pad(now.getMinutes())}${pad(now.getSeconds())}`;
 }
 
-export async function createNote(
-  data: NoteCreate,
-): Promise<{ status: string; path: string; id: string }> {
+export async function createNoteAction(data: NoteCreate) {
   const fs = await getFS();
 
   const noteId = generateNoteId();
@@ -33,20 +31,12 @@ export async function createNote(
     type: "note",
     title: data.title,
   };
-  const result = await fs.write(
-    `${PATHS.NOTES}/${noteId}.md`,
-    content,
-    metadata,
-  );
+  await fs.write(`${PATHS.NOTES}/${noteId}.md`, content, metadata);
 
   revalidatePath("/notes");
-  return { ...result, id: noteId };
 }
 
-export async function updateNote(
-  id: string,
-  data: NoteUpdate,
-): Promise<{ status: string; path: string }> {
+export async function updateNoteAction(id: string, data: NoteUpdate) {
   const fs = await getFS();
 
   const content = data.content || " ";
@@ -55,43 +45,36 @@ export async function updateNote(
     type: "note",
     title: data.title ?? "",
   };
-  const result = await fs.write(`${PATHS.NOTES}/${id}.md`, content, metadata);
+  await fs.write(`${PATHS.NOTES}/${id}.md`, content, metadata);
 
   revalidatePath("/notes");
-  return result;
 }
 
-export async function deleteNote(
-  id: string,
-): Promise<{ status: string; path: string }> {
+export async function deleteNoteAction(id: string) {
   const fs = await getFS();
 
-  const result = await fs.delete(`${PATHS.NOTES}/${id}.md`);
+  await fs.delete(`${PATHS.NOTES}/${id}.md`);
 
   revalidatePath("/notes");
-
-  if ("error" in result) {
-    return { status: "error", path: `${PATHS.NOTES}/${id}.md` };
-  }
-  return result;
 }
 
 export async function getNoteAction(id: string): Promise<Note | null> {
   const fs = await getFS();
 
-  const result = await fs.read(`${PATHS.NOTES}/${id}.md`);
-  if ("error" in result) {
+  try {
+    const result = await fs.read(`${PATHS.NOTES}/${id}.md`);
+
+    const metadata = result.metadata;
+    if (!isNoteMetadata(metadata)) {
+      throw new Error(`Expected note metadata, got ${metadata.type}`);
+    }
+    return {
+      id,
+      title: metadata.title,
+      content: result.content,
+      updated_at: metadata.updated_at ?? undefined,
+    };
+  } catch {
     return null;
   }
-
-  const metadata = result.metadata;
-  if (!isNoteMetadata(metadata)) {
-    throw new Error(`Expected note metadata, got ${metadata.type}`);
-  }
-  return {
-    id,
-    title: metadata.title,
-    content: result.content,
-    updated_at: metadata.updated_at ?? undefined,
-  };
 }

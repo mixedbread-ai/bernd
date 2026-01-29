@@ -1,6 +1,6 @@
 import { google } from "googleapis";
 import { type NextRequest, NextResponse } from "next/server";
-import { saveGoogleTokens } from "@/actions/google-auth";
+import { saveGoogleTokensAction } from "@/actions/google-auth";
 
 const SCOPES = ["https://www.googleapis.com/auth/calendar"];
 
@@ -48,7 +48,7 @@ export async function GET(req: NextRequest) {
     }
 
     // Save tokens using Server Action
-    await saveGoogleTokens({
+    await saveGoogleTokensAction({
       access_token: tokens.access_token,
       refresh_token: tokens.refresh_token,
       expiry: tokens.expiry_date
