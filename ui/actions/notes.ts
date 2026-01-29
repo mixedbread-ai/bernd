@@ -1,6 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { redirect } from "next/navigation";
 import { PATHS } from "@/lib/constants";
 import { getFS } from "@/lib/context";
 import { isNoteMetadata, type Note, type NoteMetadata } from "@/types";
@@ -34,6 +35,7 @@ export async function createNoteAction(data: NoteCreate) {
   await fs.write(`${PATHS.NOTES}/${noteId}.md`, content, metadata);
 
   revalidatePath("/notes");
+  redirect(`/notes/${noteId}`);
 }
 
 export async function updateNoteAction(id: string, data: NoteUpdate) {
@@ -50,12 +52,15 @@ export async function updateNoteAction(id: string, data: NoteUpdate) {
   revalidatePath("/notes");
 }
 
-export async function deleteNoteAction(id: string) {
+export async function deleteNoteAction(id: string, isActive: boolean) {
   const fs = await getFS();
 
   await fs.delete(`${PATHS.NOTES}/${id}.md`);
 
   revalidatePath("/notes");
+  if (isActive) {
+    redirect("/notes");
+  }
 }
 
 export async function getNoteAction(id: string): Promise<Note | null> {

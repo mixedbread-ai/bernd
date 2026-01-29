@@ -1,10 +1,14 @@
-import { NotesClient } from "@/components/notes-client";
-import { getFS } from "@/lib/context";
-import { getNotes } from "@/lib/data/notes";
+import { CreateNoteButton } from "@/components/notes";
 
-export default async function NotesPage() {
-  const fs = await getFS();
-  const notes = await getNotes(fs);
-
-  return <NotesClient initialNotes={notes} />;
+export default function NotesPage() {
+  return (
+    <div className="hidden md:flex flex-1 items-center justify-center">
+      <div className="text-center">
+        <p className="text-sm mb-2 text-muted">
+          Select a note or create a new one
+        </p>
+        <CreateNoteButton />
+      </div>
+    </div>
+  );
 }
