@@ -1,6 +1,10 @@
+export { AssistantMessage } from "./assistant-message";
 export { CopyButton } from "./copy-button";
 export { ImageModal } from "./image-modal";
 export { ImagePreview } from "./image-preview";
 export { MessageImages } from "./message-images";
+export { StreamingIndicator } from "./streaming-indicator";
 export { ToolCallItem } from "./tool-call-item";
 export { ToolCallsList } from "./tool-calls-list";
+export type { MessageSize } from "./user-message";
+export { UserMessage } from "./user-message";

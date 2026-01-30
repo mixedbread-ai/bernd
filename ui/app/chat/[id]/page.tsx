@@ -1,7 +1,7 @@
 import { notFound } from "next/navigation";
 import { getFS } from "@/lib/context";
 import { getChat } from "@/lib/data/chats";
-import { ChatClient } from "../chat-client";
+import { ChatConversation } from "./chat-conversation";
 
 export default async function ChatDetailPage({
   params,
@@ -15,5 +15,5 @@ export default async function ChatDetailPage({
     notFound();
   }
 
-  return <ChatClient initialChat={chat} />;
+  return <ChatConversation chatId={id} initialChat={chat} />;
 }

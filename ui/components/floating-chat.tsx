@@ -1,128 +1,36 @@
 "use client";
 
+import { useChat } from "@ai-sdk/react";
+import { DefaultChatTransport } from "ai";
 import { ImageIcon } from "lucide-react";
-import { useCallback, useEffect, useRef, useState } from "react";
-import ReactMarkdown, { type Components } from "react-markdown";
+import { useEffect, useRef, useState } from "react";
 import {
   fileToImageAttachment,
   handleChatKeyDown,
   handlePasteWithImages,
-  useChat,
-} from "../hooks/use-chat";
-import type { Message, ToolCall } from "../types";
+} from "@/lib/chat-utils";
+import type { ImageAttachment } from "../types";
 import {
+  AssistantMessage,
   ImageModal,
   ImagePreview,
-  MessageImages,
-  ToolCallsList,
+  StreamingIndicator,
+  UserMessage,
 } from "./chat";
-
-const markdownComponents: Components = {
-  a: ({ href, children }) => (
-    <a href={href} target="_blank" rel="noopener noreferrer">
-      {children}
-    </a>
-  ),
-};
-
-interface MessageBubbleProps {
-  msg: Message;
-  onCopy: (text: string) => void;
-  onImageClick?: (src: string) => void;
-}
-
-function MessageBubble({ msg, onCopy, onImageClick }: MessageBubbleProps) {
-  if (msg.role === "user") {
-    return (
-      <div className="px-3 py-2 rounded-2xl max-w-[80%] text-sm bg-user-bubble text-foreground">
-        <MessageImages
-          images={msg.images}
-          onImageClick={onImageClick}
-          maxHeight="small"
-        />
-        <div className="prose prose-sm max-w-none text-foreground">
-          <ReactMarkdown components={markdownComponents}>
-            {msg.content}
-          </ReactMarkdown>
-        </div>
-      </div>
-    );
-  }
-
-  return (
-    <div className="max-w-[85%] group">
-      {msg.toolCalls && msg.toolCalls.length > 0 && (
-        <ToolCallsList toolCalls={msg.toolCalls} />
-      )}
-      <div className="prose prose-sm max-w-none text-foreground">
-        <ReactMarkdown components={markdownComponents}>
-          {msg.content}
-        </ReactMarkdown>
-      </div>
-      <button
-        type="button"
-        onClick={() => onCopy(msg.content)}
-        className="mt-1 text-xs opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity text-muted"
-      >
-        copy
-      </button>
-    </div>
-  );
-}
-
-interface StreamingMessageProps {
-  toolCalls: ToolCall[];
-  content: string;
-}
-
-function StreamingMessage({ toolCalls, content }: StreamingMessageProps) {
-  return (
-    <div className="flex justify-start">
-      <div className="max-w-[85%]">
-        {toolCalls.length > 0 && <ToolCallsList toolCalls={toolCalls} />}
-        {content ? (
-          <div className="prose prose-sm max-w-none text-foreground">
-            <ReactMarkdown components={markdownComponents}>
-              {content}
-            </ReactMarkdown>
-          </div>
-        ) : (
-          <div className="flex items-center gap-1">
-            <div
-              className="w-1.5 h-1.5 rounded-full animate-bounce bg-accent"
-              style={{ animationDelay: "0ms" }}
-            />
-            <div
-              className="w-1.5 h-1.5 rounded-full animate-bounce bg-accent"
-              style={{ animationDelay: "150ms" }}
-            />
-            <div
-              className="w-1.5 h-1.5 rounded-full animate-bounce bg-accent"
-              style={{ animationDelay: "300ms" }}
-            />
-          </div>
-        )}
-      </div>
-    </div>
-  );
-}
 
 export function FloatingChat() {
   const [isOpen, setIsOpen] = useState(false);
   const [expandedImage, setExpandedImage] = useState<string | null>(null);
-  const {
-    messages,
-    input,
-    setInput,
-    images,
-    addImage,
-    removeImage,
-    loading,
-    streamingToolCalls,
-    streamingContent,
-    sendMessage,
-    clearChat,
-  } = useChat();
+  const [input, setInput] = useState("");
+  const [images, setImages] = useState<ImageAttachment[]>([]);
+
+  const { messages, status, sendMessage, setMessages } = useChat({
+    transport: new DefaultChatTransport({
+      api: "/api/chat",
+    }),
+  });
+
+  const isStreaming = status === "streaming" || status === "submitted";
 
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -156,12 +64,41 @@ export function FloatingChat() {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, []);
 
+  function handleSend() {
+    if ((!input.trim() && images.length === 0) || isStreaming) return;
+    const text = input;
+    setInput("");
+    setImages([]);
+
+    const fileParts = images.map((img) => ({
+      type: "file" as const,
+      mediaType: img.mimeType,
+      url: img.data,
+    }));
+
+    if (fileParts.length > 0) {
+      sendMessage({
+        role: "user",
+        parts: [
+          ...fileParts,
+          ...(text.trim()
+            ? [{ type: "text" as const, text: text.trim() }]
+            : []),
+        ],
+      });
+    } else {
+      sendMessage({ text: text.trim() });
+    }
+  }
+
   function handleKeyDownLocal(e: React.KeyboardEvent<HTMLTextAreaElement>) {
-    handleChatKeyDown(e, input, setInput, () => sendMessage());
+    handleChatKeyDown(e, input, setInput, handleSend);
   }
 
   async function handlePaste(e: React.ClipboardEvent) {
-    await handlePasteWithImages(e, addImage);
+    await handlePasteWithImages(e, (image) =>
+      setImages((prev) => [...prev, image]),
+    );
   }
 
   async function handleFileSelect(e: React.ChangeEvent<HTMLInputElement>) {
@@ -171,7 +108,7 @@ export function FloatingChat() {
     for (const file of files) {
       const attachment = await fileToImageAttachment(file);
       if (attachment) {
-        addImage(attachment);
+        setImages((prev) => [...prev, attachment]);
       }
     }
     if (fileInputRef.current) {
@@ -179,9 +116,9 @@ export function FloatingChat() {
     }
   }
 
-  const handleCopy = useCallback(async (text: string) => {
-    await navigator.clipboard.writeText(text);
-  }, []);
+  function clearChat() {
+    setMessages([]);
+  }
 
   if (!isOpen) return null;
 
@@ -222,38 +159,43 @@ export function FloatingChat() {
 
         {/* Messages */}
         <div className="flex-1 overflow-y-auto px-4 py-4 space-y-4">
-          {messages.length === 0 && !loading && (
+          {messages.length === 0 && !isStreaming && (
             <div className="text-center text-sm py-8 text-muted">
               Ask Bernd anything...
             </div>
           )}
 
-          {messages.map((msg, i) => (
+          {messages.map((message) => (
             <div
-              key={i}
-              className={`flex ${msg.role === "user" ? "justify-end" : "justify-start"}`}
+              key={message.id}
+              className={`flex ${message.role === "user" ? "justify-end" : "justify-start"}`}
             >
-              <MessageBubble
-                msg={msg}
-                onCopy={handleCopy}
-                onImageClick={setExpandedImage}
-              />
+              {message.role === "user" ? (
+                <UserMessage
+                  message={message}
+                  onImageClick={setExpandedImage}
+                  size="compact"
+                />
+              ) : (
+                <AssistantMessage message={message} status={status} />
+              )}
             </div>
           ))}
 
-          {loading && (
-            <StreamingMessage
-              toolCalls={streamingToolCalls}
-              content={streamingContent}
-            />
-          )}
+          {status === "submitted" && <StreamingIndicator size="compact" />}
 
           <div ref={messagesEndRef} />
         </div>
 
         {/* Input */}
         <div className="p-3 border-t border-border">
-          <ImagePreview images={images} onRemove={removeImage} size="small" />
+          <ImagePreview
+            images={images}
+            onRemove={(i) =>
+              setImages((prev) => prev.filter((_, idx) => idx !== i))
+            }
+            size="small"
+          />
           <div className="relative">
             <textarea
               ref={inputRef}
@@ -262,7 +204,7 @@ export function FloatingChat() {
               onKeyDown={handleKeyDownLocal}
               onPaste={handlePaste}
               placeholder="message..."
-              disabled={loading}
+              disabled={isStreaming}
               rows={2}
               className="w-full rounded-lg px-3 py-2 pr-10 text-sm outline-none disabled:opacity-50 transition-colors resize-none bg-surface border border-border text-foreground focus:border-accent"
             />

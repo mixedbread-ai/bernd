@@ -7,12 +7,21 @@ import {
   useMemo,
   useState,
 } from "react";
-import type { ChatSummary } from "@/types";
+import type { ChatSummary, ImageAttachment } from "@/types";
+
+export interface PendingMessage {
+  text: string;
+  images: ImageAttachment[];
+}
 
 interface ChatHistoryContextValue {
   isHistoryOpen: boolean;
   setIsHistoryOpen: React.Dispatch<React.SetStateAction<boolean>>;
   chats: ChatSummary[];
+  pendingMessage: PendingMessage | null;
+  setPendingMessage: React.Dispatch<
+    React.SetStateAction<PendingMessage | null>
+  >;
 }
 
 const ChatHistoryContext = createContext<ChatHistoryContextValue | null>(null);
@@ -35,10 +44,19 @@ export function ChatHistoryProvider({
   children,
 }: ChatHistoryProviderProps) {
   const [isHistoryOpen, setIsHistoryOpen] = useState(false);
+  const [pendingMessage, setPendingMessage] = useState<PendingMessage | null>(
+    null,
+  );
 
   const value = useMemo(
-    () => ({ isHistoryOpen, setIsHistoryOpen, chats }),
-    [isHistoryOpen, chats],
+    () => ({
+      isHistoryOpen,
+      setIsHistoryOpen,
+      chats,
+      pendingMessage,
+      setPendingMessage,
+    }),
+    [isHistoryOpen, chats, pendingMessage],
   );
 
   return (

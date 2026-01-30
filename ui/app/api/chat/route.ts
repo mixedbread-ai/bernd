@@ -1,16 +1,23 @@
 import { openai } from "@ai-sdk/openai";
-import { convertToModelMessages, stepCountIs, streamText } from "ai";
+import {
+  convertToModelMessages,
+  smoothStream,
+  stepCountIs,
+  streamText,
+  type UIMessage,
+} from "ai";
 import { getSystemPrompt } from "@/lib/agent/prompts";
 import { createTools } from "@/lib/agent/tools";
 import { getApiKey, getFS, getGoogleCalendar } from "@/lib/context";
 import { saveChat } from "@/lib/data/chats";
+import type { ImageAttachment, Message } from "@/types";
 
 // Allow streaming responses up to 60 seconds
 export const maxDuration = 60;
 
 export async function POST(req: Request) {
   const body = await req.json();
-  const messages = body.messages ?? [];
+  const { messages }: { messages: UIMessage[] } = body;
   const chatId = body.chatId as string | undefined;
 
   const fs = await getFS();
@@ -26,6 +33,10 @@ export async function POST(req: Request) {
     messages: await convertToModelMessages(messages),
     tools,
     stopWhen: stepCountIs(15),
+    experimental_transform: smoothStream({
+      chunking: "line",
+      delayInMs: 50,
+    }),
     onFinish: async ({ response }) => {
       // Auto-save chat after completion
       if (chatId) {
@@ -42,12 +53,7 @@ export async function POST(req: Request) {
           Array.isArray(lastAssistantMessage.content)
         ) {
           for (const part of lastAssistantMessage.content) {
-            if (
-              typeof part === "object" &&
-              part !== null &&
-              "text" in part &&
-              typeof part.text === "string"
-            ) {
+            if (part.type === "text" && part.text) {
               assistantText += part.text;
             }
           }
@@ -56,49 +62,43 @@ export async function POST(req: Request) {
         // Extract title from first user message in input
         let title = "New Chat";
         for (const msg of messages) {
-          if (
-            msg &&
-            typeof msg === "object" &&
-            msg.role === "user" &&
-            Array.isArray(msg.parts)
-          ) {
-            for (const part of msg.parts) {
-              if (
-                part &&
-                typeof part === "object" &&
-                part.type === "text" &&
-                typeof part.text === "string"
-              ) {
-                title = part.text.slice(0, 50);
-                break;
-              }
+          if (msg.role !== "user") continue;
+          for (const part of msg.parts) {
+            if (part.type === "text" && part.text) {
+              title = part.text.slice(0, 50);
+              break;
             }
-            break;
           }
+          if (title !== "New Chat") break;
         }
 
         // Build simplified message history for storage
-        const storedMessages = [
-          ...messages.map(
-            (msg: {
-              role?: string;
-              parts?: Array<{ type?: string; text?: string }>;
-            }) => {
-              let content = "";
-              if (msg.parts) {
-                for (const part of msg.parts) {
-                  if (part.type === "text" && part.text) {
-                    content += part.text;
-                  }
-                }
+        const storedMessages: Message[] = [
+          ...messages.map((msg) => {
+            let content = "";
+            const images: ImageAttachment[] = [];
+            for (const part of msg.parts) {
+              if (part.type === "text" && part.text) {
+                content += part.text;
+              } else if (
+                part.type === "file" &&
+                part.mediaType?.startsWith("image/") &&
+                part.url
+              ) {
+                images.push({
+                  type: "image",
+                  data: part.url,
+                  mimeType: part.mediaType,
+                });
               }
-              return {
-                role: (msg.role ?? "user") as "user" | "assistant",
-                content,
-              };
-            },
-          ),
-          { role: "assistant" as const, content: assistantText },
+            }
+            return {
+              role: msg.role as "user" | "assistant",
+              content,
+              ...(images.length > 0 ? { images } : {}),
+            };
+          }),
+          { role: "assistant", content: assistantText },
         ];
 
         await saveChat(fs, chatId, title, storedMessages);

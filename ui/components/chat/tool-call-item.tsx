@@ -2,15 +2,18 @@
 
 import { ChevronRightIcon, Loader2Icon } from "lucide-react";
 import { useState } from "react";
-import type { ToolCall } from "../../types";
 
-interface ToolCallItemProps {
-  toolCall: ToolCall;
+export interface ToolPartProps {
+  name: string;
+  toolCallId: string;
+  state: string;
+  input: unknown;
+  output?: unknown;
 }
 
-export function ToolCallItem({ toolCall }: ToolCallItemProps) {
+export function ToolCallItem({ name, state, input, output }: ToolPartProps) {
   const [isOpen, setIsOpen] = useState(false);
-  const hasResult = toolCall.result !== undefined;
+  const hasResult = state === "output-available";
 
   return (
     <div>
@@ -20,7 +23,7 @@ export function ToolCallItem({ toolCall }: ToolCallItemProps) {
         className="flex items-center gap-1 text-xs font-mono text-muted hover:text-foreground transition-colors"
       >
         <span className="text-accent">→</span>
-        <span>{toolCall.name}</span>
+        <span>{name}</span>
         {!hasResult && <Loader2Icon size={10} className="ml-1 animate-spin" />}
         <ChevronRightIcon
           size={10}
@@ -33,14 +36,14 @@ export function ToolCallItem({ toolCall }: ToolCallItemProps) {
           <div>
             <div className="text-[10px] text-muted mb-0.5">input</div>
             <pre className="font-mono text-foreground/80 overflow-x-auto">
-              {JSON.stringify(toolCall.args, null, 2)}
+              {JSON.stringify(input, null, 2)}
             </pre>
           </div>
           {hasResult && (
             <div>
               <div className="text-[10px] text-muted mb-0.5">output</div>
               <pre className="font-mono text-foreground/80 overflow-x-auto max-h-48 overflow-y-auto">
-                {JSON.stringify(toolCall.result, null, 2)}
+                {JSON.stringify(output, null, 2)}
               </pre>
             </div>
           )}

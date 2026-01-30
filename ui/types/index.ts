@@ -127,13 +127,6 @@ export function isToolMetadata(m: FileMetadata): m is ToolMetadata {
 // Application Types
 // ============================================================================
 
-export interface ToolCall {
-  name: string;
-  args: Record<string, unknown>;
-  call_id?: string;
-  result?: unknown;
-}
-
 export interface ImageAttachment {
   type: "image";
   data: string; // base64 data URL
@@ -144,7 +137,6 @@ export interface Message {
   role: "user" | "assistant";
   content: string;
   images?: ImageAttachment[];
-  toolCalls?: ToolCall[];
 }
 
 export interface ChatSummary {
