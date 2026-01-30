@@ -34,8 +34,8 @@ export async function POST(req: Request) {
     tools,
     stopWhen: stepCountIs(15),
     experimental_transform: smoothStream({
-      chunking: "line",
-      delayInMs: 50,
+      chunking: "word",
+      delayInMs: 40,
     }),
     onFinish: async ({ response }) => {
       // Auto-save chat after completion
