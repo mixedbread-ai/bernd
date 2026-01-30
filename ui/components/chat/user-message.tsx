@@ -1,15 +1,19 @@
-import { isTextUIPart, type UIMessage } from "ai";
-import ReactMarkdown, { type Components } from "react-markdown";
+import {
+  type FileUIPart,
+  isFileUIPart,
+  isTextUIPart,
+  type UIMessage,
+} from "ai";
+import ReactMarkdown from "react-markdown";
+import { markdownComponents } from "./markdown";
 
 export type MessageSize = "default" | "compact";
 
-const markdownComponents: Components = {
-  a: ({ href, children }) => (
-    <a href={href} target="_blank" rel="noopener noreferrer">
-      {children}
-    </a>
-  ),
-};
+function isImagePart(
+  part: UIMessage["parts"][number],
+): part is FileUIPart & { mediaType: `image/${string}` } {
+  return isFileUIPart(part) && part.mediaType.startsWith("image/");
+}
 
 interface UserMessageProps {
   message: UIMessage;
@@ -22,9 +26,7 @@ export function UserMessage({
   onImageClick,
   size = "default",
 }: UserMessageProps) {
-  const imageParts = message.parts.filter(
-    (p) => p.type === "file" && p.mediaType.startsWith("image/"),
-  );
+  const imageParts = message.parts.filter(isImagePart);
 
   const isCompact = size === "compact";
 
@@ -40,13 +42,11 @@ export function UserMessage({
             <button
               key={i}
               type="button"
-              onClick={() =>
-                onImageClick?.(part.type === "file" ? part.url : "")
-              }
+              onClick={() => onImageClick?.(part.url)}
               className="cursor-pointer"
             >
               <img
-                src={part.type === "file" ? part.url : ""}
+                src={part.url}
                 alt="attachment"
                 className={`rounded-lg ${isCompact ? "max-h-24" : "max-h-32"}`}
               />

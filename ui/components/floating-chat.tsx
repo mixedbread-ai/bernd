@@ -4,12 +4,8 @@ import { useChat } from "@ai-sdk/react";
 import { DefaultChatTransport } from "ai";
 import { ImageIcon } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
-import {
-  fileToImageAttachment,
-  handleChatKeyDown,
-  handlePasteWithImages,
-} from "@/lib/chat-utils";
-import type { ImageAttachment } from "../types";
+import { useImageAttachments } from "@/hooks/use-image-attachments";
+import { handleChatKeyDown, imagesToFileParts } from "@/lib/chat-utils";
 import {
   AssistantMessage,
   ImageModal,
@@ -22,7 +18,7 @@ export function FloatingChat() {
   const [isOpen, setIsOpen] = useState(false);
   const [expandedImage, setExpandedImage] = useState<string | null>(null);
   const [input, setInput] = useState("");
-  const [images, setImages] = useState<ImageAttachment[]>([]);
+  const { images, setImages, fileInputRef, handlePaste, handleFileSelect, removeImage } = useImageAttachments();
 
   const { messages, status, sendMessage, setMessages } = useChat({
     transport: new DefaultChatTransport({
@@ -33,7 +29,6 @@ export function FloatingChat() {
   const isStreaming = status === "streaming" || status === "submitted";
 
   const inputRef = useRef<HTMLTextAreaElement>(null);
-  const fileInputRef = useRef<HTMLInputElement>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   // Global Cmd+K listener
@@ -41,16 +36,18 @@ export function FloatingChat() {
     function handleKeyDown(e: KeyboardEvent) {
       if ((e.metaKey || e.ctrlKey) && e.key === "k") {
         e.preventDefault();
-        setIsOpen((prev) => !prev);
+        if (!isOpen || !isStreaming) {
+          setIsOpen((prev) => !prev);
+        }
       }
-      if (e.key === "Escape" && isOpen && !expandedImage) {
+      if (e.key === "Escape" && isOpen && !expandedImage && !isStreaming) {
         setIsOpen(false);
       }
     }
 
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [isOpen, expandedImage]);
+  }, [isOpen, isStreaming, expandedImage]);
 
   // Focus input when opened
   useEffect(() => {
@@ -60,9 +57,10 @@ export function FloatingChat() {
   }, [isOpen]);
 
   // Scroll to bottom
+  // biome-ignore lint/correctness/useExhaustiveDependencies: -
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, []);
+  }, [messages]);
 
   function handleSend() {
     if ((!input.trim() && images.length === 0) || isStreaming) return;
@@ -70,11 +68,7 @@ export function FloatingChat() {
     setInput("");
     setImages([]);
 
-    const fileParts = images.map((img) => ({
-      type: "file" as const,
-      mediaType: img.mimeType,
-      url: img.data,
-    }));
+    const fileParts = imagesToFileParts(images);
 
     if (fileParts.length > 0) {
       sendMessage({
@@ -95,27 +89,6 @@ export function FloatingChat() {
     handleChatKeyDown(e, input, setInput, handleSend);
   }
 
-  async function handlePaste(e: React.ClipboardEvent) {
-    await handlePasteWithImages(e, (image) =>
-      setImages((prev) => [...prev, image]),
-    );
-  }
-
-  async function handleFileSelect(e: React.ChangeEvent<HTMLInputElement>) {
-    const files = e.target.files;
-    if (!files) return;
-
-    for (const file of files) {
-      const attachment = await fileToImageAttachment(file);
-      if (attachment) {
-        setImages((prev) => [...prev, attachment]);
-      }
-    }
-    if (fileInputRef.current) {
-      fileInputRef.current.value = "";
-    }
-  }
-
   function clearChat() {
     setMessages([]);
   }
@@ -127,7 +100,7 @@ export function FloatingChat() {
       {/* Backdrop */}
       <div
         className="fixed inset-0 bg-black/20 backdrop-blur-sm z-40"
-        onClick={() => setIsOpen(false)}
+        onClick={() => !isStreaming && setIsOpen(false)}
       />
 
       {/* Floating window */}
@@ -142,7 +115,8 @@ export function FloatingChat() {
               <button
                 type="button"
                 onClick={clearChat}
-                className="text-xs transition-colors hover:opacity-70 text-muted"
+                disabled={isStreaming}
+                className="text-xs transition-colors hover:opacity-70 text-muted disabled:opacity-30"
               >
                 clear
               </button>
@@ -150,7 +124,8 @@ export function FloatingChat() {
             <button
               type="button"
               onClick={() => setIsOpen(false)}
-              className="text-xs transition-colors hover:opacity-70 text-muted"
+              disabled={isStreaming}
+              className="text-xs transition-colors hover:opacity-70 text-muted disabled:opacity-30"
             >
               esc
             </button>
@@ -191,9 +166,7 @@ export function FloatingChat() {
         <div className="p-3 border-t border-border">
           <ImagePreview
             images={images}
-            onRemove={(i) =>
-              setImages((prev) => prev.filter((_, idx) => idx !== i))
-            }
+            onRemove={removeImage}
             size="small"
           />
           <div className="relative">

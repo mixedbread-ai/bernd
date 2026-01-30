@@ -13,14 +13,13 @@ import {
   UserMessage,
 } from "@/components/chat";
 import { useChatHistory } from "@/context/chat-history-context";
+import { useImageAttachments } from "@/hooks/use-image-attachments";
 import {
-  fileToImageAttachment,
   handleChatKeyDown,
-  handlePasteWithImages,
+  imagesToFileParts,
   storedMessagesToUIMessages,
 } from "@/lib/chat-utils";
 import type { Chat } from "@/lib/data/chats";
-import type { ImageAttachment } from "@/types";
 
 interface ChatConversationProps {
   chatId: string;
@@ -37,23 +36,19 @@ export function ChatConversation({
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const [userScrolledUp, setUserScrolledUp] = useState(false);
-  const fileInputRef = useRef<HTMLInputElement>(null);
   const [expandedImage, setExpandedImage] = useState<string | null>(null);
   const [input, setInput] = useState("");
-  const [images, setImages] = useState<ImageAttachment[]>([]);
+  const { images, setImages, fileInputRef, handlePaste, handleFileSelect, removeImage } = useImageAttachments();
 
   const initialMessages = useMemo(
     () => storedMessagesToUIMessages(initialChat.messages),
     [initialChat.messages],
   );
 
-  const chatIdRef = useRef(chatId);
-  chatIdRef.current = chatId;
-
   const { messages, status, sendMessage, setMessages } = useChat({
     transport: new DefaultChatTransport({
       api: "/api/chat",
-      body: () => ({ chatId: chatIdRef.current }),
+      body: { chatId },
     }),
     messages: initialMessages,
   });
@@ -68,12 +63,7 @@ export function ChatConversation({
       const { text, images: pendingImages } = pendingMessage;
       setPendingMessage(null);
 
-      const fileParts = pendingImages.map((img) => ({
-        type: "file" as const,
-        mediaType: img.mimeType,
-        url: img.data,
-      }));
-
+      const fileParts = imagesToFileParts(pendingImages);
       sendMessage({
         role: "user",
         parts: [...fileParts, { type: "text" as const, text: text.trim() }],
@@ -128,11 +118,7 @@ export function ChatConversation({
     setInput("");
     setImages([]);
 
-    const fileParts = currentImages.map((img) => ({
-      type: "file" as const,
-      mediaType: img.mimeType,
-      url: img.data,
-    }));
+    const fileParts = imagesToFileParts(currentImages);
 
     if (fileParts.length > 0) {
       sendMessage({
@@ -153,34 +139,11 @@ export function ChatConversation({
     handleChatKeyDown(e, input, setInput, handleSend);
   }
 
-  async function handlePaste(e: React.ClipboardEvent) {
-    await handlePasteWithImages(e, (image) =>
-      setImages((prev) => [...prev, image]),
-    );
-  }
-
-  async function handleFileSelect(e: React.ChangeEvent<HTMLInputElement>) {
-    const files = e.target.files;
-    if (!files) return;
-
-    for (const file of files) {
-      const attachment = await fileToImageAttachment(file);
-      if (attachment) {
-        setImages((prev) => [...prev, attachment]);
-      }
-    }
-    if (fileInputRef.current) {
-      fileInputRef.current.value = "";
-    }
-  }
-
   const inputElement = (
     <div className="w-full">
       <ImagePreview
         images={images}
-        onRemove={(i) =>
-          setImages((prev) => prev.filter((_, idx) => idx !== i))
-        }
+        onRemove={removeImage}
         size="medium"
       />
       <div className="relative">

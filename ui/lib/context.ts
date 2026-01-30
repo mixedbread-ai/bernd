@@ -1,40 +1,11 @@
 // Factory functions for creating service instances
-import { cookies } from "next/headers";
 import { PATHS } from "./constants";
+import { getServerToken } from "./server-auth";
 import { GoogleCalendar, type GoogleTokens } from "./services/google-calendar";
 import { SemanticFS } from "./services/semantic-fs";
 
-const AUTH_BASE_URL =
-  process.env.NEXT_PUBLIC_AUTH_BASE_URL || "http://localhost:3001/api/auth";
-
 // Cache for SemanticFS instances per API key
 const fsCache = new Map<string, SemanticFS>();
-
-async function getServerToken(): Promise<string | null> {
-  const cookieStore = await cookies();
-  const cookieHeader = cookieStore
-    .getAll()
-    .map((c) => `${c.name}=${c.value}`)
-    .join("; ");
-
-  try {
-    const response = await fetch(`${AUTH_BASE_URL}/token`, {
-      headers: {
-        "Content-Type": "application/json",
-        Cookie: cookieHeader,
-      },
-    });
-
-    if (!response.ok) {
-      return null;
-    }
-
-    const data = await response.json();
-    return data.token;
-  } catch {
-    return null;
-  }
-}
 
 export async function getFS(): Promise<SemanticFS> {
   const token = await getServerToken();

@@ -1,4 +1,5 @@
 import type { UIMessage } from "@ai-sdk/react";
+import type { FileUIPart } from "ai";
 import type { ImageAttachment, Message } from "@/types";
 
 // Utility for handling Enter key in textarea
@@ -70,6 +71,15 @@ export async function handlePasteWithImages(
     }
   }
   return hasImage;
+}
+
+// Convert ImageAttachment[] to AI SDK file parts
+export function imagesToFileParts(images: ImageAttachment[]): FileUIPart[] {
+  return images.map((img) => ({
+    type: "file",
+    mediaType: img.mimeType,
+    url: img.data,
+  }));
 }
 
 // Convert stored Message[] to AI SDK UIMessage[] for loading existing chats

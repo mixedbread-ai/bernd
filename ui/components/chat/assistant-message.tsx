@@ -5,18 +5,11 @@ import {
   isToolUIPart,
   type UIMessage,
 } from "ai";
-import ReactMarkdown, { type Components } from "react-markdown";
+import ReactMarkdown from "react-markdown";
 import { CopyButton } from "./copy-button";
+import { markdownComponents } from "./markdown";
 import type { ToolPartProps } from "./tool-call-item";
 import { ToolCallsList } from "./tool-calls-list";
-
-const markdownComponents: Components = {
-  a: ({ href, children }) => (
-    <a href={href} target="_blank" rel="noopener noreferrer">
-      {children}
-    </a>
-  ),
-};
 
 interface AssistantMessageProps {
   message: UIMessage;

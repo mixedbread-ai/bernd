@@ -2,15 +2,11 @@
 
 import { ClockIcon, ImageIcon } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useRef, useState } from "react";
+import { useState, useTransition } from "react";
 import { ImagePreview } from "@/components/chat";
 import { useChatHistory } from "@/context/chat-history-context";
-import {
-  fileToImageAttachment,
-  handleChatKeyDown,
-  handlePasteWithImages,
-} from "@/lib/chat-utils";
-import type { ImageAttachment } from "@/types";
+import { useImageAttachments } from "@/hooks/use-image-attachments";
+import { handleChatKeyDown } from "@/lib/chat-utils";
 import { createChat } from "./actions";
 
 // Generate chat ID in Python backend format: YYYYMMDD_HHMMSS
@@ -24,41 +20,22 @@ export default function NewChatPage() {
   const router = useRouter();
   const { setIsHistoryOpen, chats, setPendingMessage } = useChatHistory();
   const [input, setInput] = useState("");
-  const [images, setImages] = useState<ImageAttachment[]>([]);
-  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [isPending, startTransition] = useTransition();
+  const { images, fileInputRef, handlePaste, handleFileSelect, removeImage } = useImageAttachments();
 
-  async function handleSubmit() {
+  function handleSubmit() {
     if (!input.trim() && images.length === 0) return;
 
     const chatId = generateChatId();
     setPendingMessage({ text: input.trim(), images });
-    await createChat(chatId);
-    router.push(`/chat/${chatId}`);
+    startTransition(async () => {
+      await createChat(chatId);
+      router.push(`/chat/${chatId}`);
+    });
   }
 
   function handleKeyDown(e: React.KeyboardEvent<HTMLTextAreaElement>) {
     handleChatKeyDown(e, input, setInput, handleSubmit);
-  }
-
-  async function handlePaste(e: React.ClipboardEvent) {
-    await handlePasteWithImages(e, (image) =>
-      setImages((prev) => [...prev, image]),
-    );
-  }
-
-  async function handleFileSelect(e: React.ChangeEvent<HTMLInputElement>) {
-    const files = e.target.files;
-    if (!files) return;
-
-    for (const file of files) {
-      const attachment = await fileToImageAttachment(file);
-      if (attachment) {
-        setImages((prev) => [...prev, attachment]);
-      }
-    }
-    if (fileInputRef.current) {
-      fileInputRef.current.value = "";
-    }
   }
 
   return (
@@ -93,9 +70,7 @@ export default function NewChatPage() {
           <div className="w-full">
             <ImagePreview
               images={images}
-              onRemove={(i) =>
-                setImages((prev) => prev.filter((_, idx) => idx !== i))
-              }
+              onRemove={removeImage}
               size="medium"
             />
             <div className="relative">
@@ -105,6 +80,7 @@ export default function NewChatPage() {
                 onKeyDown={handleKeyDown}
                 onPaste={handlePaste}
                 placeholder="Ask anything..."
+                disabled={isPending}
                 rows={2}
                 className="w-full rounded-xl shadow-sm px-4 py-3 pr-12 text-sm outline-none disabled:opacity-50 transition-all resize-none bg-surface border border-border text-foreground min-h-[56px] max-h-[120px] focus:border-accent"
                 onInput={(e) => {

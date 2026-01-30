@@ -21,7 +21,7 @@ export function NoteEditor({ note }: NoteEditorProps) {
   const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
-  // biome-ignore lint/correctness/useExhaustiveDependencies: -
+  // biome-ignore lint/correctness/useExhaustiveDependencies: Only run on mount to auto-focus when note is empty; reads initial `content` value intentionally.
   useEffect(() => {
     if (!content) {
       textareaRef.current?.focus();

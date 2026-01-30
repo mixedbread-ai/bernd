@@ -2,10 +2,10 @@
 
 import { CalendarIcon, MoonIcon, SunIcon } from "lucide-react";
 import { useRouter } from "next/navigation";
+import { useTheme } from "next-themes";
 import { useCallback, useEffect, useState } from "react";
 import { API_ENDPOINTS } from "@/config";
 import { useAuth } from "@/context/auth-context";
-import { useTheme } from "@/context/theme-context";
 import { api } from "@/lib/api";
 import { formatFullDate } from "@/lib/utils/format";
 
@@ -17,7 +17,7 @@ interface GoogleAuthStatus {
 export default function SettingsPage() {
   const router = useRouter();
   const { user, logout } = useAuth();
-  const { theme, toggleTheme } = useTheme();
+  const { theme, setTheme } = useTheme();
   const [googleStatus, setGoogleStatus] = useState<GoogleAuthStatus | null>(
     null,
   );
@@ -186,7 +186,7 @@ export default function SettingsPage() {
 
               <button
                 type="button"
-                onClick={toggleTheme}
+                onClick={() => setTheme(theme === "light" ? "dark" : "light")}
                 className="text-xs px-3 py-1.5 rounded-lg transition-colors hover:opacity-80 bg-accent text-white"
               >
                 {theme === "light" ? "Switch to dark" : "Switch to light"}

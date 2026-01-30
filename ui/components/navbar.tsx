@@ -24,6 +24,10 @@ const navItems = [
   { href: "/settings", label: "settings", key: ",", icon: SettingsIcon },
 ];
 
+function isNavActive(href: string, pathname: string): boolean {
+  return href === "/" ? pathname === "/" : pathname.startsWith(href);
+}
+
 export function Navbar() {
   const pathname = usePathname();
   const router = useRouter();
@@ -68,10 +72,7 @@ export function Navbar() {
 
         <ul className="space-y-1">
           {navItems.map((item) => {
-            const isActive =
-              item.href === "/"
-                ? pathname === "/"
-                : pathname.startsWith(item.href);
+            const isActive = isNavActive(item.href, pathname);
             return (
               <li key={item.href}>
                 <Link
@@ -110,10 +111,7 @@ export function Navbar() {
       <nav className="md:hidden fixed bottom-0 left-0 right-0 border-t border-border z-30 safe-area-bottom bg-background">
         <div className="flex items-center justify-around py-2 px-2">
           {navItems.map((item) => {
-            const isActive =
-              item.href === "/"
-                ? pathname === "/"
-                : pathname.startsWith(item.href);
+            const isActive = isNavActive(item.href, pathname);
             const Icon = item.icon;
             return (
               <Link
