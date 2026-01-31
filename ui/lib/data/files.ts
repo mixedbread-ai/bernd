@@ -1,5 +1,3 @@
-// Pure functions for fetching files data
-
 import type { FileMetadata } from "@/types";
 import { PATHS } from "../constants";
 import type { FileListItem, SemanticFS } from "../services/semantic-fs";

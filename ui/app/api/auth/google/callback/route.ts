@@ -65,7 +65,6 @@ export async function GET(req: NextRequest) {
   }
 }
 
-// Start OAuth flow
 export async function POST(req: NextRequest) {
   const clientId = process.env.GOOGLE_CLIENT_ID;
   const clientSecret = process.env.GOOGLE_CLIENT_SECRET;

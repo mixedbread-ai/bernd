@@ -1,5 +1,3 @@
-// AI SDK tools for the Bernd agent
-
 import { Readability } from "@mozilla/readability";
 import { tool } from "ai";
 import { JSDOM } from "jsdom";

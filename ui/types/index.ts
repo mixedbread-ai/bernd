@@ -1,19 +1,11 @@
-// Shared types for the Bernd application
-
 import type { Priority, TodoStatus } from "@/lib/constants";
 
-// ============================================================================
-// File Metadata Types (Discriminated Union)
-// ============================================================================
-
-// Base fields auto-set by SemanticFS.write()
 interface BaseMetadata {
   path?: string;
   created_at?: string;
   updated_at?: string;
 }
 
-// Todo metadata (/todos/*.md)
 export interface TodoMetadata extends BaseMetadata {
   type: "todo";
   title?: string;
@@ -24,31 +16,26 @@ export interface TodoMetadata extends BaseMetadata {
   calendar_event_id?: string;
 }
 
-// Note metadata (/notes/*.md)
 export interface NoteMetadata extends BaseMetadata {
   type: "note";
   title: string;
 }
 
-// Chat metadata (/chats/*.json)
 export interface ChatMetadata extends BaseMetadata {
   type: "chat";
   title: string;
   message_count: number;
 }
 
-// Auth metadata (/auth/*.json)
 export interface AuthMetadata extends BaseMetadata {
   type: "auth";
   provider?: "google";
 }
 
-// Memory metadata (/memories/*)
 export interface MemoryMetadata extends BaseMetadata {
   type: "memory";
 }
 
-// File upload metadata (/files/*)
 export interface FileUploadMetadata extends BaseMetadata {
   type: "file";
   mime_type: string;
@@ -57,22 +44,18 @@ export interface FileUploadMetadata extends BaseMetadata {
   original_name: string;
 }
 
-// Folder marker metadata
 export interface FolderMarkerMetadata extends BaseMetadata {
   type: "folder_marker";
 }
 
-// Binary metadata (/chat_assets/**)
 export interface BinaryMetadata extends BaseMetadata {
   type: "binary";
 }
 
-// Tool metadata (/tools/*.md)
 export interface ToolMetadata extends BaseMetadata {
   type: "tool";
 }
 
-// Discriminated union of all metadata types
 export type FileMetadata =
   | TodoMetadata
   | NoteMetadata
@@ -84,7 +67,6 @@ export type FileMetadata =
   | BinaryMetadata
   | ToolMetadata;
 
-// Type guards
 export function isTodoMetadata(m: FileMetadata): m is TodoMetadata {
   return m.type === "todo";
 }
@@ -122,10 +104,6 @@ export function isMemoryMetadata(m: FileMetadata): m is MemoryMetadata {
 export function isToolMetadata(m: FileMetadata): m is ToolMetadata {
   return m.type === "tool";
 }
-
-// ============================================================================
-// Application Types
-// ============================================================================
 
 export interface ImageAttachment {
   type: "image";
@@ -171,7 +149,6 @@ export interface Note {
   updated_at?: string;
 }
 
-// SSE event types from the streaming API
 export type StreamEvent =
   | {
       type: "tool_call";

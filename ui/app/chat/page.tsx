@@ -9,7 +9,6 @@ import { useImageAttachments } from "@/hooks/use-image-attachments";
 import { handleChatKeyDown } from "@/lib/chat-utils";
 import { createChat } from "./actions";
 
-// Generate chat ID in Python backend format: YYYYMMDD_HHMMSS
 function generateChatId(): string {
   const now = new Date();
   const pad = (n: number) => n.toString().padStart(2, "0");

@@ -2,7 +2,6 @@ import type { UIMessage } from "@ai-sdk/react";
 import type { FileUIPart } from "ai";
 import type { ImageAttachment, Message } from "@/types";
 
-// Utility for handling Enter key in textarea
 export function handleChatKeyDown(
   e: React.KeyboardEvent<HTMLTextAreaElement>,
   input: string,
@@ -27,7 +26,6 @@ export function handleChatKeyDown(
   }
 }
 
-// Utility for converting File to ImageAttachment
 export async function fileToImageAttachment(
   file: File,
 ): Promise<ImageAttachment | null> {
@@ -49,7 +47,6 @@ export async function fileToImageAttachment(
   });
 }
 
-// Utility for handling paste events with images
 export async function handlePasteWithImages(
   e: React.ClipboardEvent,
   addImage: (image: ImageAttachment) => void,
@@ -78,7 +75,6 @@ export async function handlePasteWithImages(
   return hasImage;
 }
 
-// Convert ImageAttachment[] to AI SDK file parts
 export function imagesToFileParts(images: ImageAttachment[]): FileUIPart[] {
   return images.map((img) => ({
     type: "file",
@@ -87,7 +83,6 @@ export function imagesToFileParts(images: ImageAttachment[]): FileUIPart[] {
   }));
 }
 
-// Convert stored Message[] to AI SDK UIMessage[] for loading existing chats
 export function storedMessagesToUIMessages(messages: Message[]): UIMessage[] {
   return messages.map((message, index) => {
     const parts: UIMessage["parts"] = [];

@@ -4,9 +4,11 @@ import { CalendarIcon, MoonIcon, SunIcon } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useTheme } from "next-themes";
 import { useCallback, useEffect, useState } from "react";
-import { API_ENDPOINTS } from "@/config";
+import {
+  disconnectGoogleAction,
+  getGoogleStatusAction,
+} from "@/actions/google-auth";
 import { useAuth } from "@/context/auth-context";
-import { api } from "@/lib/api";
 import { formatFullDate } from "@/lib/utils/format";
 
 interface GoogleAuthStatus {
@@ -26,8 +28,7 @@ export default function SettingsPage() {
 
   const checkGoogleStatus = useCallback(async () => {
     try {
-      const res = await api.get(API_ENDPOINTS.googleAuthStatus);
-      const data = await res.json();
+      const data = await getGoogleStatusAction();
       setGoogleStatus(data);
     } catch {
       setGoogleStatus({ connected: false });
@@ -51,10 +52,10 @@ export default function SettingsPage() {
 
   const connectGoogle = async () => {
     try {
-      const res = await api.get(API_ENDPOINTS.googleAuth);
+      const res = await fetch("/api/auth/google/callback", { method: "POST" });
       const data = await res.json();
-      if (data.auth_url) {
-        window.open(data.auth_url, "google-auth", "width=500,height=600");
+      if (data.authUrl) {
+        window.open(data.authUrl, "google-auth", "width=500,height=600");
       } else if (data.error) {
         alert(data.error);
       }
@@ -69,7 +70,7 @@ export default function SettingsPage() {
     }
     setDisconnecting(true);
     try {
-      await api.delete(API_ENDPOINTS.googleAuth);
+      await disconnectGoogleAction();
       setGoogleStatus({ connected: false });
     } catch (e) {
       console.error("Failed to disconnect Google", e);

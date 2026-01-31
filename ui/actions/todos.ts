@@ -23,7 +23,6 @@ export interface TodoUpdate {
   tags?: string[];
 }
 
-// Helper to make a safe filename from title
 function makeSafeTitle(title: string): string {
   return title
     .replace(/[^\w\s-]/g, "")

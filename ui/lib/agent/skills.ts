@@ -1,4 +1,3 @@
-// Skill loader for the Bernd agent
 import fs from "node:fs";
 import path from "node:path";
 import matter from "gray-matter";
@@ -12,7 +11,6 @@ export interface Skill {
   path: string;
 }
 
-// Skills directory - look in the root skills folder
 const SKILLS_DIR = path.join(process.cwd(), "..", "skills");
 
 function parseSkillFile(filePath: string): Skill | null {
@@ -94,7 +92,6 @@ export function generateSkillDescriptions(
   return result;
 }
 
-// Cache for loaded skills
 let _loadedSkills: Map<string, Skill> | null = null;
 
 export function getSkills(): Map<string, Skill> {

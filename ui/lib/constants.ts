@@ -1,7 +1,6 @@
 export type TodoStatus = "pending" | "in_progress" | "completed";
 export type Priority = "low" | "medium" | "high";
 
-// Path prefixes for semantic filesystem
 export const PATHS = {
   TODOS: "/todos",
   MEMORIES: "/memories",

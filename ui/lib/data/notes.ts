@@ -1,5 +1,3 @@
-// Pure functions for fetching notes data
-
 import type { Note, NoteMetadata } from "@/types";
 import { isNoteMetadata } from "@/types";
 import { PATHS } from "../constants";

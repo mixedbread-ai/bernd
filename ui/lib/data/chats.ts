@@ -1,5 +1,3 @@
-// Pure functions for fetching chats data
-
 import {
   type ChatMetadata,
   type ChatSummary,

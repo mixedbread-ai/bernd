@@ -1,4 +1,3 @@
-// Semantic filesystem backed by Mixedbread
 import Mixedbread from "@mixedbread/sdk";
 
 import type { FileMetadata } from "@/types";

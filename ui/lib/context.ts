@@ -1,10 +1,8 @@
-// Factory functions for creating service instances
 import { PATHS } from "./constants";
 import { getServerToken } from "./server-auth";
 import { GoogleCalendar, type GoogleTokens } from "./services/google-calendar";
 import { SemanticFS } from "./services/semantic-fs";
 
-// Cache for SemanticFS instances per API key
 const fsCache = new Map<string, SemanticFS>();
 
 export async function getFS(): Promise<SemanticFS> {
@@ -85,7 +83,6 @@ export async function getGoogleCalendar(): Promise<GoogleCalendar | null> {
   );
 }
 
-// Helper to check if Google Calendar is connected
 export async function isGoogleCalendarConnected(): Promise<boolean> {
   try {
     const fs = await getFS();

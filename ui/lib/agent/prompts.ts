@@ -1,5 +1,3 @@
-// System prompt management for the agent
-
 import { PATHS } from "../constants";
 import type { SemanticFS } from "../services/semantic-fs";
 

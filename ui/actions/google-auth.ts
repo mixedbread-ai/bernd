@@ -4,6 +4,24 @@ import { revalidatePath } from "next/cache";
 import { PATHS } from "@/lib/constants";
 import { getFS } from "@/lib/context";
 
+export async function getGoogleStatusAction(): Promise<{
+  connected: boolean;
+  connected_at?: string;
+}> {
+  try {
+    const fs = await getFS();
+    const result = await fs.read(PATHS.GOOGLE_AUTH);
+    const tokens = JSON.parse(result.content);
+    const connected = !!(tokens?.access_token && tokens?.refresh_token);
+    return {
+      connected,
+      connected_at: connected ? result.metadata.created_at : undefined,
+    };
+  } catch {
+    return { connected: false };
+  }
+}
+
 export async function disconnectGoogleAction() {
   const fs = await getFS();
 

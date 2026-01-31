@@ -1,5 +1,3 @@
-// Formatting utility functions
-
 /**
  * Format a relative date for todos (future-focused)
  * Examples: "3d ago", "today", "tmrw", "5d", "Jan 15"

@@ -1,4 +1,3 @@
-// Web search tool using Mixedbread's web store
 import Mixedbread from "@mixedbread/sdk";
 
 export interface WebSearchResult {

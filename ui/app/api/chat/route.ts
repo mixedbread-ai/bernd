@@ -12,7 +12,6 @@ import { getApiKey, getFS, getGoogleCalendar } from "@/lib/context";
 import { saveChat } from "@/lib/data/chats";
 import type { ImageAttachment, Message } from "@/types";
 
-// Allow streaming responses up to 60 seconds
 export const maxDuration = 60;
 
 export async function POST(req: Request) {

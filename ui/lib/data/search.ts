@@ -1,4 +1,3 @@
-// Pure functions for semantic search across all content
 import type { FileMetadata } from "@/types";
 import type { SemanticFS } from "../services/semantic-fs";
 

@@ -1,4 +1,3 @@
-// Google Calendar API integration
 import { type calendar_v3, google } from "googleapis";
 
 export interface GoogleTokens {

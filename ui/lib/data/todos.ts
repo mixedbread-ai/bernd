@@ -1,5 +1,3 @@
-// Pure functions for fetching todos data
-
 import type { Todo, TodoMetadata } from "@/types";
 import { isTodoMetadata } from "@/types";
 import { PATHS, type Priority, type TodoStatus } from "../constants";
