@@ -44,6 +44,13 @@ body {
     color 0.2s;
 }
 
+@layer base {
+  button:not(:disabled),
+  [role="button"]:not(:disabled) {
+    cursor: pointer;
+  }
+}
+
 ::selection {
   background: var(--accent);
   color: var(--background);

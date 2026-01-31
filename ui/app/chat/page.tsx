@@ -21,7 +21,8 @@ export default function NewChatPage() {
   const { setIsHistoryOpen, chats, setPendingMessage } = useChatHistory();
   const [input, setInput] = useState("");
   const [isPending, startTransition] = useTransition();
-  const { images, fileInputRef, handlePaste, handleFileSelect, removeImage } = useImageAttachments();
+  const { images, fileInputRef, handlePaste, handleFileSelect, removeImage } =
+    useImageAttachments();
 
   function handleSubmit() {
     if (!input.trim() && images.length === 0) return;
@@ -72,6 +73,7 @@ export default function NewChatPage() {
               images={images}
               onRemove={removeImage}
               size="medium"
+              disabled={isPending}
             />
             <div className="relative">
               <textarea
@@ -100,7 +102,8 @@ export default function NewChatPage() {
               <button
                 type="button"
                 onClick={() => fileInputRef.current?.click()}
-                className="absolute right-3 bottom-3 p-1.5 transition-colors hover:opacity-70 text-muted"
+                disabled={isPending}
+                className="absolute right-3 bottom-3 p-1.5 transition-colors hover:opacity-70 text-muted disabled:opacity-30"
                 title="Attach image"
               >
                 <ImageIcon size={18} />

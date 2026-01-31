@@ -167,9 +167,7 @@ export class GoogleCalendar {
       calendarId,
       requestBody: event,
       sendUpdates:
-        sendNotifications && attendees && attendees.length > 0
-          ? "all"
-          : "none",
+        sendNotifications && attendees && attendees.length > 0 ? "all" : "none",
     });
 
     return {
@@ -286,10 +284,7 @@ export class GoogleCalendar {
 
     let effectiveTimeMin = timeMin;
     if (effectiveTimeMin) {
-      if (
-        !effectiveTimeMin.endsWith("Z") &&
-        !effectiveTimeMin.includes("+")
-      ) {
+      if (!effectiveTimeMin.endsWith("Z") && !effectiveTimeMin.includes("+")) {
         effectiveTimeMin += "Z";
       }
     } else {
@@ -306,10 +301,7 @@ export class GoogleCalendar {
 
     if (timeMax) {
       let effectiveTimeMax = timeMax;
-      if (
-        !effectiveTimeMax.endsWith("Z") &&
-        !effectiveTimeMax.includes("+")
-      ) {
+      if (!effectiveTimeMax.endsWith("Z") && !effectiveTimeMax.includes("+")) {
         effectiveTimeMax += "Z";
       }
       requestParams.timeMax = effectiveTimeMax;

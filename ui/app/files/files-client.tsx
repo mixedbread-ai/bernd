@@ -14,6 +14,7 @@ import {
   uploadFileAction,
 } from "@/actions/files";
 import { formatFileSize } from "@/lib/utils/format";
+import { cn } from "@/lib/utils/ui";
 import type { FileItem } from "./page";
 
 interface PreviewData {
@@ -47,10 +48,7 @@ interface FilesClientProps {
   initialPath: string;
 }
 
-export function FilesClient({
-  initialItems,
-  initialPath,
-}: FilesClientProps) {
+export function FilesClient({ initialItems, initialPath }: FilesClientProps) {
   const [currentPath, setCurrentPath] = useState(initialPath);
   const [items, setItems] = useState<FileItem[]>(initialItems);
   const [loading, setLoading] = useState(false);
@@ -294,7 +292,12 @@ export function FilesClient({
                   onClick={() =>
                     navigateTo(`/${pathParts.slice(0, i + 1).join("/")}`)
                   }
-                  className={`hover:underline ${i === pathParts.length - 1 ? "text-foreground" : "text-muted"}`}
+                  className={cn(
+                    "hover:underline",
+                    i === pathParts.length - 1
+                      ? "text-foreground"
+                      : "text-muted",
+                  )}
                 >
                   {part}
                 </button>

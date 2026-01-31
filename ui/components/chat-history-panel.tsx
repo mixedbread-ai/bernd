@@ -5,6 +5,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { useState } from "react";
 import { deleteChatAction } from "@/actions/chats";
 import { useChatHistory } from "@/context/chat-history-context";
+import { cn } from "@/lib/utils/ui";
 
 export function ChatHistoryPanel() {
   const router = useRouter();
@@ -67,11 +68,12 @@ export function ChatHistoryPanel() {
                   <button
                     type="button"
                     onClick={() => loadChat(chat.id)}
-                    className={`w-full text-left px-3 py-2 pr-8 text-xs rounded-lg transition-colors ${
+                    className={cn(
+                      "w-full text-left px-3 py-2 pr-8 text-xs rounded-lg transition-colors",
                       activeChatId === chat.id
                         ? "bg-surface-hover text-foreground"
-                        : "text-muted"
-                    }`}
+                        : "text-muted",
+                    )}
                   >
                     <div className="truncate">{chat.title}</div>
                     <div className="text-[10px] mt-0.5 text-muted">

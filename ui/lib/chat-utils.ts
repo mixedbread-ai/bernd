@@ -57,15 +57,20 @@ export async function handlePasteWithImages(
   const items = e.clipboardData?.items;
   if (!items) return false;
 
-  let hasImage = false;
-  for (const item of items) {
-    if (item.type.startsWith("image/")) {
-      const file = item.getAsFile();
-      if (file) {
-        const attachment = await fileToImageAttachment(file);
-        if (attachment) {
-          addImage(attachment);
-          hasImage = true;
+  const hasImage = Array.from(items).some((item) =>
+    item.type.startsWith("image/"),
+  );
+
+  if (hasImage) {
+    e.preventDefault();
+    for (const item of items) {
+      if (item.type.startsWith("image/")) {
+        const file = item.getAsFile();
+        if (file) {
+          const attachment = await fileToImageAttachment(file);
+          if (attachment) {
+            addImage(attachment);
+          }
         }
       }
     }

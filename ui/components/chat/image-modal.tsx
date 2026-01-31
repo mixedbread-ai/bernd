@@ -1,5 +1,6 @@
 "use client";
 
+import { XIcon } from "lucide-react";
 import { useEffect } from "react";
 
 interface ImageModalProps {
@@ -29,7 +30,7 @@ export function ImageModal({ src, onClose }: ImageModalProps) {
         onClick={onClose}
         className="absolute top-4 right-4 text-white/80 hover:text-white text-2xl"
       >
-        ×
+        <XIcon className="size-5" />
       </button>
       <img
         src={src}

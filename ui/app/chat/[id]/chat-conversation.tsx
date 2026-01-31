@@ -20,6 +20,7 @@ import {
   storedMessagesToUIMessages,
 } from "@/lib/chat-utils";
 import type { Chat } from "@/lib/data/chats";
+import { cn } from "@/lib/utils/ui";
 
 interface ChatConversationProps {
   chatId: string;
@@ -38,7 +39,14 @@ export function ChatConversation({
   const [userScrolledUp, setUserScrolledUp] = useState(false);
   const [expandedImage, setExpandedImage] = useState<string | null>(null);
   const [input, setInput] = useState("");
-  const { images, setImages, fileInputRef, handlePaste, handleFileSelect, removeImage } = useImageAttachments();
+  const {
+    images,
+    setImages,
+    fileInputRef,
+    handlePaste,
+    handleFileSelect,
+    removeImage,
+  } = useImageAttachments();
 
   const initialMessages = useMemo(
     () => storedMessagesToUIMessages(initialChat.messages),
@@ -145,6 +153,7 @@ export function ChatConversation({
         images={images}
         onRemove={removeImage}
         size="medium"
+        disabled={isStreaming}
       />
       <div className="relative">
         <textarea
@@ -173,7 +182,8 @@ export function ChatConversation({
         <button
           type="button"
           onClick={() => fileInputRef.current?.click()}
-          className="absolute right-3 bottom-3 p-1.5 transition-colors hover:opacity-70 text-muted"
+          disabled={isStreaming}
+          className="absolute right-3 bottom-3 p-1.5 transition-colors hover:opacity-70 text-muted disabled:opacity-30"
           title="Attach image"
         >
           <ImageIcon size={18} />
@@ -217,7 +227,10 @@ export function ChatConversation({
           {messages.map((message) => (
             <div
               key={message.id}
-              className={`mb-6 flex ${message.role === "user" ? "justify-end" : "justify-start"}`}
+              className={cn(
+                "mb-6 flex",
+                message.role === "user" ? "justify-end" : "justify-start",
+              )}
             >
               {message.role === "user" ? (
                 <UserMessage
@@ -255,4 +268,3 @@ export function ChatConversation({
     </div>
   );
 }
-

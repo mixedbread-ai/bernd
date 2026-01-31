@@ -4,6 +4,7 @@ import { TrashIcon } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useTransition } from "react";
+import { cn } from "@/lib/utils/ui";
 import { createNoteAction, deleteNoteAction } from "../../actions/notes";
 import { formatTimeAgo } from "../../lib/utils/format";
 import type { Note } from "../../types";
@@ -35,7 +36,10 @@ export function NotesSidebar({ initialNotes }: NotesSidebarProps) {
 
   return (
     <div
-      className={`${isOnDetail ? "hidden md:flex" : "flex"} w-full md:w-64 border-b md:border-b-0 md:border-r border-border flex-col`}
+      className={cn(
+        isOnDetail ? "hidden md:flex" : "flex",
+        "w-full md:w-64 border-b md:border-b-0 md:border-r border-border flex-col",
+      )}
     >
       <div className="p-4 border-b border-border flex items-center justify-between">
         <h2 className="text-sm font-medium text-foreground">Notes</h2>
@@ -58,11 +62,12 @@ export function NotesSidebar({ initialNotes }: NotesSidebarProps) {
               <li key={note.id} className="group/item relative">
                 <Link
                   href={`/notes/${note.id}`}
-                  className={`block w-full text-left px-3 py-2 pr-8 text-xs rounded-lg transition-colors ${
+                  className={cn(
+                    "block w-full text-left px-3 py-2 pr-8 text-xs rounded-lg transition-colors",
                     isNoteActive(note.id)
                       ? "bg-surface-hover text-foreground"
-                      : "text-muted"
-                  }`}
+                      : "text-muted",
+                  )}
                 >
                   <div className="truncate">{note.title || "Untitled"}</div>
                   <div className="text-[10px] mt-0.5 text-muted">

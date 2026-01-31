@@ -1,6 +1,6 @@
-import { isFileUploadMetadata } from "@/types";
 import { PATHS } from "@/lib/constants";
 import { getFS } from "@/lib/context";
+import { isFileUploadMetadata } from "@/types";
 import { FilesClient } from "./files-client";
 
 export interface FileItem {

@@ -4,6 +4,7 @@ import { ArrowLeftIcon } from "lucide-react";
 import Link from "next/link";
 import { useCallback, useEffect, useRef, useState } from "react";
 import ReactMarkdown from "react-markdown";
+import { cn } from "@/lib/utils/ui";
 import { updateNoteAction } from "../../actions/notes";
 import type { Note } from "../../types";
 
@@ -88,7 +89,10 @@ export function NoteEditor({ note }: NoteEditorProps) {
           <button
             type="button"
             onClick={() => setShowPreview(!showPreview)}
-            className={`md:hidden text-xs px-2 py-1 rounded ${showPreview ? "bg-accent text-white" : "bg-surface text-muted"}`}
+            className={cn(
+              "md:hidden text-xs px-2 py-1 rounded",
+              showPreview ? "bg-accent text-white" : "bg-surface text-muted",
+            )}
           >
             {showPreview ? "edit" : "preview"}
           </button>
@@ -100,7 +104,10 @@ export function NoteEditor({ note }: NoteEditorProps) {
       <div className="flex-1 flex flex-col md:flex-row overflow-hidden">
         {/* Editor - hidden on mobile when preview is shown */}
         <div
-          className={`${showPreview ? "hidden" : "flex"} md:flex flex-1 overflow-hidden md:border-r border-border`}
+          className={cn(
+            showPreview ? "hidden" : "flex",
+            "md:flex flex-1 overflow-hidden md:border-r border-border",
+          )}
         >
           <textarea
             ref={textareaRef}
@@ -112,7 +119,10 @@ export function NoteEditor({ note }: NoteEditorProps) {
         </div>
         {/* Live preview - shown on mobile when preview is toggled, always on desktop */}
         <div
-          className={`${showPreview ? "flex" : "hidden"} md:flex flex-1 overflow-y-auto p-4 md:p-6 bg-surface`}
+          className={cn(
+            showPreview ? "flex" : "hidden",
+            "md:flex flex-1 overflow-y-auto p-4 md:p-6 bg-surface",
+          )}
         >
           <div className="prose prose-sm max-w-none text-foreground">
             <ReactMarkdown>

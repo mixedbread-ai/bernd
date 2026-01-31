@@ -2,6 +2,7 @@
 
 import { ChevronRightIcon, Loader2Icon } from "lucide-react";
 import { useState } from "react";
+import { cn } from "@/lib/utils/ui";
 
 export interface ToolPartProps {
   name: string;
@@ -27,7 +28,10 @@ export function ToolCallItem({ name, state, input, output }: ToolPartProps) {
         {!hasResult && <Loader2Icon size={10} className="ml-1 animate-spin" />}
         <ChevronRightIcon
           size={10}
-          className={`ml-0.5 transition-transform duration-200 ${isOpen ? "rotate-90" : ""}`}
+          className={cn(
+            "ml-0.5 transition-transform duration-200",
+            isOpen && "rotate-90",
+          )}
         />
       </button>
 

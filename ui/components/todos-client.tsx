@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
+import { cn } from "@/lib/utils/ui";
 import {
   createTodoAction,
   deleteTodoAction,
@@ -16,10 +17,7 @@ type Priority = "low" | "medium" | "high";
 
 const PRIORITY_ORDER: Record<string, number> = { high: 0, medium: 1, low: 2 };
 
-function getPriorityIndicatorClass(
-  status: string,
-  priority: Priority,
-): string {
+function getPriorityIndicatorClass(status: string, priority: Priority): string {
   if (status === "completed") {
     return "bg-transparent";
   }
@@ -248,7 +246,10 @@ export function TodosClient({ initialTodos }: TodosClientProps) {
                   type="button"
                   key={f}
                   onClick={() => setFilter(f)}
-                  className={`transition-colors whitespace-nowrap ${filter === f ? "text-foreground" : "text-muted"}`}
+                  className={cn(
+                    "transition-colors whitespace-nowrap",
+                    filter === f ? "text-foreground" : "text-muted",
+                  )}
                 >
                   {f === "in_progress" ? "active" : f}
                   {filter === f && (
@@ -369,9 +370,10 @@ export function TodosClient({ initialTodos }: TodosClientProps) {
             {filtered.map((todo) => (
               <li
                 key={todo.id}
-                className={`group ${
-                  todo.status === "completed" ? "opacity-40" : ""
-                }`}
+                className={cn(
+                  "group",
+                  todo.status === "completed" && "opacity-40",
+                )}
               >
                 <div
                   className="flex items-start gap-3 cursor-pointer -mx-3 px-3 py-2 rounded transition-colors hover:bg-surface-hover"
@@ -381,11 +383,12 @@ export function TodosClient({ initialTodos }: TodosClientProps) {
                   <button
                     type="button"
                     onClick={(e) => toggleComplete(e, todo)}
-                    className={`mt-1 h-4 w-4 shrink-0 rounded border-2 flex items-center justify-center transition-colors ${
+                    className={cn(
+                      "mt-1 h-4 w-4 shrink-0 rounded border-2 flex items-center justify-center transition-colors",
                       todo.status === "completed"
                         ? "bg-muted border-muted"
-                        : "border-muted hover:border-foreground"
-                    }`}
+                        : "border-muted hover:border-foreground",
+                    )}
                   >
                     {todo.status === "completed" && (
                       <svg
@@ -406,12 +409,17 @@ export function TodosClient({ initialTodos }: TodosClientProps) {
 
                   {/* Priority indicator */}
                   <span
-                    className={`mt-1.5 h-2 w-2 shrink-0 rounded-full ${getPriorityIndicatorClass(todo.status, todo.priority)}`}
+                    className={cn(
+                      "mt-1.5 h-2 w-2 shrink-0 rounded-full",
+                      getPriorityIndicatorClass(todo.status, todo.priority),
+                    )}
                   />
 
                   <div className="flex-1 min-w-0">
                     <span
-                      className={`${todo.status === "completed" ? "line-through" : ""}`}
+                      className={cn(
+                        todo.status === "completed" && "line-through",
+                      )}
                     >
                       {todo.title}
                     </span>

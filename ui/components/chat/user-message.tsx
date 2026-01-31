@@ -5,6 +5,7 @@ import {
   type UIMessage,
 } from "ai";
 import ReactMarkdown from "react-markdown";
+import { cn } from "@/lib/utils/ui";
 import { markdownComponents } from "./markdown";
 
 export type MessageSize = "default" | "compact";
@@ -32,9 +33,10 @@ export function UserMessage({
 
   return (
     <div
-      className={`rounded-2xl max-w-[80%] text-sm bg-user-bubble text-foreground ${
-        isCompact ? "px-3 py-2" : "px-4 py-2.5"
-      }`}
+      className={cn(
+        "rounded-2xl max-w-[80%] text-sm bg-user-bubble text-foreground",
+        isCompact ? "px-3 py-2" : "px-4 py-2.5",
+      )}
     >
       {imageParts.length > 0 && (
         <div className="flex flex-wrap gap-2 mb-2">
@@ -48,7 +50,10 @@ export function UserMessage({
               <img
                 src={part.url}
                 alt="attachment"
-                className={`rounded-lg ${isCompact ? "max-h-24" : "max-h-32"}`}
+                className={cn(
+                  "rounded-lg",
+                  isCompact ? "max-h-24" : "max-h-32",
+                )}
               />
             </button>
           ))}

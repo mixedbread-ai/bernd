@@ -1,8 +1,5 @@
 import { useRef, useState } from "react";
-import {
-  fileToImageAttachment,
-  handlePasteWithImages,
-} from "@/lib/chat-utils";
+import { fileToImageAttachment, handlePasteWithImages } from "@/lib/chat-utils";
 import type { ImageAttachment } from "@/types";
 
 export function useImageAttachments() {
@@ -34,5 +31,12 @@ export function useImageAttachments() {
     setImages((prev) => prev.filter((_, i) => i !== index));
   }
 
-  return { images, setImages, fileInputRef, handlePaste, handleFileSelect, removeImage };
+  return {
+    images,
+    setImages,
+    fileInputRef,
+    handlePaste,
+    handleFileSelect,
+    removeImage,
+  };
 }

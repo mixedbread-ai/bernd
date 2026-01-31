@@ -6,6 +6,7 @@ import { ImageIcon } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { useImageAttachments } from "@/hooks/use-image-attachments";
 import { handleChatKeyDown, imagesToFileParts } from "@/lib/chat-utils";
+import { cn } from "@/lib/utils/ui";
 import {
   AssistantMessage,
   ImageModal,
@@ -18,7 +19,14 @@ export function FloatingChat() {
   const [isOpen, setIsOpen] = useState(false);
   const [expandedImage, setExpandedImage] = useState<string | null>(null);
   const [input, setInput] = useState("");
-  const { images, setImages, fileInputRef, handlePaste, handleFileSelect, removeImage } = useImageAttachments();
+  const {
+    images,
+    setImages,
+    fileInputRef,
+    handlePaste,
+    handleFileSelect,
+    removeImage,
+  } = useImageAttachments();
 
   const { messages, status, sendMessage, setMessages } = useChat({
     transport: new DefaultChatTransport({
@@ -143,7 +151,10 @@ export function FloatingChat() {
           {messages.map((message) => (
             <div
               key={message.id}
-              className={`flex ${message.role === "user" ? "justify-end" : "justify-start"}`}
+              className={cn(
+                "flex",
+                message.role === "user" ? "justify-end" : "justify-start",
+              )}
             >
               {message.role === "user" ? (
                 <UserMessage
@@ -168,6 +179,7 @@ export function FloatingChat() {
             images={images}
             onRemove={removeImage}
             size="small"
+            disabled={isStreaming}
           />
           <div className="relative">
             <textarea
@@ -192,7 +204,8 @@ export function FloatingChat() {
             <button
               type="button"
               onClick={() => fileInputRef.current?.click()}
-              className="absolute right-2 bottom-2 p-1 transition-colors hover:opacity-70 text-muted"
+              disabled={isStreaming}
+              className="absolute right-2 bottom-2 p-1 transition-colors hover:opacity-70 text-muted disabled:opacity-30"
               title="Attach image"
             >
               <ImageIcon size={16} />

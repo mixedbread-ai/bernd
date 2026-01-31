@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { searchAction } from "@/actions/search";
 import type { SearchAllResult } from "@/lib/data/search";
+import { cn } from "@/lib/utils/ui";
 
 const TYPE_COLORS: Record<string, string> = {
   todo: "bg-accent",
@@ -87,7 +88,10 @@ export default function SearchPage() {
                 <li key={result.path} className="group">
                   <div className="flex items-start gap-3">
                     <span
-                      className={`mt-1.5 px-2 py-0.5 text-xs text-white rounded ${getTypeColor(result.type)}`}
+                      className={cn(
+                        "mt-1.5 px-2 py-0.5 text-xs text-white rounded",
+                        getTypeColor(result.type),
+                      )}
                     >
                       {result.type}
                     </span>

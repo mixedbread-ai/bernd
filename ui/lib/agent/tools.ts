@@ -293,11 +293,7 @@ Commands:
               Math.min((insert_line ?? 1) - 1, lines.length),
             );
             lines.splice(idx, 0, new_str ?? "");
-            return fs.write(
-              targetPath,
-              lines.join("\n"),
-              existingMetadata,
-            );
+            return fs.write(targetPath, lines.join("\n"), existingMetadata);
           }
 
           default:
@@ -425,7 +421,8 @@ Commands:
               });
 
             case "update":
-              if (!event_id) return { error: "event_id is required for update" };
+              if (!event_id)
+                return { error: "event_id is required for update" };
               return await gcal.updateEvent(event_id, {
                 title,
                 description,
@@ -438,7 +435,8 @@ Commands:
               });
 
             case "delete":
-              if (!event_id) return { error: "event_id is required for delete" };
+              if (!event_id)
+                return { error: "event_id is required for delete" };
               return await gcal.deleteEvent(event_id);
 
             default:

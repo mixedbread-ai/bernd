@@ -1,6 +1,11 @@
 // Pure functions for fetching chats data
 
-import { type ChatMetadata, type ChatSummary, isChatMetadata, type Message } from "@/types";
+import {
+  type ChatMetadata,
+  type ChatSummary,
+  isChatMetadata,
+  type Message,
+} from "@/types";
 import { PATHS } from "../constants";
 import type { FileListItem, SemanticFS } from "../services/semantic-fs";
 

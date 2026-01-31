@@ -12,6 +12,7 @@ import {
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect } from "react";
+import { cn } from "@/lib/utils/ui";
 import { useAuth } from "../context/auth-context";
 import { OrgSwitcher } from "./org-switcher";
 
@@ -77,11 +78,17 @@ export function Navbar() {
               <li key={item.href}>
                 <Link
                   href={item.href}
-                  className={`group flex items-center justify-between py-1.5 text-sm transition-colors ${isActive ? "text-foreground" : "text-muted"}`}
+                  className={cn(
+                    "group flex items-center justify-between py-1.5 text-sm transition-colors",
+                    isActive ? "text-foreground" : "text-muted",
+                  )}
                 >
                   <span className="hover:opacity-80">{item.label}</span>
                   <span
-                    className={`text-xs ${isActive ? "text-accent" : "text-muted opacity-50"}`}
+                    className={cn(
+                      "text-xs",
+                      isActive ? "text-accent" : "text-muted opacity-50",
+                    )}
                   >
                     {item.key}
                   </span>
@@ -117,7 +124,10 @@ export function Navbar() {
               <Link
                 key={item.href}
                 href={item.href}
-                className={`flex flex-col items-center gap-1 px-3 py-2 rounded-lg transition-colors ${isActive ? "text-accent" : "text-muted"}`}
+                className={cn(
+                  "flex flex-col items-center gap-1 px-3 py-2 rounded-lg transition-colors",
+                  isActive ? "text-accent" : "text-muted",
+                )}
               >
                 <Icon size={20} />
                 <span className="text-[10px]">{item.label}</span>
