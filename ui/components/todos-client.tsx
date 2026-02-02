@@ -1,6 +1,7 @@
 "use client";
 
 import { useOptimistic, useState, useTransition } from "react";
+import { useQueryStates, parseAsStringLiteral } from "nuqs";
 import { cn } from "@/lib/utils/ui";
 import {
   createTodoAction,
@@ -12,7 +13,9 @@ import {
 import { formatRelativeDate } from "../lib/utils/format";
 import type { Todo } from "../types";
 
-type SortOption = "priority" | "due_date" | "created" | "alphabetical";
+const FILTER_OPTIONS = ["all", "pending", "in_progress", "completed"] as const;
+const SORT_OPTIONS = ["priority", "due_date", "created", "alphabetical"] as const;
+type SortOption = (typeof SORT_OPTIONS)[number];
 type Priority = "low" | "medium" | "high";
 
 const PRIORITY_ORDER: Record<string, number> = { high: 0, medium: 1, low: 2 };
@@ -125,10 +128,10 @@ export function TodosClient({ initialTodos }: TodosClientProps) {
       }
     },
   );
-  const [filter, setFilter] = useState<
-    "all" | "pending" | "in_progress" | "completed"
-  >("pending");
-  const [sortBy, setSortBy] = useState<SortOption>("priority");
+  const [{ filter, sort }, setParams] = useQueryStates({
+    filter: parseAsStringLiteral(FILTER_OPTIONS).withDefault("pending"),
+    sort: parseAsStringLiteral(SORT_OPTIONS).withDefault("priority"),
+  });
   const [expanded, setExpanded] = useState<string | null>(null);
 
   // Form state
@@ -228,7 +231,7 @@ export function TodosClient({ initialTodos }: TodosClientProps) {
 
   const filtered = sortTodosList(
     optimisticTodos.filter((t) => filter === "all" || t.status === filter),
-    sortBy,
+    sort,
   );
 
   const counts = {
@@ -249,7 +252,7 @@ export function TodosClient({ initialTodos }: TodosClientProps) {
                 <button
                   type="button"
                   key={f}
-                  onClick={() => setFilter(f)}
+                  onClick={() => setParams({ filter: f }, { history: "push" })}
                   className={cn(
                     "transition-colors whitespace-nowrap",
                     filter === f ? "text-foreground" : "text-muted",
@@ -265,8 +268,8 @@ export function TodosClient({ initialTodos }: TodosClientProps) {
           </div>
           <div className="flex items-center gap-2">
             <select
-              value={sortBy}
-              onChange={(e) => setSortBy(e.target.value as SortOption)}
+              value={sort}
+              onChange={(e) => setParams({ sort: e.target.value as SortOption })}
               className="text-xs px-2 py-1 rounded outline-none cursor-pointer bg-surface border border-border text-muted"
             >
               <option value="priority">priority</option>
