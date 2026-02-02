@@ -2,15 +2,22 @@
 
 import { XIcon } from "lucide-react";
 import { usePathname, useRouter } from "next/navigation";
-import { useState } from "react";
+import { useOptimistic, useState, useTransition } from "react";
 import { deleteChatAction } from "@/actions/chats";
 import { useChatHistory } from "@/context/chat-history-context";
 import { cn } from "@/lib/utils/ui";
+import type { ChatSummary } from "@/types";
 
 export function ChatHistoryPanel() {
   const router = useRouter();
   const pathname = usePathname();
   const { isHistoryOpen, setIsHistoryOpen, chats } = useChatHistory();
+  const [, startTransition] = useTransition();
+  const [optimisticChats, setOptimisticChats] = useOptimistic(
+    chats,
+    (state: ChatSummary[], action: { type: "delete"; id: string }) =>
+      state.filter((chat) => chat.id !== action.id),
+  );
   const [chatSearch, setChatSearch] = useState("");
 
   if (!isHistoryOpen) return null;
@@ -19,7 +26,7 @@ export function ChatHistoryPanel() {
     ? pathname.slice("/chat/".length)
     : null;
 
-  const filteredChats = chats.filter((chat) =>
+  const filteredChats = optimisticChats.filter((chat) =>
     chat.title.toLowerCase().includes(chatSearch.toLowerCase()),
   );
 
@@ -31,6 +38,17 @@ export function ChatHistoryPanel() {
   function startNewChat() {
     setIsHistoryOpen(false);
     router.push("/chat");
+  }
+
+  function deleteChat(id: string) {
+    startTransition(async () => {
+      setOptimisticChats({ type: "delete", id });
+      try {
+        await deleteChatAction(id, activeChatId === id);
+      } catch {
+        alert("Failed to delete chat.");
+      }
+    });
   }
 
   return (
@@ -84,7 +102,7 @@ export function ChatHistoryPanel() {
                     type="button"
                     onClick={(e) => {
                       e.stopPropagation();
-                      deleteChatAction(chat.id, activeChatId === chat.id);
+                      deleteChat(chat.id);
                     }}
                     className="absolute right-2 top-1/2 -translate-y-1/2 p-1 opacity-0 group-hover/item:opacity-100 transition-opacity hover:opacity-70 text-accent"
                     title="Delete"

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useOptimistic, useState, useTransition } from "react";
 import { cn } from "@/lib/utils/ui";
 import {
   createTodoAction,
@@ -78,9 +78,53 @@ interface TodosClientProps {
   initialTodos: Todo[];
 }
 
+type TodoAction =
+  | { type: "toggle"; id: string; newStatus: string }
+  | { type: "delete"; id: string }
+  | { type: "add"; data: TodoCreate }
+  | { type: "update"; id: string; data: TodoUpdate };
+
 export function TodosClient({ initialTodos }: TodosClientProps) {
-  const [todos, setTodos] =
-    useState<(Todo & { content?: string })[]>(initialTodos);
+  const [optimisticTodos, setOptimisticTodos] = useOptimistic(
+    initialTodos,
+    (state: Todo[], action: TodoAction) => {
+      switch (action.type) {
+        case "toggle":
+          return state.map((todo) =>
+            todo.id === action.id
+              ? { ...todo, status: action.newStatus as Todo["status"] }
+              : todo,
+          );
+        case "delete":
+          return state.filter((todo) => todo.id !== action.id);
+        case "add":
+          return [
+            ...state,
+            {
+              id: action.data.title,
+              title: action.data.title,
+              description: action.data.description,
+              priority: action.data.priority ?? "medium",
+              due_date: action.data.due_date,
+              status: action.data.status ?? "pending",
+              tags: action.data.tags ?? [],
+            },
+          ];
+        case "update": {
+          const { new_title, ...rest } = action.data;
+          return state.map((todo) =>
+            todo.id === action.id
+              ? {
+                  ...todo,
+                  ...rest,
+                  ...(new_title ? { id: new_title, title: new_title } : {}),
+                }
+              : todo,
+          );
+        }
+      }
+    },
+  );
   const [filter, setFilter] = useState<
     "all" | "pending" | "in_progress" | "completed"
   >("pending");
@@ -101,22 +145,12 @@ export function TodosClient({ initialTodos }: TodosClientProps) {
     e.stopPropagation();
     const newStatus = todo.status === "completed" ? "pending" : "completed";
 
-    // Optimistic update
-    setTodos((prev) =>
-      prev.map((t) => (t.id === todo.id ? { ...t, status: newStatus } : t)),
-    );
-
     startTransition(async () => {
+      setOptimisticTodos({ type: "toggle", id: todo.id, newStatus });
       try {
         await updateTodoAction(todo.id, { status: newStatus } as TodoUpdate);
-      } catch (err) {
-        console.error("Failed to update todo", err);
-        // Revert on error
-        setTodos((prev) =>
-          prev.map((t) =>
-            t.id === todo.id ? { ...t, status: todo.status } : t,
-          ),
-        );
+      } catch {
+        alert("Failed to update todo.");
       }
     });
   }
@@ -125,17 +159,12 @@ export function TodosClient({ initialTodos }: TodosClientProps) {
     e.stopPropagation();
     if (!confirm("Delete this todo?")) return;
 
-    const todoToDelete = todos.find((t) => t.id === id);
-    setTodos((prev) => prev.filter((t) => t.id !== id));
-
     startTransition(async () => {
+      setOptimisticTodos({ type: "delete", id });
       try {
         await deleteTodoAction(id);
-      } catch (err) {
-        console.error("Failed to delete todo", err);
-        if (todoToDelete) {
-          setTodos((prev) => [...prev, todoToDelete]);
-        }
+      } catch {
+        alert("Failed to delete todo.");
       }
     });
   }
@@ -159,7 +188,6 @@ export function TodosClient({ initialTodos }: TodosClientProps) {
     startTransition(async () => {
       try {
         if (editingId) {
-          // Update existing todo
           const updateData: TodoUpdate = {
             new_title:
               formData.title !== editingId ? formData.title : undefined,
@@ -167,52 +195,27 @@ export function TodosClient({ initialTodos }: TodosClientProps) {
             priority: formData.priority,
             due_date: formData.due_date || undefined,
           };
+          setOptimisticTodos({
+            type: "update",
+            id: editingId,
+            data: updateData,
+          });
           await updateTodoAction(editingId, updateData);
-
-          // Update local state
-          setTodos((prev) =>
-            prev.map((t) =>
-              t.id === editingId
-                ? {
-                    ...t,
-                    id: formData.title,
-                    title: formData.title,
-                    description: formData.description,
-                    priority: formData.priority,
-                    due_date: formData.due_date || undefined,
-                  }
-                : t,
-            ),
-          );
         } else {
-          // Create new todo
           const createData: TodoCreate = {
             title: formData.title,
             description: formData.description,
             priority: formData.priority,
             due_date: formData.due_date || undefined,
           };
+          setOptimisticTodos({ type: "add", data: createData });
           await createTodoAction(createData);
-
-          // Add to local state
-          setTodos((prev) => [
-            ...prev,
-            {
-              id: formData.title,
-              title: formData.title,
-              description: formData.description,
-              priority: formData.priority,
-              due_date: formData.due_date || undefined,
-              status: "pending",
-              tags: [],
-            },
-          ]);
         }
         setShowForm(false);
         setEditingId(null);
         setFormData(emptyFormData);
-      } catch (err) {
-        console.error("Failed to save todo", err);
+      } catch {
+        alert("Failed to save todo.");
       }
     });
   }
@@ -224,15 +227,16 @@ export function TodosClient({ initialTodos }: TodosClientProps) {
   }
 
   const filtered = sortTodosList(
-    todos.filter((t) => filter === "all" || t.status === filter),
+    optimisticTodos.filter((t) => filter === "all" || t.status === filter),
     sortBy,
   );
 
   const counts = {
-    all: todos.length,
-    pending: todos.filter((t) => t.status === "pending").length,
-    in_progress: todos.filter((t) => t.status === "in_progress").length,
-    completed: todos.filter((t) => t.status === "completed").length,
+    all: optimisticTodos.length,
+    pending: optimisticTodos.filter((t) => t.status === "pending").length,
+    in_progress: optimisticTodos.filter((t) => t.status === "in_progress")
+      .length,
+    completed: optimisticTodos.filter((t) => t.status === "completed").length,
   };
 
   return (

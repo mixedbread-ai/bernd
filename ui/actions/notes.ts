@@ -52,15 +52,12 @@ export async function updateNoteAction(id: string, data: NoteUpdate) {
   revalidatePath("/notes");
 }
 
-export async function deleteNoteAction(id: string, isActive: boolean) {
+export async function deleteNoteAction(id: string) {
   const fs = await getFS();
 
   await fs.delete(`${PATHS.NOTES}/${id}.md`);
 
   revalidatePath("/notes");
-  if (isActive) {
-    redirect("/notes");
-  }
 }
 
 export async function getNoteAction(id: string): Promise<Note | null> {

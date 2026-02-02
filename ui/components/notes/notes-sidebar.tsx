@@ -2,8 +2,8 @@
 
 import { TrashIcon } from "lucide-react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
-import { useTransition } from "react";
+import { usePathname, useRouter } from "next/navigation";
+import { useOptimistic, useTransition } from "react";
 import { cn } from "@/lib/utils/ui";
 import { createNoteAction, deleteNoteAction } from "../../actions/notes";
 import { formatTimeAgo } from "../../lib/utils/format";
@@ -15,13 +15,20 @@ interface NotesSidebarProps {
 
 export function NotesSidebar({ initialNotes }: NotesSidebarProps) {
   const pathname = usePathname();
-  const [isPending, startTransition] = useTransition();
+  const router = useRouter();
+  const [isCreating, startCreateTransition] = useTransition();
+  const [, startDeleteTransition] = useTransition();
+  const [optimisticNotes, setOptimisticNotes] = useOptimistic(
+    initialNotes,
+    (state: Note[], action: { type: "delete"; id: string }) =>
+      state.filter((note) => note.id !== action.id),
+  );
 
   const isNoteActive = (noteId: string) => pathname === `/notes/${noteId}`;
   const isOnDetail = pathname !== "/notes";
 
   const handleCreate = () => {
-    startTransition(async () => {
+    startCreateTransition(async () => {
       await createNoteAction({ title: "Untitled", content: "" });
     });
   };
@@ -29,8 +36,15 @@ export function NotesSidebar({ initialNotes }: NotesSidebarProps) {
   const handleDelete = (noteId: string, e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    startTransition(async () => {
-      await deleteNoteAction(noteId, isNoteActive(noteId));
+    const active = isNoteActive(noteId);
+    if (active) router.push("/notes");
+    startDeleteTransition(async () => {
+      setOptimisticNotes({ type: "delete", id: noteId });
+      try {
+        await deleteNoteAction(noteId);
+      } catch {
+        alert("Failed to delete note.");
+      }
     });
   };
 
@@ -46,7 +60,7 @@ export function NotesSidebar({ initialNotes }: NotesSidebarProps) {
         <button
           type="button"
           onClick={handleCreate}
-          disabled={isPending}
+          disabled={isCreating}
           className="text-xs transition-colors hover:opacity-70 text-accent disabled:opacity-50"
         >
           + new
@@ -54,11 +68,11 @@ export function NotesSidebar({ initialNotes }: NotesSidebarProps) {
       </div>
 
       <div className="flex-1 overflow-y-auto p-2">
-        {initialNotes.length === 0 ? (
+        {optimisticNotes.length === 0 ? (
           <p className="text-xs p-2 text-muted">no notes yet</p>
         ) : (
           <ul className="space-y-0.5">
-            {initialNotes.map((note) => (
+            {optimisticNotes.map((note) => (
               <li key={note.id} className="group/item relative">
                 <Link
                   href={`/notes/${note.id}`}

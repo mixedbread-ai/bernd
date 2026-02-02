@@ -1,7 +1,14 @@
 "use client";
 
 import { ArrowLeftIcon, DownloadIcon, Trash2Icon, XIcon } from "lucide-react";
-import { useCallback, useEffect, useRef, useState, useTransition } from "react";
+import {
+  useCallback,
+  useEffect,
+  useOptimistic,
+  useRef,
+  useState,
+  useTransition,
+} from "react";
 import ReactMarkdown from "react-markdown";
 import {
   createFolderAction,
@@ -48,9 +55,16 @@ interface FilesClientProps {
   initialPath: string;
 }
 
+type FileAction = { type: "delete"; path: string };
+
 export function FilesClient({ initialItems, initialPath }: FilesClientProps) {
   const [currentPath, setCurrentPath] = useState(initialPath);
   const [items, setItems] = useState<FileItem[]>(initialItems);
+  const [optimisticItems, setOptimisticItems] = useOptimistic(
+    items,
+    (state: FileItem[], action: FileAction) =>
+      state.filter((file) => file.path !== action.path),
+  );
   const [loading, setLoading] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [showNewFolder, setShowNewFolder] = useState(false);
@@ -166,8 +180,7 @@ export function FilesClient({ initialItems, initialPath }: FilesClientProps) {
         setNewFolderName("");
         setShowNewFolder(false);
         fetchFiles(currentPath);
-      } catch (e) {
-        console.error("Failed to create folder:", e);
+      } catch {
         alert("Failed to create folder.");
       }
     });
@@ -182,6 +195,7 @@ export function FilesClient({ initialItems, initialPath }: FilesClientProps) {
     if (!confirm(message)) return;
 
     startTransition(async () => {
+      setOptimisticItems({ type: "delete", path: item.path });
       try {
         if (item.type === "folder") {
           await deleteFolderAction(item.path);
@@ -189,8 +203,7 @@ export function FilesClient({ initialItems, initialPath }: FilesClientProps) {
           await deleteFileAction(item.path);
         }
         fetchFiles(currentPath);
-      } catch (e) {
-        console.error("Failed to delete:", e);
+      } catch {
         alert("Failed to delete.");
       }
     });
@@ -382,7 +395,7 @@ export function FilesClient({ initialItems, initialPath }: FilesClientProps) {
         {/* File list */}
         {loading ? (
           <div className="text-muted">loading...</div>
-        ) : items.length === 0 ? (
+        ) : optimisticItems.length === 0 ? (
           <div className="text-center py-12 text-muted">
             <p className="mb-2">This folder is empty</p>
             <p className="text-xs">
@@ -391,7 +404,7 @@ export function FilesClient({ initialItems, initialPath }: FilesClientProps) {
           </div>
         ) : (
           <div className="space-y-1">
-            {items.map((item) => (
+            {optimisticItems.map((item) => (
               <div
                 key={item.path}
                 className="group flex items-center gap-3 p-3 rounded-lg transition-colors hover:bg-opacity-50 bg-surface"
