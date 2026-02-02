@@ -1,7 +1,7 @@
 "use client";
 
+import { parseAsStringLiteral, useQueryStates } from "nuqs";
 import { useOptimistic, useState, useTransition } from "react";
-import { useQueryStates, parseAsStringLiteral } from "nuqs";
 import { cn } from "@/lib/utils/ui";
 import {
   createTodoAction,
@@ -14,7 +14,12 @@ import { formatRelativeDate } from "../lib/utils/format";
 import type { Todo } from "../types";
 
 const FILTER_OPTIONS = ["all", "pending", "in_progress", "completed"] as const;
-const SORT_OPTIONS = ["priority", "due_date", "created", "alphabetical"] as const;
+const SORT_OPTIONS = [
+  "priority",
+  "due_date",
+  "created",
+  "alphabetical",
+] as const;
 type SortOption = (typeof SORT_OPTIONS)[number];
 type Priority = "low" | "medium" | "high";
 
@@ -84,7 +89,6 @@ interface TodosClientProps {
 type TodoAction =
   | { type: "toggle"; id: string; newStatus: string }
   | { type: "delete"; id: string }
-  | { type: "add"; data: TodoCreate }
   | { type: "update"; id: string; data: TodoUpdate };
 
 export function TodosClient({ initialTodos }: TodosClientProps) {
@@ -100,19 +104,6 @@ export function TodosClient({ initialTodos }: TodosClientProps) {
           );
         case "delete":
           return state.filter((todo) => todo.id !== action.id);
-        case "add":
-          return [
-            ...state,
-            {
-              id: action.data.title,
-              title: action.data.title,
-              description: action.data.description,
-              priority: action.data.priority ?? "medium",
-              due_date: action.data.due_date,
-              status: action.data.status ?? "pending",
-              tags: action.data.tags ?? [],
-            },
-          ];
         case "update": {
           const { new_title, ...rest } = action.data;
           return state.map((todo) =>
@@ -138,7 +129,8 @@ export function TodosClient({ initialTodos }: TodosClientProps) {
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [formData, setFormData] = useState<TodoFormData>(emptyFormData);
-  const [isPending, startTransition] = useTransition();
+  const [, startTransition] = useTransition();
+  const [isFormPending, startFormTransition] = useTransition();
 
   function toggleExpand(id: string) {
     setExpanded((prev) => (prev === id ? null : id));
@@ -188,39 +180,43 @@ export function TodosClient({ initialTodos }: TodosClientProps) {
     e.preventDefault();
     if (!formData.title.trim()) return;
 
-    startTransition(async () => {
-      try {
-        if (editingId) {
-          const updateData: TodoUpdate = {
-            new_title:
-              formData.title !== editingId ? formData.title : undefined,
-            description: formData.description,
-            priority: formData.priority,
-            due_date: formData.due_date || undefined,
-          };
-          setOptimisticTodos({
-            type: "update",
-            id: editingId,
-            data: updateData,
-          });
-          await updateTodoAction(editingId, updateData);
-        } else {
+    if (editingId) {
+      const id = editingId;
+      const updateData: TodoUpdate = {
+        new_title: formData.title !== id ? formData.title : undefined,
+        description: formData.description,
+        priority: formData.priority,
+        due_date: formData.due_date || undefined,
+      };
+      setShowForm(false);
+      setEditingId(null);
+      setFormData(emptyFormData);
+      startFormTransition(async () => {
+        setOptimisticTodos({ type: "update", id, data: updateData });
+        try {
+          await updateTodoAction(id, updateData);
+        } catch {
+          alert("Failed to update todo.");
+        }
+      });
+    } else {
+      startFormTransition(async () => {
+        try {
           const createData: TodoCreate = {
             title: formData.title,
             description: formData.description,
             priority: formData.priority,
             due_date: formData.due_date || undefined,
           };
-          setOptimisticTodos({ type: "add", data: createData });
           await createTodoAction(createData);
+          setShowForm(false);
+          setEditingId(null);
+          setFormData(emptyFormData);
+        } catch {
+          alert("Failed to create todo.");
         }
-        setShowForm(false);
-        setEditingId(null);
-        setFormData(emptyFormData);
-      } catch {
-        alert("Failed to save todo.");
-      }
-    });
+      });
+    }
   }
 
   function cancelForm() {
@@ -267,16 +263,29 @@ export function TodosClient({ initialTodos }: TodosClientProps) {
             )}
           </div>
           <div className="flex items-center gap-2">
-            <select
-              value={sort}
-              onChange={(e) => setParams({ sort: e.target.value as SortOption })}
-              className="text-xs px-2 py-1 rounded outline-none cursor-pointer bg-surface border border-border text-muted"
-            >
-              <option value="priority">priority</option>
-              <option value="due_date">due date</option>
-              <option value="created">newest</option>
-              <option value="alphabetical">a-z</option>
-            </select>
+            <div className="relative">
+              <select
+                value={sort}
+                onChange={(e) =>
+                  setParams({ sort: e.target.value as SortOption })
+                }
+                className="text-xs pl-2 pr-6 py-1 rounded outline-none cursor-pointer bg-surface border border-border text-muted appearance-none"
+              >
+                <option value="priority">priority</option>
+                <option value="due_date">due date</option>
+                <option value="created">newest</option>
+                <option value="alphabetical">a-z</option>
+              </select>
+              <svg
+                className="pointer-events-none absolute right-1.5 top-1/2 -translate-y-1/2 h-3 w-3 text-muted"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth={2}
+              >
+                <path d="M6 9l6 6 6-6" />
+              </svg>
+            </div>
             <button
               type="button"
               onClick={() => {
@@ -305,7 +314,8 @@ export function TodosClient({ initialTodos }: TodosClientProps) {
                 onChange={(e) =>
                   setFormData({ ...formData, title: e.target.value })
                 }
-                className="w-full px-3 py-2 bg-background border border-border rounded text-foreground placeholder:text-muted outline-none focus:border-accent"
+                disabled={isFormPending}
+                className="w-full px-3 py-2 bg-background border border-border rounded text-foreground placeholder:text-muted outline-none focus:border-accent disabled:opacity-50"
               />
               <textarea
                 placeholder="Description (optional)"
@@ -313,7 +323,8 @@ export function TodosClient({ initialTodos }: TodosClientProps) {
                 onChange={(e) =>
                   setFormData({ ...formData, description: e.target.value })
                 }
-                className="w-full px-3 py-2 bg-background border border-border rounded text-foreground placeholder:text-muted outline-none focus:border-accent resize-none"
+                disabled={isFormPending}
+                className="w-full px-3 py-2 bg-background border border-border rounded text-foreground placeholder:text-muted outline-none focus:border-accent resize-none disabled:opacity-50"
                 rows={3}
               />
               <div className="flex gap-4">
@@ -321,20 +332,32 @@ export function TodosClient({ initialTodos }: TodosClientProps) {
                   <label className="block text-xs text-muted mb-1">
                     Priority
                   </label>
-                  <select
-                    value={formData.priority}
-                    onChange={(e) =>
-                      setFormData({
-                        ...formData,
-                        priority: e.target.value as "low" | "medium" | "high",
-                      })
-                    }
-                    className="w-full px-3 py-2 bg-background border border-border rounded text-foreground outline-none focus:border-accent"
-                  >
-                    <option value="low">Low</option>
-                    <option value="medium">Medium</option>
-                    <option value="high">High</option>
-                  </select>
+                  <div className="relative">
+                    <select
+                      value={formData.priority}
+                      onChange={(e) =>
+                        setFormData({
+                          ...formData,
+                          priority: e.target.value as "low" | "medium" | "high",
+                        })
+                      }
+                      disabled={isFormPending}
+                      className="w-full pl-3 pr-8 py-2 bg-background border border-border rounded text-foreground outline-none focus:border-accent disabled:opacity-50 appearance-none"
+                    >
+                      <option value="low">Low</option>
+                      <option value="medium">Medium</option>
+                      <option value="high">High</option>
+                    </select>
+                    <svg
+                      className="pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 h-3 w-3 text-muted"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth={2}
+                    >
+                      <path d="M6 9l6 6 6-6" />
+                    </svg>
+                  </div>
                 </div>
                 <div className="flex-1">
                   <label className="block text-xs text-muted mb-1">
@@ -346,7 +369,8 @@ export function TodosClient({ initialTodos }: TodosClientProps) {
                     onChange={(e) =>
                       setFormData({ ...formData, due_date: e.target.value })
                     }
-                    className="w-full px-3 py-2 bg-background border border-border rounded text-foreground outline-none focus:border-accent"
+                    disabled={isFormPending}
+                    className="w-full px-3 py-2 bg-background border border-border rounded text-foreground outline-none focus:border-accent disabled:opacity-50"
                   />
                 </div>
               </div>
@@ -354,16 +378,21 @@ export function TodosClient({ initialTodos }: TodosClientProps) {
                 <button
                   type="button"
                   onClick={cancelForm}
-                  className="px-4 py-2 text-sm text-muted hover:text-foreground transition-colors"
+                  disabled={isFormPending}
+                  className="px-4 py-2 text-sm text-muted hover:text-foreground transition-colors disabled:opacity-50"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  disabled={isPending || !formData.title.trim()}
+                  disabled={isFormPending || !formData.title.trim()}
                   className="px-4 py-2 text-sm bg-accent text-background rounded hover:opacity-90 transition-opacity disabled:opacity-50"
                 >
-                  {isPending ? "Saving..." : editingId ? "Update" : "Create"}
+                  {isFormPending
+                    ? "Saving..."
+                    : editingId
+                      ? "Update"
+                      : "Create"}
                 </button>
               </div>
             </div>

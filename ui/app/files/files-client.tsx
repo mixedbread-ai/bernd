@@ -65,7 +65,6 @@ export function FilesClient({ initialItems, initialPath }: FilesClientProps) {
     (state: FileItem[], action: FileAction) =>
       state.filter((file) => file.path !== action.path),
   );
-  const [loading, setLoading] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [showNewFolder, setShowNewFolder] = useState(false);
   const [newFolderName, setNewFolderName] = useState("");
@@ -75,10 +74,11 @@ export function FilesClient({ initialItems, initialPath }: FilesClientProps) {
     content: string;
   } | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const [isPending, startTransition] = useTransition();
+  const [, startTransition] = useTransition();
+  const [isFolderPending, startFolderTransition] = useTransition();
+  const [isFilePending, startFileTransition] = useTransition();
 
   const fetchFiles = useCallback(async (path: string) => {
-    setLoading(true);
     try {
       const data = await listFilesAction(path);
       setItems(data);
@@ -86,8 +86,6 @@ export function FilesClient({ initialItems, initialPath }: FilesClientProps) {
     } catch (e) {
       console.error("Failed to fetch files:", e);
       setItems([]);
-    } finally {
-      setLoading(false);
     }
   }, []);
 
@@ -120,17 +118,17 @@ export function FilesClient({ initialItems, initialPath }: FilesClientProps) {
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [preview, closePreview]);
 
-  const navigateTo = (path: string) => {
-    fetchFiles(path);
-  };
+  function navigateTo(path: string) {
+    startTransition(() => fetchFiles(path));
+  }
 
-  const goUp = () => {
+  function goUp() {
     if (currentPath === "/files") return;
     const parent = currentPath.split("/").slice(0, -1).join("/") || "/files";
     navigateTo(parent);
-  };
+  }
 
-  const handleUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  async function handleUpload(e: React.ChangeEvent<HTMLInputElement>) {
     const files = e.target.files;
     if (!files || files.length === 0) return;
 
@@ -159,7 +157,7 @@ export function FilesClient({ initialItems, initialPath }: FilesClientProps) {
           });
         }
       }
-      fetchFiles(currentPath);
+      startTransition(() => fetchFiles(currentPath));
     } catch (e) {
       console.error("Upload failed:", e);
       alert("Upload failed. Please try again.");
@@ -169,12 +167,12 @@ export function FilesClient({ initialItems, initialPath }: FilesClientProps) {
         fileInputRef.current.value = "";
       }
     }
-  };
+  }
 
-  const handleCreateFolder = async () => {
+  function handleCreateFolder() {
     if (!newFolderName.trim()) return;
 
-    startTransition(async () => {
+    startFolderTransition(async () => {
       try {
         await createFolderAction(`${currentPath}/${newFolderName.trim()}`);
         setNewFolderName("");
@@ -184,9 +182,9 @@ export function FilesClient({ initialItems, initialPath }: FilesClientProps) {
         alert("Failed to create folder.");
       }
     });
-  };
+  }
 
-  const handleDeleteItem = async (item: FileItem) => {
+  function handleDeleteItem(item: FileItem) {
     const message =
       item.type === "folder"
         ? `Delete folder "${item.name}" and all its contents?`
@@ -207,9 +205,9 @@ export function FilesClient({ initialItems, initialPath }: FilesClientProps) {
         alert("Failed to delete.");
       }
     });
-  };
+  }
 
-  const handleDownloadFile = async (item: FileItem) => {
+  async function handleDownloadFile(item: FileItem) {
     try {
       const mimeType = item.mime_type || "application/octet-stream";
 
@@ -237,9 +235,9 @@ export function FilesClient({ initialItems, initialPath }: FilesClientProps) {
       console.error("Download failed:", e);
       alert("Download failed.");
     }
-  };
+  }
 
-  const openPreview = async (item: FileItem) => {
+  async function openPreview(item: FileItem) {
     if (!canPreview(item.mime_type)) {
       handleDownloadFile(item);
       return;
@@ -265,16 +263,16 @@ export function FilesClient({ initialItems, initialPath }: FilesClientProps) {
       setPreview(null);
       alert("Failed to load preview.");
     }
-  };
+  }
 
-  const handleCreateFile = async () => {
+  function handleCreateFile() {
     if (!newFile?.name.trim()) return;
 
     const fileName = newFile.name.endsWith(".md")
       ? newFile.name
       : `${newFile.name}.md`;
 
-    startTransition(async () => {
+    startFileTransition(async () => {
       try {
         await uploadFileAction(`${currentPath}/${fileName}`, newFile.content, {
           mime_type: "text/markdown",
@@ -287,7 +285,7 @@ export function FilesClient({ initialItems, initialPath }: FilesClientProps) {
         alert("Failed to create file.");
       }
     });
-  };
+  }
 
   const pathParts = currentPath.split("/").filter(Boolean);
 
@@ -333,7 +331,10 @@ export function FilesClient({ initialItems, initialPath }: FilesClientProps) {
             >
               + folder
             </button>
-            <label className="text-xs px-3 py-1.5 rounded-lg transition-colors hover:opacity-80 cursor-pointer bg-accent text-white">
+            <label className={cn(
+              "text-xs px-3 py-1.5 rounded-lg transition-colors bg-accent text-white",
+              uploading ? "opacity-50 cursor-default" : "hover:opacity-80 cursor-pointer",
+            )}>
               {uploading ? "uploading..." : "+ upload"}
               <input
                 ref={fileInputRef}
@@ -356,16 +357,17 @@ export function FilesClient({ initialItems, initialPath }: FilesClientProps) {
               value={newFolderName}
               onChange={(e) => setNewFolderName(e.target.value)}
               placeholder="Folder name..."
-              className="flex-1 text-sm bg-transparent outline-none text-foreground"
+              disabled={isFolderPending}
+              className="flex-1 text-sm bg-transparent outline-none text-foreground disabled:opacity-50"
               onKeyDown={(e) => {
                 if (e.key === "Enter") handleCreateFolder();
-                if (e.key === "Escape") setShowNewFolder(false);
+                if (e.key === "Escape" && !isFolderPending) setShowNewFolder(false);
               }}
             />
             <button
               type="button"
               onClick={handleCreateFolder}
-              disabled={isPending}
+              disabled={isFolderPending}
               className="text-xs px-2 py-1 rounded bg-accent text-white disabled:opacity-50"
             >
               create
@@ -373,7 +375,8 @@ export function FilesClient({ initialItems, initialPath }: FilesClientProps) {
             <button
               type="button"
               onClick={() => setShowNewFolder(false)}
-              className="text-xs px-2 py-1 text-muted"
+              disabled={isFolderPending}
+              className="text-xs px-2 py-1 text-muted disabled:opacity-50"
             >
               cancel
             </button>
@@ -393,9 +396,7 @@ export function FilesClient({ initialItems, initialPath }: FilesClientProps) {
         )}
 
         {/* File list */}
-        {loading ? (
-          <div className="text-muted">loading...</div>
-        ) : optimisticItems.length === 0 ? (
+        {optimisticItems.length === 0 ? (
           <div className="text-center py-12 text-muted">
             <p className="mb-2">This folder is empty</p>
             <p className="text-xs">
@@ -548,7 +549,7 @@ export function FilesClient({ initialItems, initialPath }: FilesClientProps) {
       {newFile && (
         <div
           className="fixed inset-0 z-50 flex items-center justify-center p-4 md:p-8 bg-black/80"
-          onClick={() => setNewFile(null)}
+          onClick={() => { if (!isFilePending) setNewFile(null); }}
         >
           <div
             className="relative w-full max-w-3xl max-h-[90vh] rounded-xl overflow-hidden flex flex-col bg-background"
@@ -565,14 +566,15 @@ export function FilesClient({ initialItems, initialPath }: FilesClientProps) {
                     setNewFile({ ...newFile, name: e.target.value })
                   }
                   placeholder="filename.md"
-                  className="flex-1 text-sm bg-transparent outline-none text-foreground"
+                  disabled={isFilePending}
+                  className="flex-1 text-sm bg-transparent outline-none disabled:opacity-50 text-foreground"
                 />
               </div>
               <div className="flex items-center gap-2">
                 <button
                   type="button"
                   onClick={handleCreateFile}
-                  disabled={!newFile.name.trim() || isPending}
+                  disabled={!newFile.name.trim() || isFilePending}
                   className="text-xs px-3 py-1.5 rounded-lg transition-colors hover:opacity-80 disabled:opacity-50 bg-accent text-white"
                 >
                   save
@@ -580,7 +582,8 @@ export function FilesClient({ initialItems, initialPath }: FilesClientProps) {
                 <button
                   type="button"
                   onClick={() => setNewFile(null)}
-                  className="p-2 rounded-lg hover:opacity-80 text-muted"
+                  disabled={isFilePending}
+                  className="p-2 rounded-lg hover:opacity-80 disabled:opacity-50 text-muted"
                   title="Close"
                 >
                   <XIcon size={18} />
@@ -596,7 +599,8 @@ export function FilesClient({ initialItems, initialPath }: FilesClientProps) {
                   setNewFile({ ...newFile, content: e.target.value })
                 }
                 placeholder="Write your markdown here..."
-                className="w-full h-[60vh] text-sm font-mono bg-transparent outline-none resize-none text-foreground"
+                disabled={isFilePending}
+                className="w-full h-[60vh] text-sm font-mono bg-transparent outline-none resize-none disabled:opacity-50 text-foreground"
               />
             </div>
           </div>
