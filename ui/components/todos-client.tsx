@@ -71,7 +71,7 @@ function sortTodosList<T extends Todo>(todos: T[], sortBy: SortOption): T[] {
 interface TodoFormData {
   title: string;
   description: string;
-  priority: "low" | "medium" | "high";
+  priority: Priority;
   due_date: string;
 }
 
@@ -338,7 +338,7 @@ export function TodosClient({ initialTodos }: TodosClientProps) {
                       onChange={(e) =>
                         setFormData({
                           ...formData,
-                          priority: e.target.value as "low" | "medium" | "high",
+                          priority: e.target.value as Priority,
                         })
                       }
                       disabled={isFormPending}

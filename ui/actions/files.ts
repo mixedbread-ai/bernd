@@ -3,12 +3,12 @@
 import { revalidatePath } from "next/cache";
 import { PATHS } from "@/lib/constants";
 import { getFS } from "@/lib/context";
+import type { FileItem } from "@/types";
 import {
   type FileUploadMetadata,
   type FolderMarkerMetadata,
   isFileUploadMetadata,
 } from "@/types";
-import type { FileItem } from "../app/files/page";
 
 export async function listFilesAction(path: string): Promise<FileItem[]> {
   const fs = await getFS();

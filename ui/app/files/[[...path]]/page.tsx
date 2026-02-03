@@ -1,16 +1,7 @@
 import { PATHS } from "@/lib/constants";
 import { getFS } from "@/lib/context";
-import { isFileUploadMetadata } from "@/types";
-import { FilesClient } from "./files-client";
-
-export interface FileItem {
-  name: string;
-  path: string;
-  type: "file" | "folder";
-  size?: number;
-  mime_type?: string;
-  created_at?: string;
-}
+import { type FileItem, isFileUploadMetadata } from "@/types";
+import { FilesClient } from "../files-client";
 
 async function getFiles(path: string): Promise<FileItem[]> {
   const fs = await getFS();
@@ -26,6 +17,9 @@ async function getFiles(path: string): Promise<FileItem[]> {
     const parts = relativePath.split("/");
     const name = parts[0];
     const isFolder = parts.length > 1;
+
+    // Skip folder marker files
+    if (name === "folder_meta.json") continue;
 
     if (isFolder) {
       if (seen.has(name)) continue;
@@ -59,8 +53,15 @@ async function getFiles(path: string): Promise<FileItem[]> {
   return items;
 }
 
-export default async function FilesPage() {
-  const initialItems = await getFiles(PATHS.FILES);
+export default async function FilesPage({
+  params,
+}: PageProps<"/files/[[...path]]">) {
+  const { path } = await params;
+  const decodedPath = path?.map(decodeURIComponent);
+  const currentPath = decodedPath
+    ? `${PATHS.FILES}/${decodedPath.join("/")}`
+    : PATHS.FILES;
+  const items = await getFiles(currentPath);
 
-  return <FilesClient initialItems={initialItems} initialPath={PATHS.FILES} />;
+  return <FilesClient items={items} currentPath={currentPath} />;
 }

@@ -1,6 +1,7 @@
 "use client";
 
 import { ArrowLeftIcon, DownloadIcon, Trash2Icon, XIcon } from "lucide-react";
+import { useRouter } from "next/navigation";
 import {
   useCallback,
   useEffect,
@@ -16,13 +17,12 @@ import {
   deleteFolderAction,
   downloadBinaryFileAction,
   downloadFileAction,
-  listFilesAction,
   uploadBinaryFileAction,
   uploadFileAction,
 } from "@/actions/files";
 import { formatFileSize } from "@/lib/utils/format";
 import { cn } from "@/lib/utils/ui";
-import type { FileItem } from "./page";
+import type { FileItem } from "@/types";
 
 interface PreviewData {
   item: FileItem;
@@ -51,15 +51,14 @@ function canPreview(mimeType?: string): boolean {
 }
 
 interface FilesClientProps {
-  initialItems: FileItem[];
-  initialPath: string;
+  items: FileItem[];
+  currentPath: string;
 }
 
 type FileAction = { type: "delete"; path: string };
 
-export function FilesClient({ initialItems, initialPath }: FilesClientProps) {
-  const [currentPath, setCurrentPath] = useState(initialPath);
-  const [items, setItems] = useState<FileItem[]>(initialItems);
+export function FilesClient({ items, currentPath }: FilesClientProps) {
+  const router = useRouter();
   const [optimisticItems, setOptimisticItems] = useOptimistic(
     items,
     (state: FileItem[], action: FileAction) =>
@@ -77,17 +76,6 @@ export function FilesClient({ initialItems, initialPath }: FilesClientProps) {
   const [, startTransition] = useTransition();
   const [isFolderPending, startFolderTransition] = useTransition();
   const [isFilePending, startFileTransition] = useTransition();
-
-  const fetchFiles = useCallback(async (path: string) => {
-    try {
-      const data = await listFilesAction(path);
-      setItems(data);
-      setCurrentPath(path);
-    } catch (e) {
-      console.error("Failed to fetch files:", e);
-      setItems([]);
-    }
-  }, []);
 
   // Cleanup blob URLs on unmount
   useEffect(() => {
@@ -119,13 +107,13 @@ export function FilesClient({ initialItems, initialPath }: FilesClientProps) {
   }, [preview, closePreview]);
 
   function navigateTo(path: string) {
-    startTransition(() => fetchFiles(path));
+    router.push(path);
   }
 
   function goUp() {
     if (currentPath === "/files") return;
     const parent = currentPath.split("/").slice(0, -1).join("/") || "/files";
-    navigateTo(parent);
+    router.push(parent);
   }
 
   async function handleUpload(e: React.ChangeEvent<HTMLInputElement>) {
@@ -157,7 +145,6 @@ export function FilesClient({ initialItems, initialPath }: FilesClientProps) {
           });
         }
       }
-      startTransition(() => fetchFiles(currentPath));
     } catch (e) {
       console.error("Upload failed:", e);
       alert("Upload failed. Please try again.");
@@ -177,7 +164,6 @@ export function FilesClient({ initialItems, initialPath }: FilesClientProps) {
         await createFolderAction(`${currentPath}/${newFolderName.trim()}`);
         setNewFolderName("");
         setShowNewFolder(false);
-        fetchFiles(currentPath);
       } catch {
         alert("Failed to create folder.");
       }
@@ -200,7 +186,6 @@ export function FilesClient({ initialItems, initialPath }: FilesClientProps) {
         } else {
           await deleteFileAction(item.path);
         }
-        fetchFiles(currentPath);
       } catch {
         alert("Failed to delete.");
       }
@@ -279,7 +264,6 @@ export function FilesClient({ initialItems, initialPath }: FilesClientProps) {
           original_name: fileName,
         });
         setNewFile(null);
-        fetchFiles(currentPath);
       } catch (e) {
         console.error("Failed to create file:", e);
         alert("Failed to create file.");
@@ -331,10 +315,14 @@ export function FilesClient({ initialItems, initialPath }: FilesClientProps) {
             >
               + folder
             </button>
-            <label className={cn(
-              "text-xs px-3 py-1.5 rounded-lg transition-colors bg-accent text-white",
-              uploading ? "opacity-50 cursor-default" : "hover:opacity-80 cursor-pointer",
-            )}>
+            <label
+              className={cn(
+                "text-xs px-3 py-1.5 rounded-lg transition-colors bg-accent text-white",
+                uploading
+                  ? "opacity-50 cursor-default"
+                  : "hover:opacity-80 cursor-pointer",
+              )}
+            >
               {uploading ? "uploading..." : "+ upload"}
               <input
                 ref={fileInputRef}
@@ -361,7 +349,9 @@ export function FilesClient({ initialItems, initialPath }: FilesClientProps) {
               className="flex-1 text-sm bg-transparent outline-none text-foreground disabled:opacity-50"
               onKeyDown={(e) => {
                 if (e.key === "Enter") handleCreateFolder();
-                if (e.key === "Escape" && !isFolderPending) setShowNewFolder(false);
+                if (e.key === "Escape" && !isFolderPending) {
+                  setShowNewFolder(false);
+                }
               }}
             />
             <button
@@ -549,7 +539,9 @@ export function FilesClient({ initialItems, initialPath }: FilesClientProps) {
       {newFile && (
         <div
           className="fixed inset-0 z-50 flex items-center justify-center p-4 md:p-8 bg-black/80"
-          onClick={() => { if (!isFilePending) setNewFile(null); }}
+          onClick={() => {
+            if (!isFilePending) setNewFile(null);
+          }}
         >
           <div
             className="relative w-full max-w-3xl max-h-[90vh] rounded-xl overflow-hidden flex flex-col bg-background"

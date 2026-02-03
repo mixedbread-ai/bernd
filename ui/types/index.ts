@@ -160,3 +160,12 @@ export type StreamEvent =
   | { type: "text_delta"; delta: string }
   | { type: "response_end"; content: string }
   | { type: "chat_saved"; chat_id: string };
+
+export interface FileItem {
+  name: string;
+  path: string;
+  type: "file" | "folder";
+  size?: number;
+  mime_type?: string;
+  created_at?: string;
+}
