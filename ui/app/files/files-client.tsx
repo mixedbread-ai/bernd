@@ -20,6 +20,7 @@ import {
   uploadBinaryFileAction,
   uploadFileAction,
 } from "@/actions/files";
+import { useAutoFocus } from "@/hooks/use-auto-focus";
 import { formatFileSize } from "@/lib/utils/format";
 import { cn } from "@/lib/utils/ui";
 import type { FileItem } from "@/types";
@@ -76,6 +77,8 @@ export function FilesClient({ items, currentPath }: FilesClientProps) {
   const [, startTransition] = useTransition();
   const [isFolderPending, startFolderTransition] = useTransition();
   const [isFilePending, startFileTransition] = useTransition();
+  const newFolderInputRef = useAutoFocus<HTMLInputElement>(showNewFolder);
+  const newFileInputRef = useAutoFocus<HTMLInputElement>(!!newFile);
 
   // Cleanup blob URLs on unmount
   useEffect(() => {
@@ -95,16 +98,20 @@ export function FilesClient({ items, currentPath }: FilesClientProps) {
     });
   }, []);
 
-  // Close preview with Escape key
+  // Close modals with Escape key
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === "Escape" && preview) {
-        closePreview();
+      if (e.key === "Escape") {
+        if (preview) {
+          closePreview();
+        } else if (newFile && !isFilePending) {
+          setNewFile(null);
+        }
       }
     };
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [preview, closePreview]);
+  }, [preview, closePreview, newFile, isFilePending]);
 
   function navigateTo(path: string) {
     router.push(path);
@@ -341,6 +348,7 @@ export function FilesClient({ items, currentPath }: FilesClientProps) {
         {showNewFolder && (
           <div className="mb-4 p-3 rounded-lg flex items-center gap-2 bg-surface border border-border">
             <input
+              ref={newFolderInputRef}
               type="text"
               value={newFolderName}
               onChange={(e) => setNewFolderName(e.target.value)}
@@ -552,6 +560,7 @@ export function FilesClient({ items, currentPath }: FilesClientProps) {
               <div className="flex items-center gap-3 flex-1 min-w-0">
                 <span className="text-lg">📝</span>
                 <input
+                  ref={newFileInputRef}
                   type="text"
                   value={newFile.name}
                   onChange={(e) =>

@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
 import { ImagePreview } from "@/components/chat";
 import { useChatHistory } from "@/context/chat-history-context";
+import { useAutoFocus } from "@/hooks/use-auto-focus";
 import { useImageAttachments } from "@/hooks/use-image-attachments";
 import { handleChatKeyDown } from "@/lib/chat-utils";
 import { createChat } from "./actions";
@@ -22,6 +23,7 @@ export default function NewChatPage() {
   const [isPending, startTransition] = useTransition();
   const { images, fileInputRef, handlePaste, handleFileSelect, removeImage } =
     useImageAttachments();
+  const textareaRef = useAutoFocus<HTMLTextAreaElement>();
 
   function handleSubmit() {
     if (!input.trim() && images.length === 0) return;
@@ -76,6 +78,7 @@ export default function NewChatPage() {
             />
             <div className="relative">
               <textarea
+                ref={textareaRef}
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
                 onKeyDown={handleKeyDown}

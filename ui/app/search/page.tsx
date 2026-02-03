@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { searchAction } from "@/actions/search";
+import { useAutoFocus } from "@/hooks/use-auto-focus";
 import type { SearchAllResult } from "@/lib/data/search";
 import { cn } from "@/lib/utils/ui";
 
@@ -21,6 +22,7 @@ export default function SearchPage() {
   const [loading, setLoading] = useState(false);
   const [searched, setSearched] = useState(false);
   const debounceRef = useRef<NodeJS.Timeout | null>(null);
+  const inputRef = useAutoFocus<HTMLInputElement>();
 
   const search = useCallback(async (q: string) => {
     if (!q.trim()) {
@@ -61,6 +63,7 @@ export default function SearchPage() {
     <div className="min-h-screen p-4 md:p-12 bg-background text-foreground">
       <div className="mx-auto max-w-2xl">
         <input
+          ref={inputRef}
           type="text"
           value={query}
           onChange={(e) => setQuery(e.target.value)}

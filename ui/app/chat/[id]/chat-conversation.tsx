@@ -13,6 +13,7 @@ import {
   UserMessage,
 } from "@/components/chat";
 import { useChatHistory } from "@/context/chat-history-context";
+import { useAutoFocus } from "@/hooks/use-auto-focus";
 import { useImageAttachments } from "@/hooks/use-image-attachments";
 import {
   handleChatKeyDown,
@@ -47,6 +48,7 @@ export function ChatConversation({
     handleFileSelect,
     removeImage,
   } = useImageAttachments();
+  const textareaRef = useAutoFocus<HTMLTextAreaElement>();
 
   const initialMessages = useMemo(
     () => storedMessagesToUIMessages(initialChat.messages),
@@ -157,6 +159,7 @@ export function ChatConversation({
       />
       <div className="relative">
         <textarea
+          ref={textareaRef}
           value={input}
           onChange={(e) => setInput(e.target.value)}
           onKeyDown={handleKeyDownLocal}

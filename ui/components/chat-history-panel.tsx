@@ -5,6 +5,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { useOptimistic, useState, useTransition } from "react";
 import { deleteChatAction } from "@/actions/chats";
 import { useChatHistory } from "@/context/chat-history-context";
+import { useAutoFocus } from "@/hooks/use-auto-focus";
 import { cn } from "@/lib/utils/ui";
 import type { ChatSummary } from "@/types";
 
@@ -19,6 +20,7 @@ export function ChatHistoryPanel() {
       state.filter((chat) => chat.id !== action.id),
   );
   const [chatSearch, setChatSearch] = useState("");
+  const searchInputRef = useAutoFocus<HTMLInputElement>(isHistoryOpen);
 
   if (!isHistoryOpen) return null;
 
@@ -69,6 +71,7 @@ export function ChatHistoryPanel() {
         </div>
 
         <input
+          ref={searchInputRef}
           type="text"
           value={chatSearch}
           onChange={(e) => setChatSearch(e.target.value)}

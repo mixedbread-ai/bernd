@@ -2,6 +2,7 @@
 
 import { parseAsStringLiteral, useQueryStates } from "nuqs";
 import { useOptimistic, useState, useTransition } from "react";
+import { useAutoFocus } from "@/hooks/use-auto-focus";
 import { cn } from "@/lib/utils/ui";
 import {
   createTodoAction,
@@ -131,6 +132,7 @@ export function TodosClient({ initialTodos }: TodosClientProps) {
   const [formData, setFormData] = useState<TodoFormData>(emptyFormData);
   const [, startTransition] = useTransition();
   const [isFormPending, startFormTransition] = useTransition();
+  const formInputRef = useAutoFocus<HTMLInputElement>(showForm);
 
   function toggleExpand(id: string) {
     setExpanded((prev) => (prev === id ? null : id));
@@ -308,6 +310,7 @@ export function TodosClient({ initialTodos }: TodosClientProps) {
           >
             <div className="space-y-4">
               <input
+                ref={formInputRef}
                 type="text"
                 placeholder="What needs to be done?"
                 value={formData.title}
