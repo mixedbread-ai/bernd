@@ -1,6 +1,6 @@
-import type { FileMetadata } from "@/types";
 import { PATHS } from "@/lib/constants";
 import type { FileListItem, SemanticFS } from "@/lib/services/semantic-fs";
+import type { FileMetadata } from "@/types";
 
 export interface FileEntry {
   path: string;

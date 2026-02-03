@@ -2,12 +2,16 @@ import { Readability } from "@mozilla/readability";
 import { tool } from "ai";
 import { JSDOM } from "jsdom";
 import { z } from "zod";
-import { type FileMetadata, isTodoMetadata } from "@/types";
+import {
+  generateSkillDescriptions,
+  getSkills,
+  handleSkill,
+} from "@/lib/agent/skills";
 import { PATHS } from "@/lib/constants";
 import type { GoogleCalendar } from "@/lib/services/google-calendar";
 import type { SemanticFS } from "@/lib/services/semantic-fs";
 import { WebSearch } from "@/lib/services/web-search";
-import { generateSkillDescriptions, getSkills, handleSkill } from "@/lib/agent/skills";
+import { type FileMetadata, isTodoMetadata } from "@/types";
 
 export function createTools(
   fs: SemanticFS,

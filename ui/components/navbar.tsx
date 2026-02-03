@@ -12,9 +12,9 @@ import {
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect } from "react";
-import { cn } from "@/lib/utils/ui";
-import { useAuth } from "@/context/auth-context";
 import { OrgSwitcher } from "@/components/org-switcher";
+import { useAuth } from "@/context/auth-context";
+import { cn } from "@/lib/utils/ui";
 
 const navItems = [
   { href: "/", label: "todos", key: "t", icon: CircleCheckIcon },

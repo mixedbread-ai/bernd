@@ -2,9 +2,9 @@
 
 import { usePathname } from "next/navigation";
 import type { ReactNode } from "react";
-import { useAuth } from "@/context/auth-context";
 import { FloatingChat } from "@/components/chat/floating-chat";
 import { Navbar } from "@/components/navbar";
+import { useAuth } from "@/context/auth-context";
 
 export function AuthenticatedLayout({ children }: { children: ReactNode }) {
   const { isAuthenticated } = useAuth();

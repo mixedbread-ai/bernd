@@ -1,6 +1,9 @@
 "use client";
 
-import { ToolCallItem, type ToolPartProps } from "@/components/chat/tool-call-item";
+import {
+  ToolCallItem,
+  type ToolPartProps,
+} from "@/components/chat/tool-call-item";
 
 interface ToolCallsListProps {
   toolParts: ToolPartProps[];

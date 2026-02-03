@@ -1,6 +1,8 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef } from "react";
 
-export function useAutoFocus<T extends HTMLElement>(shouldFocus: boolean = true) {
+export function useAutoFocus<T extends HTMLElement>(
+  shouldFocus: boolean = true,
+) {
   const ref = useRef<T>(null);
 
   useEffect(() => {

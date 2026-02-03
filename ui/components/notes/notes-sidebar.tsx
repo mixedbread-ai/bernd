@@ -4,10 +4,10 @@ import { TrashIcon } from "lucide-react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useOptimistic, useTransition } from "react";
-import { cn } from "@/lib/utils/ui";
-import type { Note } from "@/types";
 import { createNoteAction, deleteNoteAction } from "@/actions/notes";
 import { formatTimeAgo } from "@/lib/utils/format";
+import { cn } from "@/lib/utils/ui";
+import type { Note } from "@/types";
 
 interface NotesSidebarProps {
   initialNotes: Note[];

@@ -1,5 +1,5 @@
-import { cn } from "@/lib/utils/ui";
 import type { MessageSize } from "@/components/chat/user-message";
+import { cn } from "@/lib/utils/ui";
 
 interface StreamingIndicatorProps {
   size?: MessageSize;

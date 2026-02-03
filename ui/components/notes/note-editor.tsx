@@ -4,9 +4,9 @@ import { ArrowLeftIcon } from "lucide-react";
 import Link from "next/link";
 import { useCallback, useEffect, useRef, useState } from "react";
 import ReactMarkdown from "react-markdown";
+import { updateNoteAction } from "@/actions/notes";
 import { cn } from "@/lib/utils/ui";
 import type { Note } from "@/types";
-import { updateNoteAction } from "@/actions/notes";
 
 interface NoteEditorProps {
   note: Note;

@@ -5,8 +5,8 @@ import {
   type UIMessage,
 } from "ai";
 import ReactMarkdown from "react-markdown";
-import { cn } from "@/lib/utils/ui";
 import { markdownComponents } from "@/components/chat/markdown";
+import { cn } from "@/lib/utils/ui";
 
 export type MessageSize = "default" | "compact";
 
