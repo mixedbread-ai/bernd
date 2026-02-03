@@ -1,5 +1,7 @@
-import { Loading } from "@/components/loading";
-
-export default function PageLoading() {
-  return <Loading />;
+export default function FilesLoading() {
+  return (
+    <div className="flex items-center justify-center py-12 text-muted text-xl">
+      ...
+    </div>
+  );
 }

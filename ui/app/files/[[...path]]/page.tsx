@@ -1,4 +1,4 @@
-import { FilesClient } from "@/components/files/files-client";
+import { FilesList } from "@/components/files/files-list";
 import { PATHS } from "@/lib/constants";
 import { getFS } from "@/lib/context";
 import { type FileItem, isFileUploadMetadata } from "@/types";
@@ -63,5 +63,5 @@ export default async function FilesPage({
     : PATHS.FILES;
   const items = await getFiles(currentPath);
 
-  return <FilesClient items={items} currentPath={currentPath} />;
+  return <FilesList items={items} />;
 }
