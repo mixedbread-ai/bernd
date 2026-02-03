@@ -4,8 +4,8 @@ import {
   isChatMetadata,
   type Message,
 } from "@/types";
-import { PATHS } from "../constants";
-import type { FileListItem, SemanticFS } from "../services/semantic-fs";
+import { PATHS } from "@/lib/constants";
+import type { FileListItem, SemanticFS } from "@/lib/services/semantic-fs";
 
 function pathToId(path: string): string {
   const filename = path.split("/").pop() ?? "";

@@ -1,11 +1,11 @@
 import type { Todo, TodoMetadata } from "@/types";
 import { isTodoMetadata } from "@/types";
-import { PATHS, type Priority, type TodoStatus } from "../constants";
+import { PATHS, type Priority, type TodoStatus } from "@/lib/constants";
 import type {
   FileListItem,
   SearchResult,
   SemanticFS,
-} from "../services/semantic-fs";
+} from "@/lib/services/semantic-fs";
 
 function pathToId(path: string): string {
   // Extract filename without extension as ID

@@ -1,5 +1,5 @@
 import { Suspense } from "react";
-import { TodosClient } from "@/components/todos-client";
+import { TodosClient } from "@/components/todos/todos-client";
 import { getFS } from "@/lib/context";
 import { getTodos } from "@/lib/data/todos";
 

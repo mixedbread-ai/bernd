@@ -7,13 +7,11 @@ import { useEffect, useRef, useState } from "react";
 import { useImageAttachments } from "@/hooks/use-image-attachments";
 import { handleChatKeyDown, imagesToFileParts } from "@/lib/chat-utils";
 import { cn } from "@/lib/utils/ui";
-import {
-  AssistantMessage,
-  ImageModal,
-  ImagePreview,
-  StreamingIndicator,
-  UserMessage,
-} from "./chat";
+import { AssistantMessage } from "@/components/chat/assistant-message";
+import { ImageModal } from "@/components/chat/image-modal";
+import { ImagePreview } from "@/components/chat/image-preview";
+import { StreamingIndicator } from "@/components/chat/streaming-indicator";
+import { UserMessage } from "@/components/chat/user-message";
 
 export function FloatingChat() {
   const [isOpen, setIsOpen] = useState(false);

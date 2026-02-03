@@ -2,7 +2,7 @@
 
 import { XIcon } from "lucide-react";
 import { cn } from "@/lib/utils/ui";
-import type { ImageAttachment } from "../../types";
+import type { ImageAttachment } from "@/types";
 
 interface ImagePreviewProps {
   images: ImageAttachment[];

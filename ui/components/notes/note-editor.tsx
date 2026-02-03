@@ -5,8 +5,8 @@ import Link from "next/link";
 import { useCallback, useEffect, useRef, useState } from "react";
 import ReactMarkdown from "react-markdown";
 import { cn } from "@/lib/utils/ui";
-import { updateNoteAction } from "../../actions/notes";
-import type { Note } from "../../types";
+import type { Note } from "@/types";
+import { updateNoteAction } from "@/actions/notes";
 
 interface NoteEditorProps {
   note: Note;

@@ -5,13 +5,11 @@ import { DefaultChatTransport } from "ai";
 import { ClockIcon, ImageIcon } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import {
-  AssistantMessage,
-  ImageModal,
-  ImagePreview,
-  StreamingIndicator,
-  UserMessage,
-} from "@/components/chat";
+import { AssistantMessage } from "@/components/chat/assistant-message";
+import { ImageModal } from "@/components/chat/image-modal";
+import { ImagePreview } from "@/components/chat/image-preview";
+import { StreamingIndicator } from "@/components/chat/streaming-indicator";
+import { UserMessage } from "@/components/chat/user-message";
 import { useChatHistory } from "@/context/chat-history-context";
 import { useAutoFocus } from "@/hooks/use-auto-focus";
 import { useImageAttachments } from "@/hooks/use-image-attachments";

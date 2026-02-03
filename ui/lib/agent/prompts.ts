@@ -1,5 +1,5 @@
-import { PATHS } from "../constants";
-import type { SemanticFS } from "../services/semantic-fs";
+import { PATHS } from "@/lib/constants";
+import type { SemanticFS } from "@/lib/services/semantic-fs";
 
 export async function loadUserProfile(fs: SemanticFS): Promise<string> {
   try {

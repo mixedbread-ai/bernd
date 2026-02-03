@@ -1,7 +1,7 @@
+import { FilesClient } from "@/components/files/files-client";
 import { PATHS } from "@/lib/constants";
 import { getFS } from "@/lib/context";
 import { type FileItem, isFileUploadMetadata } from "@/types";
-import { FilesClient } from "../files-client";
 
 async function getFiles(path: string): Promise<FileItem[]> {
   const fs = await getFS();

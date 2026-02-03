@@ -1,5 +1,5 @@
 import { notFound } from "next/navigation";
-import { NoteEditor } from "@/components/notes";
+import { NoteEditor } from "@/components/notes/note-editor";
 import { getFS } from "@/lib/context";
 import { getNote } from "@/lib/data/notes";
 

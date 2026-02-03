@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import { ChatHistoryPanel } from "@/components/chat-history-panel";
+import { ChatHistoryPanel } from "@/components/chat/chat-history-panel";
 import { ChatHistoryProvider } from "@/context/chat-history-context";
 import { getFS } from "@/lib/context";
 import { getChats } from "@/lib/data/chats";

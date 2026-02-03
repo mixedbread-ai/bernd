@@ -3,12 +3,12 @@
 import { ClockIcon, ImageIcon } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
-import { ImagePreview } from "@/components/chat";
+import { ImagePreview } from "@/components/chat/image-preview";
 import { useChatHistory } from "@/context/chat-history-context";
 import { useAutoFocus } from "@/hooks/use-auto-focus";
 import { useImageAttachments } from "@/hooks/use-image-attachments";
 import { handleChatKeyDown } from "@/lib/chat-utils";
-import { createChat } from "./actions";
+import { createChat } from "@/app/chat/actions";
 
 function generateChatId(): string {
   const now = new Date();

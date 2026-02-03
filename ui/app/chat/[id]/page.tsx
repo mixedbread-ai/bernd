@@ -1,7 +1,7 @@
 import { notFound } from "next/navigation";
+import { ChatConversation } from "@/components/chat/chat-conversation";
 import { getFS } from "@/lib/context";
 import { getChat } from "@/lib/data/chats";
-import { ChatConversation } from "./chat-conversation";
 
 export default async function ChatDetailPage({
   params,

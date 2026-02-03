@@ -1,4 +1,4 @@
-import { NotesSidebar } from "@/components/notes";
+import { NotesSidebar } from "@/components/notes/notes-sidebar";
 import { getFS } from "@/lib/context";
 import { getNotes } from "@/lib/data/notes";
 

@@ -1,4 +1,4 @@
-import { CreateNoteButton } from "@/components/notes";
+import { CreateNoteButton } from "@/components/notes/create-note-button";
 
 export default function NotesPage() {
   return (

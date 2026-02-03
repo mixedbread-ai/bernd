@@ -1,7 +1,7 @@
-import { PATHS } from "./constants";
-import { getServerToken } from "./server-auth";
-import { GoogleCalendar, type GoogleTokens } from "./services/google-calendar";
-import { SemanticFS } from "./services/semantic-fs";
+import { PATHS } from "@/lib/constants";
+import { getServerToken } from "@/lib/server-auth";
+import { GoogleCalendar, type GoogleTokens } from "@/lib/services/google-calendar";
+import { SemanticFS } from "@/lib/services/semantic-fs";
 
 const fsCache = new Map<string, SemanticFS>();
 

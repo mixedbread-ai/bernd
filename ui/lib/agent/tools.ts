@@ -3,11 +3,11 @@ import { tool } from "ai";
 import { JSDOM } from "jsdom";
 import { z } from "zod";
 import { type FileMetadata, isTodoMetadata } from "@/types";
-import { PATHS } from "../constants";
-import type { GoogleCalendar } from "../services/google-calendar";
-import type { SemanticFS } from "../services/semantic-fs";
-import { WebSearch } from "../services/web-search";
-import { generateSkillDescriptions, getSkills, handleSkill } from "./skills";
+import { PATHS } from "@/lib/constants";
+import type { GoogleCalendar } from "@/lib/services/google-calendar";
+import type { SemanticFS } from "@/lib/services/semantic-fs";
+import { WebSearch } from "@/lib/services/web-search";
+import { generateSkillDescriptions, getSkills, handleSkill } from "@/lib/agent/skills";
 
 export function createTools(
   fs: SemanticFS,

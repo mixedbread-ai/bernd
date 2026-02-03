@@ -6,10 +6,10 @@ import {
   type UIMessage,
 } from "ai";
 import ReactMarkdown from "react-markdown";
-import { CopyButton } from "./copy-button";
-import { markdownComponents } from "./markdown";
-import type { ToolPartProps } from "./tool-call-item";
-import { ToolCallsList } from "./tool-calls-list";
+import { CopyButton } from "@/components/chat/copy-button";
+import { markdownComponents } from "@/components/chat/markdown";
+import type { ToolPartProps } from "@/components/chat/tool-call-item";
+import { ToolCallsList } from "@/components/chat/tool-calls-list";
 
 interface AssistantMessageProps {
   message: UIMessage;

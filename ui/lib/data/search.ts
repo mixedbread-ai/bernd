@@ -1,5 +1,5 @@
 import type { FileMetadata } from "@/types";
-import type { SemanticFS } from "../services/semantic-fs";
+import type { SemanticFS } from "@/lib/services/semantic-fs";
 
 export interface SearchAllResult {
   path: string;

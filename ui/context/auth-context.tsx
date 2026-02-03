@@ -1,7 +1,7 @@
 "use client";
 
 import { createContext, type ReactNode, useContext } from "react";
-import { authClient, useSession } from "../lib/auth";
+import { authClient, useSession } from "@/lib/auth";
 
 interface User {
   id: string;

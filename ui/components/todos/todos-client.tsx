@@ -2,17 +2,17 @@
 
 import { parseAsStringLiteral, useQueryStates } from "nuqs";
 import { useOptimistic, useState, useTransition } from "react";
-import { useAutoFocus } from "@/hooks/use-auto-focus";
-import { cn } from "@/lib/utils/ui";
 import {
   createTodoAction,
   deleteTodoAction,
   type TodoCreate,
   type TodoUpdate,
   updateTodoAction,
-} from "../actions/todos";
-import { formatRelativeDate } from "../lib/utils/format";
-import type { Todo } from "../types";
+} from "@/actions/todos";
+import { useAutoFocus } from "@/hooks/use-auto-focus";
+import { formatRelativeDate } from "@/lib/utils/format";
+import { cn } from "@/lib/utils/ui";
+import type { Todo } from "@/types";
 
 const FILTER_OPTIONS = ["all", "pending", "in_progress", "completed"] as const;
 const SORT_OPTIONS = [

@@ -1,6 +1,6 @@
 "use client";
 
-import type { ImageAttachment } from "../../types";
+import type { ImageAttachment } from "@/types";
 
 interface MessageImagesProps {
   images?: ImageAttachment[];
