@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { searchAction } from "@/actions/search";
 import { useAutoFocus } from "@/hooks/use-auto-focus";
 import type { SearchAllResult } from "@/lib/data/search";
@@ -15,6 +15,51 @@ const TYPE_COLORS: Record<string, string> = {
 function getTypeColor(type: string): string {
   return TYPE_COLORS[type] ?? "bg-muted";
 }
+
+interface ProcessedResult extends SearchAllResult {
+  name: string;
+  snippet: string;
+}
+
+function processResult(result: SearchAllResult): ProcessedResult {
+  const name = result.path.split("/").pop()?.replace(".md", "") || result.path;
+  const snippet = (result.content || "")
+    .replace(/^# .+\n\n?/, "")
+    .slice(0, 200)
+    .trim();
+  return { ...result, name, snippet };
+}
+
+const SearchResultItem = memo(function SearchResultItem({
+  result,
+}: {
+  result: ProcessedResult;
+}) {
+  return (
+    <li className="group">
+      <div className="flex items-start gap-3">
+        <span
+          className={cn(
+            "mt-1.5 px-2 py-0.5 text-xs text-white rounded",
+            getTypeColor(result.type),
+          )}
+        >
+          {result.type}
+        </span>
+        <div className="flex-1 min-w-0">
+          <div className="font-medium text-foreground">{result.name}</div>
+          <div className="text-sm mt-1 line-clamp-2 text-muted">
+            {result.snippet || "(no content)"}
+          </div>
+          <div className="text-xs mt-2 text-muted">
+            {result.path}
+            <span className="ml-3">score: {(result.score * 100).toFixed(0)}%</span>
+          </div>
+        </div>
+      </div>
+    </li>
+  );
+});
 
 export default function SearchPage() {
   const [query, setQuery] = useState("");
@@ -59,61 +104,36 @@ export default function SearchPage() {
     };
   }, [query, search]);
 
+  const processedResults = useMemo(
+    () => results.map(processResult),
+    [results],
+  );
+
   return (
     <div className="min-h-screen p-4 md:p-12 bg-background text-foreground">
       <div className="mx-auto max-w-2xl">
+        <label className="sr-only" htmlFor="search-input">Search</label>
         <input
+          id="search-input"
           ref={inputRef}
           type="text"
           value={query}
           onChange={(e) => setQuery(e.target.value)}
-          placeholder="search everything..."
+          placeholder="Search everything…"
           className="w-full rounded-lg shadow-sm px-4 py-3 text-sm outline-none transition-all mb-8 bg-surface border border-border text-foreground focus:border-accent"
         />
 
-        {loading && <div className="text-muted">searching...</div>}
+        {loading && <div className="text-muted" aria-live="polite">Searching…</div>}
 
         {!loading && searched && results.length === 0 && (
           <div className="text-muted">no results</div>
         )}
 
-        {!loading && results.length > 0 && (
+        {!loading && processedResults.length > 0 && (
           <ul className="space-y-6">
-            {results.map((result) => {
-              const name =
-                result.path.split("/").pop()?.replace(".md", "") || result.path;
-              const snippet = (result.content || "")
-                .replace(/^# .+\n\n?/, "")
-                .slice(0, 200)
-                .trim();
-
-              return (
-                <li key={result.path} className="group">
-                  <div className="flex items-start gap-3">
-                    <span
-                      className={cn(
-                        "mt-1.5 px-2 py-0.5 text-xs text-white rounded",
-                        getTypeColor(result.type),
-                      )}
-                    >
-                      {result.type}
-                    </span>
-                    <div className="flex-1 min-w-0">
-                      <div className="font-medium text-foreground">{name}</div>
-                      <div className="text-sm mt-1 line-clamp-2 text-muted">
-                        {snippet || "(no content)"}
-                      </div>
-                      <div className="text-xs mt-2 text-muted">
-                        {result.path}
-                        <span className="ml-3">
-                          score: {(result.score * 100).toFixed(0)}%
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-                </li>
-              );
-            })}
+            {processedResults.map((result) => (
+              <SearchResultItem key={result.path} result={result} />
+            ))}
           </ul>
         )}
       </div>

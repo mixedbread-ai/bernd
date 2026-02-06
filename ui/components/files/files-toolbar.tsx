@@ -155,7 +155,7 @@ export function FilesToolbar() {
                 : "hover:opacity-80 cursor-pointer",
             )}
           >
-            {uploading ? "uploading..." : "+ upload"}
+            {uploading ? "uploading…" : "+ upload"}
             <input
               ref={fileInputRef}
               type="file"
@@ -177,7 +177,7 @@ export function FilesToolbar() {
             type="text"
             value={newFolderName}
             onChange={(e) => setNewFolderName(e.target.value)}
-            placeholder="Folder name..."
+            placeholder="Folder name…"
             disabled={isFolderPending}
             className="flex-1 text-sm bg-transparent outline-none text-foreground disabled:opacity-50"
             onKeyDown={(e) => {
@@ -210,9 +210,9 @@ export function FilesToolbar() {
       {parentPath && (
         <Link
           href={parentPath}
-          className="mb-4 text-sm flex items-center gap-2 hover:opacity-80 text-muted"
+          className="mb-4 text-sm flex items-center gap-2 hover:opacity-80 text-muted rounded w-fit"
         >
-          <ArrowLeftIcon size={16} />
+          <ArrowLeftIcon size={16} aria-hidden="true" />
           back
         </Link>
       )}
@@ -226,7 +226,7 @@ export function FilesToolbar() {
           }}
         >
           <div
-            className="relative w-full max-w-3xl max-h-[90vh] rounded-xl overflow-hidden flex flex-col bg-background"
+            className="relative w-full max-w-3xl max-h-[90vh] rounded-xl overflow-hidden flex flex-col bg-background overscroll-contain"
             onClick={(e) => e.stopPropagation()}
           >
             {/* Header */}
@@ -259,9 +259,9 @@ export function FilesToolbar() {
                   onClick={() => setNewFile(null)}
                   disabled={isFilePending}
                   className="p-2 rounded-lg hover:opacity-80 disabled:opacity-50 text-muted"
-                  title="Close"
                 >
-                  <XIcon size={18} />
+                  <XIcon size={18} aria-hidden="true" />
+                  <span className="sr-only">Close</span>
                 </button>
               </div>
             </div>
@@ -273,7 +273,7 @@ export function FilesToolbar() {
                 onChange={(e) =>
                   setNewFile({ ...newFile, content: e.target.value })
                 }
-                placeholder="Write your markdown here..."
+                placeholder="Write your markdown here…"
                 disabled={isFilePending}
                 className="w-full h-[60vh] text-sm font-mono bg-transparent outline-none resize-none disabled:opacity-50 text-foreground"
               />

@@ -110,7 +110,7 @@ export function FloatingChat() {
       />
 
       {/* Floating window */}
-      <div className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-2xl max-h-[80vh] rounded-xl shadow-2xl z-50 flex flex-col overflow-hidden bg-background border border-border">
+      <div className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-2xl max-h-[80vh] rounded-xl shadow-2xl z-50 flex flex-col overflow-hidden bg-background border border-border overscroll-contain">
         {/* Header */}
         <div className="flex items-center justify-between px-4 py-3 border-b border-border">
           <span className="text-sm font-medium text-foreground">
@@ -122,7 +122,7 @@ export function FloatingChat() {
                 type="button"
                 onClick={clearChat}
                 disabled={isStreaming}
-                className="text-xs transition-colors hover:opacity-70 text-muted disabled:opacity-30"
+                className="text-xs transition-colors hover:opacity-70 text-muted disabled:opacity-30 rounded"
               >
                 clear
               </button>
@@ -131,7 +131,7 @@ export function FloatingChat() {
               type="button"
               onClick={() => setIsOpen(false)}
               disabled={isStreaming}
-              className="text-xs transition-colors hover:opacity-70 text-muted disabled:opacity-30"
+              className="text-xs transition-colors hover:opacity-70 text-muted disabled:opacity-30 rounded"
             >
               esc
             </button>
@@ -142,7 +142,7 @@ export function FloatingChat() {
         <div className="flex-1 overflow-y-auto px-4 py-4 space-y-4">
           {messages.length === 0 && !isStreaming && (
             <div className="text-center text-sm py-8 text-muted">
-              Ask Bernd anything...
+              Ask Bernd anything…
             </div>
           )}
 
@@ -186,7 +186,7 @@ export function FloatingChat() {
               onChange={(e) => setInput(e.target.value)}
               onKeyDown={handleKeyDownLocal}
               onPaste={handlePaste}
-              placeholder="message..."
+              placeholder="Message…"
               disabled={isStreaming}
               rows={2}
               className="w-full rounded-lg px-3 py-2 pr-10 text-sm outline-none disabled:opacity-50 transition-colors resize-none bg-surface border border-border text-foreground focus:border-accent"
@@ -203,10 +203,10 @@ export function FloatingChat() {
               type="button"
               onClick={() => fileInputRef.current?.click()}
               disabled={isStreaming}
-              className="absolute right-2 bottom-2 p-1 transition-colors hover:opacity-70 text-muted disabled:opacity-30"
-              title="Attach image"
+              className="absolute right-2 bottom-2 p-1 transition-colors hover:opacity-70 text-muted disabled:opacity-30 rounded"
             >
-              <ImageIcon size={16} />
+              <ImageIcon size={16} aria-hidden="true" />
+              <span className="sr-only">Attach image</span>
             </button>
           </div>
         </div>

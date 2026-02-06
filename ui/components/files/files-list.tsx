@@ -74,11 +74,12 @@ export function FilesList({ items }: FilesListProps) {
 
   // Close modals with Escape key
   useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
+    function handleKeyDown(e: KeyboardEvent) {
       if (e.key === "Escape" && preview) {
         closePreview();
       }
-    };
+    }
+
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [preview, closePreview]);
@@ -217,9 +218,9 @@ export function FilesList({ items }: FilesListProps) {
                       handleDownloadFile(item);
                     }}
                     className="p-1.5 rounded hover:bg-opacity-80 text-muted"
-                    title="Download"
                   >
-                    <DownloadIcon size={16} />
+                    <DownloadIcon size={16} aria-hidden="true" />
+                    <span className="sr-only">Download {item.name}</span>
                   </button>
                 )}
                 <button
@@ -229,9 +230,9 @@ export function FilesList({ items }: FilesListProps) {
                     handleDeleteItem(item);
                   }}
                   className="p-1.5 rounded hover:bg-opacity-80 text-accent"
-                  title="Delete"
                 >
-                  <Trash2Icon size={16} />
+                  <Trash2Icon size={16} aria-hidden="true" />
+                  <span className="sr-only">Delete {item.name}</span>
                 </button>
               </div>
             </div>
@@ -246,7 +247,7 @@ export function FilesList({ items }: FilesListProps) {
           onClick={closePreview}
         >
           <div
-            className="relative w-full max-w-4xl max-h-[90vh] rounded-xl overflow-hidden flex flex-col bg-background"
+            className="relative w-full max-w-4xl max-h-[90vh] rounded-xl overflow-hidden flex flex-col bg-background overscroll-contain"
             onClick={(e) => e.stopPropagation()}
           >
             {/* Header */}
@@ -264,17 +265,17 @@ export function FilesList({ items }: FilesListProps) {
                   type="button"
                   onClick={() => handleDownloadFile(preview.item)}
                   className="p-2 rounded-lg hover:opacity-80 text-muted"
-                  title="Download"
                 >
-                  <DownloadIcon size={18} />
+                  <DownloadIcon size={18} aria-hidden="true" />
+                  <span className="sr-only">Download</span>
                 </button>
                 <button
                   type="button"
                   onClick={closePreview}
                   className="p-2 rounded-lg hover:opacity-80 text-muted"
-                  title="Close"
                 >
-                  <XIcon size={18} />
+                  <XIcon size={18} aria-hidden="true" />
+                  <span className="sr-only">Close</span>
                 </button>
               </div>
             </div>
@@ -283,7 +284,7 @@ export function FilesList({ items }: FilesListProps) {
             <div className="flex-1 overflow-auto p-4">
               {preview.loading ? (
                 <div className="flex items-center justify-center h-64 text-muted">
-                  loading...
+                  Loading…
                 </div>
               ) : preview.item.mime_type?.startsWith("image/") ? (
                 <div className="flex items-center justify-center">

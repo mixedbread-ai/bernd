@@ -50,10 +50,10 @@ export function OrgSwitcher() {
           <DropdownMenu.Trigger asChild>
             <button
               type="button"
-              className="mt-1 flex items-center gap-1 text-sm text-muted hover:text-foreground transition-[color] outline-none"
+              className="mt-1 flex items-center gap-1 text-sm text-muted hover:text-foreground transition-[color] rounded"
             >
               <span className="truncate max-w-[100px]">{activeOrg?.name}</span>
-              <ChevronsUpDownIcon size={12} />
+              <ChevronsUpDownIcon size={12} aria-hidden="true" />
             </button>
           </DropdownMenu.Trigger>
 
@@ -75,7 +75,7 @@ export function OrgSwitcher() {
                 >
                   <span className="w-4 shrink-0">
                     {org.id === activeOrg?.id && (
-                      <CheckIcon size={14} className="text-foreground" />
+                      <CheckIcon size={14} className="text-foreground" aria-hidden="true" />
                     )}
                   </span>
                   <span className="truncate">{org.name}</span>

@@ -162,7 +162,7 @@ export function ChatConversation({
           onChange={(e) => setInput(e.target.value)}
           onKeyDown={handleKeyDownLocal}
           onPaste={handlePaste}
-          placeholder="Ask anything..."
+          placeholder="Ask anything…"
           disabled={isStreaming}
           rows={2}
           className="w-full rounded-xl shadow-sm px-4 py-3 pr-12 text-sm outline-none disabled:opacity-50 transition-all resize-none bg-surface border border-border text-foreground min-h-[56px] max-h-[120px] focus:border-accent"
@@ -184,10 +184,10 @@ export function ChatConversation({
           type="button"
           onClick={() => fileInputRef.current?.click()}
           disabled={isStreaming}
-          className="absolute right-3 bottom-3 p-1.5 transition-colors hover:opacity-70 text-muted disabled:opacity-30"
-          title="Attach image"
+          className="absolute right-3 bottom-3 p-1.5 transition-colors hover:opacity-70 text-muted disabled:opacity-30 rounded"
         >
-          <ImageIcon size={18} />
+          <ImageIcon size={18} aria-hidden="true" />
+          <span className="sr-only">Attach image</span>
         </button>
       </div>
     </div>
@@ -200,9 +200,9 @@ export function ChatConversation({
         <button
           type="button"
           onClick={() => setIsHistoryOpen(true)}
-          className="flex items-center gap-2 text-sm transition-colors hover:opacity-70 text-muted"
+          className="flex items-center gap-2 text-sm transition-colors hover:opacity-70 text-muted rounded"
         >
-          <ClockIcon size={16} />
+          <ClockIcon size={16} aria-hidden="true" />
           <span className="hidden sm:inline">History</span>
           {chats.length > 0 && (
             <span className="text-xs text-muted">({chats.length})</span>
@@ -212,7 +212,7 @@ export function ChatConversation({
         <button
           type="button"
           onClick={startNewChat}
-          className="text-xs transition-colors hover:opacity-70 text-accent"
+          className="text-xs transition-colors hover:opacity-70 text-accent rounded"
         >
           + New chat
         </button>

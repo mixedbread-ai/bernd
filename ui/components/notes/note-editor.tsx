@@ -73,18 +73,19 @@ export function NoteEditor({ note }: NoteEditorProps) {
       {/* Title and toolbar */}
       <div className="p-4 border-b border-border flex items-center gap-3">
         {/* Back button on mobile */}
-        <Link href="/notes" className="md:hidden p-1 -ml-1 text-muted">
-          <ArrowLeftIcon size={20} />
+        <Link href="/notes" className="md:hidden p-1 -ml-1 text-muted rounded">
+          <ArrowLeftIcon size={20} aria-hidden="true" />
+          <span className="sr-only">Back to notes</span>
         </Link>
         <input
           type="text"
           value={title}
           onChange={(e) => handleTitleChange(e.target.value)}
-          placeholder="Note title..."
+          placeholder="Note title…"
           className="text-base md:text-lg font-medium bg-transparent outline-none flex-1 min-w-0 text-foreground"
         />
         <div className="flex items-center gap-2 md:gap-4 shrink-0">
-          {saving && <span className="text-xs text-muted">saving...</span>}
+          {saving && <span className="text-xs text-muted" aria-live="polite">saving…</span>}
           {/* Toggle preview on mobile */}
           <button
             type="button"
@@ -113,7 +114,7 @@ export function NoteEditor({ note }: NoteEditorProps) {
             ref={textareaRef}
             value={content}
             onChange={(e) => handleContentChange(e.target.value)}
-            placeholder="Write your notes in markdown..."
+            placeholder="Write your notes in markdown…"
             className="w-full h-full p-4 md:p-6 bg-transparent outline-none resize-none text-sm font-mono text-foreground"
           />
         </div>
@@ -126,7 +127,7 @@ export function NoteEditor({ note }: NoteEditorProps) {
         >
           <div className="prose prose-sm max-w-none text-foreground">
             <ReactMarkdown>
-              {content || "*Start typing to see preview...*"}
+              {content || "*Start typing to see preview…*"}
             </ReactMarkdown>
           </div>
         </div>

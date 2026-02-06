@@ -79,7 +79,7 @@ export function Navbar() {
                 <Link
                   href={item.href}
                   className={cn(
-                    "group flex items-center justify-between py-1.5 text-sm transition-colors",
+                    "group flex items-center justify-between py-1.5 text-sm transition-colors rounded",
                     isActive ? "text-foreground" : "text-muted",
                   )}
                 >
@@ -105,9 +105,9 @@ export function Navbar() {
             <button
               type="button"
               onClick={handleLogout}
-              className="text-sm transition-colors hover:opacity-80 flex items-center gap-2 text-muted"
+              className="text-sm transition-colors hover:opacity-80 flex items-center gap-2 text-muted rounded"
             >
-              <LogOutIcon size={14} />
+              <LogOutIcon size={14} aria-hidden="true" />
               sign out
             </button>
           </div>
@@ -129,7 +129,7 @@ export function Navbar() {
                   isActive ? "text-accent" : "text-muted",
                 )}
               >
-                <Icon size={20} />
+                <Icon size={20} aria-hidden="true" />
                 <span className="text-[10px]">{item.label}</span>
               </Link>
             );

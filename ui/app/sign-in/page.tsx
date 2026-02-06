@@ -31,11 +31,13 @@ export default function SignInPage() {
           <p className="text-sm text-muted">Sign in to continue</p>
         </div>
 
-        {error && (
-          <div className="mb-4 p-3 rounded-lg text-sm text-center bg-surface border border-border text-accent">
-            {error}
-          </div>
-        )}
+        <div aria-live="polite" aria-atomic="true">
+          {error && (
+            <div className="mb-4 p-3 rounded-lg text-sm text-center bg-surface border border-border text-accent">
+              {error}
+            </div>
+          )}
+        </div>
 
         <div className="space-y-3">
           <button
@@ -46,7 +48,7 @@ export default function SignInPage() {
           >
             <GoogleLogoIcon className="w-5 h-5" />
             {loadingProvider === "google"
-              ? "Signing in..."
+              ? "Signing in…"
               : "Continue with Google"}
           </button>
 
@@ -58,7 +60,7 @@ export default function SignInPage() {
           >
             <GitHubLogoIcon className="w-5 h-5" />
             {loadingProvider === "github"
-              ? "Signing in..."
+              ? "Signing in…"
               : "Continue with GitHub"}
           </button>
         </div>
@@ -98,6 +100,7 @@ function GitHubLogoIcon(props: React.SVGProps<SVGSVGElement>) {
       viewBox="0 0 15 15"
       fill="none"
       xmlns="http://www.w3.org/2000/svg"
+      aria-hidden="true"
       {...props}
     >
       <path

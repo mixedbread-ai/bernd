@@ -2,7 +2,7 @@
 
 import { XIcon } from "lucide-react";
 import { usePathname, useRouter } from "next/navigation";
-import { useOptimistic, useState, useTransition } from "react";
+import { useMemo, useOptimistic, useState, useTransition } from "react";
 import { deleteChatAction } from "@/actions/chats";
 import { useChatHistory } from "@/context/chat-history-context";
 import { useAutoFocus } from "@/hooks/use-auto-focus";
@@ -22,15 +22,19 @@ export function ChatHistoryPanel() {
   const [chatSearch, setChatSearch] = useState("");
   const searchInputRef = useAutoFocus<HTMLInputElement>(isHistoryOpen);
 
-  if (!isHistoryOpen) return null;
-
   const activeChatId = pathname.startsWith("/chat/")
     ? pathname.slice("/chat/".length)
     : null;
 
-  const filteredChats = optimisticChats.filter((chat) =>
-    chat.title.toLowerCase().includes(chatSearch.toLowerCase()),
+  const filteredChats = useMemo(
+    () =>
+      optimisticChats.filter((chat) =>
+        chat.title.toLowerCase().includes(chatSearch.toLowerCase()),
+      ),
+    [optimisticChats, chatSearch],
   );
+
+  if (!isHistoryOpen) return null;
 
   function loadChat(id: string) {
     setIsHistoryOpen(false);
@@ -64,18 +68,20 @@ export function ChatHistoryPanel() {
           <button
             type="button"
             onClick={startNewChat}
-            className="text-xs transition-colors hover:opacity-70 text-accent"
+            className="text-xs transition-colors hover:opacity-70 text-accent rounded"
           >
             + new
           </button>
         </div>
 
+        <label className="sr-only" htmlFor="chat-search">Search chats</label>
         <input
+          id="chat-search"
           ref={searchInputRef}
           type="text"
           value={chatSearch}
           onChange={(e) => setChatSearch(e.target.value)}
-          placeholder="Search..."
+          placeholder="Search…"
           className="w-full rounded-lg px-3 py-2 text-xs outline-none transition-colors mb-3 bg-surface border border-border text-foreground"
         />
 
@@ -107,10 +113,10 @@ export function ChatHistoryPanel() {
                       e.stopPropagation();
                       deleteChat(chat.id);
                     }}
-                    className="absolute right-2 top-1/2 -translate-y-1/2 p-1 opacity-0 group-hover/item:opacity-100 transition-opacity hover:opacity-70 text-accent"
-                    title="Delete"
+                    className="absolute right-2 top-1/2 -translate-y-1/2 p-1 opacity-0 group-hover/item:opacity-100 transition-opacity hover:opacity-70 text-accent rounded"
                   >
-                    <XIcon size={12} />
+                    <XIcon size={12} aria-hidden="true" />
+                    <span className="sr-only">Delete chat</span>
                   </button>
                 </li>
               ))}

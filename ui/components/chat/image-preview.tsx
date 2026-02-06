@@ -26,7 +26,7 @@ export function ImagePreview({
   return (
     <div className="flex gap-2 mb-2 flex-wrap">
       {images.map((img, i) => (
-        <div key={i} className="relative group">
+        <div key={img.data.slice(0, 100)} className="relative group">
           <img
             src={img.data}
             alt={`Attachment ${i + 1}`}
@@ -44,7 +44,7 @@ export function ImagePreview({
                 buttonSize,
               )}
             >
-              <XIcon className={cn(size === "small" ? "size-2.5" : "size-3")} />
+              <XIcon className={cn(size === "small" ? "size-2.5" : "size-3")} aria-hidden="true" />
               <span className="sr-only">Remove image</span>
             </button>
           )}

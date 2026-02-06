@@ -61,7 +61,7 @@ export function NotesSidebar({ initialNotes }: NotesSidebarProps) {
           type="button"
           onClick={handleCreate}
           disabled={isCreating}
-          className="text-xs transition-colors hover:opacity-70 text-accent disabled:opacity-50"
+          className="text-xs transition-colors hover:opacity-70 text-accent disabled:opacity-50 rounded"
         >
           + new
         </button>
@@ -91,10 +91,10 @@ export function NotesSidebar({ initialNotes }: NotesSidebarProps) {
                 <button
                   type="button"
                   onClick={(e) => handleDelete(note.id, e)}
-                  className="absolute right-2 top-1/2 -translate-y-1/2 p-1 opacity-0 group-hover/item:opacity-100 transition-opacity hover:opacity-70 text-accent"
-                  title="Delete"
+                  className="absolute right-2 top-1/2 -translate-y-1/2 p-1 opacity-0 group-hover/item:opacity-100 transition-opacity hover:opacity-70 text-accent rounded"
                 >
-                  <TrashIcon size={12} />
+                  <TrashIcon size={12} aria-hidden="true" />
+                  <span className="sr-only">Delete {note.title || "note"}</span>
                 </button>
               </li>
             ))}

@@ -49,6 +49,17 @@ body {
   [role="button"]:not(:disabled) {
     cursor: pointer;
   }
+
+  /* Default focus styles for interactive elements */
+  a:focus-visible,
+  button:focus-visible,
+  [role="button"]:focus-visible,
+  input:focus-visible,
+  textarea:focus-visible,
+  select:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+  }
 }
 
 ::selection {
@@ -171,3 +182,19 @@ html {
 .animate-dropdown-out {
   animation: dropdown-out 0.1s ease-in;
 }
+
+/* Respect reduced motion preferences - !important is required to override all animations */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+
+  html {
+    scroll-behavior: auto;
+  }
+}
+

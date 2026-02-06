@@ -102,7 +102,7 @@ export default function SettingsPage() {
             <div className="flex items-start justify-between">
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 rounded-lg flex items-center justify-center bg-background">
-                  <CalendarIcon size={20} className="text-foreground" />
+                  <CalendarIcon size={20} className="text-foreground" aria-hidden="true" />
                 </div>
                 <div>
                   <div className="text-sm font-medium text-foreground">
@@ -110,7 +110,7 @@ export default function SettingsPage() {
                   </div>
                   <div className="text-xs mt-0.5 text-muted">
                     {loading ? (
-                      "Checking..."
+                      "Checking…"
                     ) : googleStatus?.connected ? (
                       <>
                         <span className="text-accent">Connected</span>
@@ -136,7 +136,7 @@ export default function SettingsPage() {
                     disabled={disconnecting}
                     className="text-xs px-3 py-1.5 rounded-lg transition-colors hover:opacity-80 disabled:opacity-50 bg-background border border-border text-muted"
                   >
-                    {disconnecting ? "Disconnecting..." : "Disconnect"}
+                    {disconnecting ? "Disconnecting…" : "Disconnect"}
                   </button>
                 ) : (
                   <button
@@ -170,9 +170,9 @@ export default function SettingsPage() {
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 rounded-lg flex items-center justify-center bg-background">
                   {theme === "light" ? (
-                    <SunIcon size={20} className="text-foreground" />
+                    <SunIcon size={20} className="text-foreground" aria-hidden="true" />
                   ) : (
-                    <MoonIcon size={20} className="text-foreground" />
+                    <MoonIcon size={20} className="text-foreground" aria-hidden="true" />
                   )}
                 </div>
                 <div>

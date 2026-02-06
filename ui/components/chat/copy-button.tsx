@@ -19,7 +19,7 @@ export function CopyButton({ text }: CopyButtonProps) {
     <button
       type="button"
       onClick={handleCopy}
-      className="text-xs transition-colors text-muted"
+      className="text-xs transition-colors text-muted rounded"
     >
       {copied ? "copied" : "copy"}
     </button>

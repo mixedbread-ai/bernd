@@ -1,7 +1,7 @@
 "use client";
 
 import { parseAsStringLiteral, useQueryStates } from "nuqs";
-import { useOptimistic, useState, useTransition } from "react";
+import { useMemo, useOptimistic, useState, useTransition } from "react";
 import {
   createTodoAction,
   deleteTodoAction,
@@ -227,18 +227,25 @@ export function TodosClient({ initialTodos }: TodosClientProps) {
     setFormData(emptyFormData);
   }
 
-  const filtered = sortTodosList(
-    optimisticTodos.filter((t) => filter === "all" || t.status === filter),
-    sort,
+  const filtered = useMemo(
+    () =>
+      sortTodosList(
+        optimisticTodos.filter((t) => filter === "all" || t.status === filter),
+        sort,
+      ),
+    [optimisticTodos, filter, sort],
   );
 
-  const counts = {
-    all: optimisticTodos.length,
-    pending: optimisticTodos.filter((t) => t.status === "pending").length,
-    in_progress: optimisticTodos.filter((t) => t.status === "in_progress")
-      .length,
-    completed: optimisticTodos.filter((t) => t.status === "completed").length,
-  };
+  const counts = useMemo(
+    () => ({
+      all: optimisticTodos.length,
+      pending: optimisticTodos.filter((t) => t.status === "pending").length,
+      in_progress: optimisticTodos.filter((t) => t.status === "in_progress")
+        .length,
+      completed: optimisticTodos.filter((t) => t.status === "completed").length,
+    }),
+    [optimisticTodos],
+  );
 
   return (
     <div className="min-h-screen p-4 md:p-12 bg-background text-foreground">
@@ -252,7 +259,7 @@ export function TodosClient({ initialTodos }: TodosClientProps) {
                   key={f}
                   onClick={() => setParams({ filter: f }, { history: "push" })}
                   className={cn(
-                    "transition-colors whitespace-nowrap",
+                    "transition-colors whitespace-nowrap rounded",
                     filter === f ? "text-foreground" : "text-muted",
                   )}
                 >
@@ -284,6 +291,7 @@ export function TodosClient({ initialTodos }: TodosClientProps) {
                 fill="none"
                 stroke="currentColor"
                 strokeWidth={2}
+                aria-hidden="true"
               >
                 <path d="M6 9l6 6 6-6" />
               </svg>
@@ -357,6 +365,7 @@ export function TodosClient({ initialTodos }: TodosClientProps) {
                       fill="none"
                       stroke="currentColor"
                       strokeWidth={2}
+                      aria-hidden="true"
                     >
                       <path d="M6 9l6 6 6-6" />
                     </svg>
@@ -391,11 +400,7 @@ export function TodosClient({ initialTodos }: TodosClientProps) {
                   disabled={isFormPending || !formData.title.trim()}
                   className="px-4 py-2 text-sm bg-accent text-background rounded hover:opacity-90 transition-opacity disabled:opacity-50"
                 >
-                  {isFormPending
-                    ? "Saving..."
-                    : editingId
-                      ? "Update"
-                      : "Create"}
+                  {isFormPending ? "Saving…" : editingId ? "Update" : "Create"}
                 </button>
               </div>
             </div>
@@ -414,9 +419,18 @@ export function TodosClient({ initialTodos }: TodosClientProps) {
                   todo.status === "completed" && "opacity-40",
                 )}
               >
+                {/* biome-ignore lint/a11y/useSemanticElements: div with role="button" required to allow nested interactive elements */}
                 <div
                   className="flex items-start gap-3 cursor-pointer -mx-3 px-3 py-2 rounded transition-colors hover:bg-surface-hover"
                   onClick={() => toggleExpand(todo.id)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" || e.key === " ") {
+                      e.preventDefault();
+                      toggleExpand(todo.id);
+                    }
+                  }}
+                  tabIndex={0}
+                  role="button"
                 >
                   {/* Checkbox */}
                   <button
@@ -429,6 +443,11 @@ export function TodosClient({ initialTodos }: TodosClientProps) {
                         : "border-muted hover:border-foreground",
                     )}
                   >
+                    <span className="sr-only">
+                      {todo.status === "completed"
+                        ? "Mark as pending"
+                        : "Mark as completed"}
+                    </span>
                     {todo.status === "completed" && (
                       <svg
                         className="w-3 h-3 text-background"
@@ -436,6 +455,7 @@ export function TodosClient({ initialTodos }: TodosClientProps) {
                         viewBox="0 0 24 24"
                         stroke="currentColor"
                         strokeWidth={3}
+                        aria-hidden="true"
                       >
                         <path
                           strokeLinecap="round"
@@ -449,7 +469,7 @@ export function TodosClient({ initialTodos }: TodosClientProps) {
                   {/* Priority indicator */}
                   <span
                     className={cn(
-                      "mt-1.5 h-2 w-2 shrink-0 rounded-full",
+                      "mt-2 h-2 w-2 shrink-0 rounded-full",
                       getPriorityIndicatorClass(todo.status, todo.priority),
                     )}
                   />
@@ -470,26 +490,28 @@ export function TodosClient({ initialTodos }: TodosClientProps) {
                   </div>
 
                   {/* Actions - visible on hover */}
-                  <div className="shrink-0 flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                  <div className="shrink-0 flex mt-0.75 items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
                     <button
                       type="button"
                       onClick={(e) => startEdit(e, todo)}
-                      className="text-xs text-muted hover:text-foreground"
+                      className="text-xs text-muted hover:text-foreground rounded"
                     >
                       edit
                     </button>
                     <button
                       type="button"
                       onClick={(e) => handleDelete(e, todo.id)}
-                      className="text-xs text-muted hover:text-accent"
+                      className="text-xs text-muted hover:text-accent rounded"
                     >
                       delete
                     </button>
                   </div>
 
-                  <span className="shrink-0 text-sm text-muted">
-                    {formatRelativeDate(todo.due_date || "")}
-                  </span>
+                  {todo.due_date && (
+                    <span className="shrink-0 text-sm text-muted">
+                      {formatRelativeDate(todo.due_date)}
+                    </span>
+                  )}
                 </div>
                 {expanded === todo.id && (
                   <div className="ml-9 mt-2 pl-4 border-l-2 border-border text-sm text-muted">

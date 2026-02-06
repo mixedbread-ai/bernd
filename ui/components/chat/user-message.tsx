@@ -40,21 +40,22 @@ export function UserMessage({
     >
       {imageParts.length > 0 && (
         <div className="flex flex-wrap gap-2 mb-2">
-          {imageParts.map((part, i) => (
+          {imageParts.map((part) => (
             <button
-              key={i}
+              key={part.url}
               type="button"
               onClick={() => onImageClick?.(part.url)}
-              className="cursor-pointer"
+              className="cursor-pointer rounded-lg"
             >
               <img
                 src={part.url}
-                alt="attachment"
+                alt=""
                 className={cn(
                   "rounded-lg",
                   isCompact ? "max-h-24" : "max-h-32",
                 )}
               />
+              <span className="sr-only">View attachment</span>
             </button>
           ))}
         </div>
@@ -62,7 +63,7 @@ export function UserMessage({
       <div className="prose prose-sm max-w-none text-foreground">
         {message.parts.map((part, i) =>
           isTextUIPart(part) ? (
-            <ReactMarkdown key={i} components={markdownComponents}>
+            <ReactMarkdown key={`${message.id}-text-${i}`} components={markdownComponents}>
               {part.text}
             </ReactMarkdown>
           ) : null,
