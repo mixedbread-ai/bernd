@@ -19,12 +19,16 @@ export async function POST(req: Request) {
   const { messages }: { messages: UIMessage[] } = body;
   const chatId = body.chatId as string | undefined;
 
-  const fs = await getFS();
-  const gcal = await getGoogleCalendar();
-  const apiKey = await getApiKey();
+  const [fs, gcal, apiKey] = await Promise.all([
+    getFS(),
+    getGoogleCalendar(),
+    getApiKey(),
+  ]);
 
-  const tools = createTools(fs, () => gcal, apiKey);
-  const systemPrompt = await getSystemPrompt(fs);
+  const [tools, systemPrompt] = await Promise.all([
+    Promise.resolve(createTools(fs, () => gcal, apiKey)),
+    getSystemPrompt(fs),
+  ]);
 
   const result = streamText({
     model: openai("gpt-4o"),

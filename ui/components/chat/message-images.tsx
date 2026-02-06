@@ -22,7 +22,7 @@ export function MessageImages({
     <div className="flex gap-2 mb-2 flex-wrap">
       {images.map((img, i) => (
         <img
-          key={i}
+          key={img.data.slice(0, 100)}
           src={img.data}
           alt={`Image ${i + 1}`}
           onClick={() => onImageClick?.(img.data)}
