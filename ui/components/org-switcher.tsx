@@ -75,7 +75,11 @@ export function OrgSwitcher() {
                 >
                   <span className="w-4 shrink-0">
                     {org.id === activeOrg?.id && (
-                      <CheckIcon size={14} className="text-foreground" aria-hidden="true" />
+                      <CheckIcon
+                        size={14}
+                        className="text-foreground"
+                        aria-hidden="true"
+                      />
                     )}
                   </span>
                   <span className="truncate">{org.name}</span>

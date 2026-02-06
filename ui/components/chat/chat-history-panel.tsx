@@ -74,7 +74,9 @@ export function ChatHistoryPanel() {
           </button>
         </div>
 
-        <label className="sr-only" htmlFor="chat-search">Search chats</label>
+        <label className="sr-only" htmlFor="chat-search">
+          Search chats
+        </label>
         <input
           id="chat-search"
           ref={searchInputRef}

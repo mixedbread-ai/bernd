@@ -63,7 +63,10 @@ export function UserMessage({
       <div className="prose prose-sm max-w-none text-foreground">
         {message.parts.map((part, i) =>
           isTextUIPart(part) ? (
-            <ReactMarkdown key={`${message.id}-text-${i}`} components={markdownComponents}>
+            <ReactMarkdown
+              key={`${message.id}-text-${i}`}
+              components={markdownComponents}
+            >
               {part.text}
             </ReactMarkdown>
           ) : null,

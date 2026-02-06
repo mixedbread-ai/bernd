@@ -102,7 +102,11 @@ export default function SettingsPage() {
             <div className="flex items-start justify-between">
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 rounded-lg flex items-center justify-center bg-background">
-                  <CalendarIcon size={20} className="text-foreground" aria-hidden="true" />
+                  <CalendarIcon
+                    size={20}
+                    className="text-foreground"
+                    aria-hidden="true"
+                  />
                 </div>
                 <div>
                   <div className="text-sm font-medium text-foreground">
@@ -170,9 +174,17 @@ export default function SettingsPage() {
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 rounded-lg flex items-center justify-center bg-background">
                   {theme === "light" ? (
-                    <SunIcon size={20} className="text-foreground" aria-hidden="true" />
+                    <SunIcon
+                      size={20}
+                      className="text-foreground"
+                      aria-hidden="true"
+                    />
                   ) : (
-                    <MoonIcon size={20} className="text-foreground" aria-hidden="true" />
+                    <MoonIcon
+                      size={20}
+                      className="text-foreground"
+                      aria-hidden="true"
+                    />
                   )}
                 </div>
                 <div>

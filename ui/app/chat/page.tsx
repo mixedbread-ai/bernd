@@ -8,7 +8,7 @@ import { ImagePreview } from "@/components/chat/image-preview";
 import { useChatHistory } from "@/context/chat-history-context";
 import { useAutoFocus } from "@/hooks/use-auto-focus";
 import { useImageAttachments } from "@/hooks/use-image-attachments";
-import { handleChatKeyDown } from "@/lib/chat-utils";
+import { handleChatKeyDown } from "@/lib/utils/chat";
 
 function generateChatId(): string {
   const now = new Date();

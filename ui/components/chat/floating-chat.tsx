@@ -10,7 +10,7 @@ import { ImagePreview } from "@/components/chat/image-preview";
 import { StreamingIndicator } from "@/components/chat/streaming-indicator";
 import { UserMessage } from "@/components/chat/user-message";
 import { useImageAttachments } from "@/hooks/use-image-attachments";
-import { handleChatKeyDown, imagesToFileParts } from "@/lib/chat-utils";
+import { handleChatKeyDown, imagesToFileParts } from "@/lib/utils/chat";
 import { cn } from "@/lib/utils/ui";
 
 export function FloatingChat() {

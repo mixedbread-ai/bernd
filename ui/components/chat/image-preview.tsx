@@ -44,7 +44,10 @@ export function ImagePreview({
                 buttonSize,
               )}
             >
-              <XIcon className={cn(size === "small" ? "size-2.5" : "size-3")} aria-hidden="true" />
+              <XIcon
+                className={cn(size === "small" ? "size-2.5" : "size-3")}
+                aria-hidden="true"
+              />
               <span className="sr-only">Remove image</span>
             </button>
           )}

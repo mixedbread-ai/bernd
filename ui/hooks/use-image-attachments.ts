@@ -1,5 +1,5 @@
 import { useRef, useState } from "react";
-import { fileToImageAttachment, handlePasteWithImages } from "@/lib/chat-utils";
+import { fileToImageAttachment, handlePasteWithImages } from "@/lib/utils/chat";
 import type { ImageAttachment } from "@/types";
 
 export function useImageAttachments() {

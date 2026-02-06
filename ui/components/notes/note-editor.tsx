@@ -85,7 +85,11 @@ export function NoteEditor({ note }: NoteEditorProps) {
           className="text-base md:text-lg font-medium bg-transparent outline-none flex-1 min-w-0 text-foreground"
         />
         <div className="flex items-center gap-2 md:gap-4 shrink-0">
-          {saving && <span className="text-xs text-muted" aria-live="polite">saving…</span>}
+          {saving && (
+            <span className="text-xs text-muted" aria-live="polite">
+              saving…
+            </span>
+          )}
           {/* Toggle preview on mobile */}
           <button
             type="button"

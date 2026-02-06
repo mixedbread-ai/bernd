@@ -13,12 +13,12 @@ import { UserMessage } from "@/components/chat/user-message";
 import { useChatHistory } from "@/context/chat-history-context";
 import { useAutoFocus } from "@/hooks/use-auto-focus";
 import { useImageAttachments } from "@/hooks/use-image-attachments";
+import type { Chat } from "@/lib/data/chats";
 import {
   handleChatKeyDown,
   imagesToFileParts,
   storedMessagesToUIMessages,
-} from "@/lib/chat-utils";
-import type { Chat } from "@/lib/data/chats";
+} from "@/lib/utils/chat";
 import { cn } from "@/lib/utils/ui";
 
 interface ChatConversationProps {

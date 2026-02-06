@@ -53,7 +53,9 @@ const SearchResultItem = memo(function SearchResultItem({
           </div>
           <div className="text-xs mt-2 text-muted">
             {result.path}
-            <span className="ml-3">score: {(result.score * 100).toFixed(0)}%</span>
+            <span className="ml-3">
+              score: {(result.score * 100).toFixed(0)}%
+            </span>
           </div>
         </div>
       </div>
@@ -104,15 +106,14 @@ export default function SearchPage() {
     };
   }, [query, search]);
 
-  const processedResults = useMemo(
-    () => results.map(processResult),
-    [results],
-  );
+  const processedResults = useMemo(() => results.map(processResult), [results]);
 
   return (
     <div className="min-h-screen p-4 md:p-12 bg-background text-foreground">
       <div className="mx-auto max-w-2xl">
-        <label className="sr-only" htmlFor="search-input">Search</label>
+        <label className="sr-only" htmlFor="search-input">
+          Search
+        </label>
         <input
           id="search-input"
           ref={inputRef}
@@ -123,7 +124,11 @@ export default function SearchPage() {
           className="w-full rounded-lg shadow-sm px-4 py-3 text-sm outline-none transition-all mb-8 bg-surface border border-border text-foreground focus:border-accent"
         />
 
-        {loading && <div className="text-muted" aria-live="polite">Searching…</div>}
+        {loading && (
+          <div className="text-muted" aria-live="polite">
+            Searching…
+          </div>
+        )}
 
         {!loading && searched && results.length === 0 && (
           <div className="text-muted">no results</div>

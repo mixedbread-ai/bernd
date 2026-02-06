@@ -2,7 +2,13 @@
 
 import { DownloadIcon, Trash2Icon, XIcon } from "lucide-react";
 import Link from "next/link";
-import { useCallback, useEffect, useOptimistic, useState, useTransition } from "react";
+import {
+  useCallback,
+  useEffect,
+  useOptimistic,
+  useState,
+  useTransition,
+} from "react";
 import ReactMarkdown from "react-markdown";
 import {
   deleteFileAction,
@@ -195,9 +201,7 @@ export function FilesList({ items }: FilesListProps) {
                   onClick={() => openPreview(item)}
                   className="flex-1 flex items-center gap-3 text-left"
                 >
-                  <span className="text-lg">
-                    {getFileIcon(item.mime_type)}
-                  </span>
+                  <span className="text-lg">{getFileIcon(item.mime_type)}</span>
                   <div className="flex-1 min-w-0">
                     <div className="text-sm truncate text-foreground">
                       {item.name}
