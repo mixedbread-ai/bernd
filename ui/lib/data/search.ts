@@ -1,3 +1,4 @@
+import { PATHS } from "@/lib/constants";
 import type { SemanticFS } from "@/lib/services/semantic-fs";
 import type { FileMetadata } from "@/types";
 
@@ -46,11 +47,11 @@ export async function searchByType(
   topK = 10,
 ): Promise<SearchAllResult[]> {
   const prefixMap: Record<SearchAllResult["type"], string> = {
-    todo: "/todos",
-    note: "/notes",
-    memory: "/memories",
-    file: "/files",
-    chat: "/chats",
+    todo: PATHS.TODOS,
+    note: PATHS.NOTES,
+    memory: PATHS.MEMORIES,
+    file: PATHS.FILES,
+    chat: PATHS.CHATS,
   };
 
   const results = await fs.search(query, prefixMap[type], topK);

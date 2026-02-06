@@ -4,14 +4,9 @@ import type {
   SearchResult,
   SemanticFS,
 } from "@/lib/services/semantic-fs";
+import { pathToId } from "@/lib/utils";
 import type { Todo, TodoMetadata } from "@/types";
 import { isTodoMetadata } from "@/types";
-
-function pathToId(path: string): string {
-  // Extract filename without extension as ID
-  const filename = path.split("/").pop() ?? "";
-  return filename.replace(".md", "");
-}
 
 function sortTodos(todos: Todo[]): Todo[] {
   const statusOrder: Record<TodoStatus, number> = {

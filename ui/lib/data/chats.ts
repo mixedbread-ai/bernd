@@ -1,22 +1,19 @@
 import { PATHS } from "@/lib/constants";
 import type { FileListItem, SemanticFS } from "@/lib/services/semantic-fs";
+import { pathToId } from "@/lib/utils";
 import {
+  type Chat,
   type ChatMetadata,
   type ChatSummary,
   isChatMetadata,
   type Message,
 } from "@/types";
 
-function pathToId(path: string): string {
-  const filename = path.split("/").pop() ?? "";
-  return filename.replace(".json", "");
-}
-
 function fileToChatSummary(file: FileListItem): ChatSummary {
   const metadata = file.metadata;
   if (isChatMetadata(metadata)) {
     return {
-      id: pathToId(file.path),
+      id: pathToId(file.path, ".json"),
       title: metadata.title,
       message_count: metadata.message_count,
     };
@@ -33,14 +30,6 @@ export async function getChats(
     .filter((f) => f.path.endsWith(".json"))
     .map(fileToChatSummary)
     .sort((a, b) => b.id.localeCompare(a.id)); // Sort by ID descending (newest first)
-}
-
-export interface Chat {
-  id: string;
-  title: string;
-  messages: Message[];
-  created_at?: string;
-  updated_at?: string;
 }
 
 export async function getChat(

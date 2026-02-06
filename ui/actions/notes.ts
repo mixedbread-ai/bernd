@@ -4,22 +4,18 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { PATHS } from "@/lib/constants";
 import { getFS } from "@/lib/context";
-import { isNoteMetadata, type Note, type NoteMetadata } from "@/types";
-
-export interface NoteCreate {
-  title: string;
-  content?: string;
-}
-
-export interface NoteUpdate {
-  title?: string;
-  content?: string;
-}
+import { generateTimestamp } from "@/lib/utils";
+import {
+  isNoteMetadata,
+  type Note,
+  type NoteCreate,
+  type NoteMetadata,
+  type NoteUpdate,
+} from "@/types";
 
 function generateNoteId(): string {
-  const now = new Date();
-  const pad = (n: number) => n.toString().padStart(2, "0");
-  return `${now.getFullYear()}${pad(now.getMonth() + 1)}${pad(now.getDate())}_${pad(now.getHours())}${pad(now.getMinutes())}${pad(now.getSeconds())}`;
+  const ts = generateTimestamp();
+  return `${ts.slice(0, 8)}_${ts.slice(8)}`;
 }
 
 export async function createNoteAction(data: NoteCreate) {

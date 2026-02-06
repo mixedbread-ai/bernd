@@ -1,5 +1,7 @@
 import type { Priority, TodoStatus } from "@/lib/constants";
 
+export type { SearchResult } from "@/lib/services/semantic-fs";
+
 interface BaseMetadata {
   path?: string;
   created_at?: string;
@@ -128,18 +130,11 @@ export interface Todo {
   title: string;
   description?: string;
   due_date?: string;
-  priority: "low" | "medium" | "high";
-  status: "pending" | "in_progress" | "completed";
+  priority: Priority;
+  status: TodoStatus;
   tags?: string[];
   calendar_event_id?: string;
   created_at?: string;
-}
-
-export interface SearchResult {
-  path: string;
-  score: number;
-  content?: string;
-  metadata?: Record<string, unknown>;
 }
 
 export interface Note {
@@ -147,6 +142,42 @@ export interface Note {
   title: string;
   content?: string;
   updated_at?: string;
+}
+
+export interface Chat {
+  id: string;
+  title: string;
+  messages: Message[];
+  created_at?: string;
+  updated_at?: string;
+}
+
+export interface TodoCreate {
+  title: string;
+  description?: string;
+  due_date?: string;
+  priority?: Priority;
+  status?: TodoStatus;
+  tags?: string[];
+}
+
+export interface TodoUpdate {
+  new_title?: string;
+  description?: string;
+  due_date?: string;
+  priority?: Priority;
+  status?: TodoStatus;
+  tags?: string[];
+}
+
+export interface NoteCreate {
+  title: string;
+  content?: string;
+}
+
+export interface NoteUpdate {
+  title?: string;
+  content?: string;
 }
 
 export type StreamEvent =

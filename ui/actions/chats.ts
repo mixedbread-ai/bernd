@@ -4,7 +4,8 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { PATHS } from "@/lib/constants";
 import { getFS } from "@/lib/context";
-import { type Chat, getChat } from "@/lib/data/chats";
+import { getChat } from "@/lib/data/chats";
+import type { Chat } from "@/types";
 
 export async function getChatAction(id: string): Promise<Chat | null> {
   const fs = await getFS();

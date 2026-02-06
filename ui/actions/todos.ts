@@ -1,27 +1,15 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { PATHS, type Priority, type TodoStatus } from "@/lib/constants";
+import { PATHS } from "@/lib/constants";
 import { getFS, getGoogleCalendar } from "@/lib/context";
-import { isTodoMetadata, type TodoMetadata } from "@/types";
-
-export interface TodoCreate {
-  title: string;
-  description?: string;
-  due_date?: string;
-  priority?: Priority;
-  status?: TodoStatus;
-  tags?: string[];
-}
-
-export interface TodoUpdate {
-  new_title?: string;
-  description?: string;
-  due_date?: string;
-  priority?: Priority;
-  status?: TodoStatus;
-  tags?: string[];
-}
+import { generateTimestamp } from "@/lib/utils";
+import {
+  isTodoMetadata,
+  type TodoCreate,
+  type TodoMetadata,
+  type TodoUpdate,
+} from "@/types";
 
 function makeSafeTitle(title: string): string {
   return title
@@ -34,10 +22,7 @@ function makeSafeTitle(title: string): string {
 
 function generateTodoFilename(title: string): string {
   const safeTitle = makeSafeTitle(title);
-  const now = new Date();
-  const pad = (n: number) => n.toString().padStart(2, "0");
-  const timestamp = `${now.getFullYear()}${pad(now.getMonth() + 1)}${pad(now.getDate())}${pad(now.getHours())}${pad(now.getMinutes())}${pad(now.getSeconds())}`;
-  return `${safeTitle}-${timestamp}.md`;
+  return `${safeTitle}-${generateTimestamp()}.md`;
 }
 
 export async function createTodoAction(data: TodoCreate) {

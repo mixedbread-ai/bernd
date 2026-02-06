@@ -1,12 +1,8 @@
 import { PATHS } from "@/lib/constants";
 import type { FileListItem, SemanticFS } from "@/lib/services/semantic-fs";
+import { pathToId } from "@/lib/utils";
 import type { Note, NoteMetadata } from "@/types";
 import { isNoteMetadata } from "@/types";
-
-function pathToId(path: string): string {
-  const filename = path.split("/").pop() ?? "";
-  return filename.replace(".md", "");
-}
 
 function noteMetadataToNote(
   id: string,

@@ -5,14 +5,12 @@ import { useMemo, useOptimistic, useState, useTransition } from "react";
 import {
   createTodoAction,
   deleteTodoAction,
-  type TodoCreate,
-  type TodoUpdate,
   updateTodoAction,
 } from "@/actions/todos";
 import { useAutoFocus } from "@/hooks/use-auto-focus";
 import { formatRelativeDate } from "@/lib/utils/format";
 import { cn } from "@/lib/utils/ui";
-import type { Todo } from "@/types";
+import type { Todo, TodoCreate, TodoUpdate } from "@/types";
 
 const FILTER_OPTIONS = ["all", "pending", "in_progress", "completed"] as const;
 const SORT_OPTIONS = [
