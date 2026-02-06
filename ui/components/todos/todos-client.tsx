@@ -110,7 +110,7 @@ export function TodosClient({ initialTodos }: TodosClientProps) {
               ? {
                   ...todo,
                   ...rest,
-                  ...(new_title ? { id: new_title, title: new_title } : {}),
+                  ...(new_title ? { title: new_title } : {}),
                 }
               : todo,
           );
@@ -143,7 +143,7 @@ export function TodosClient({ initialTodos }: TodosClientProps) {
     startTransition(async () => {
       setOptimisticTodos({ type: "toggle", id: todo.id, newStatus });
       try {
-        await updateTodoAction(todo.id, { status: newStatus } as TodoUpdate);
+        await updateTodoAction(todo.id, { status: newStatus });
       } catch {
         alert("Failed to update todo.");
       }
@@ -182,8 +182,12 @@ export function TodosClient({ initialTodos }: TodosClientProps) {
 
     if (editingId) {
       const id = editingId;
+      const currentTodo = optimisticTodos.find((t) => t.id === id);
       const updateData: TodoUpdate = {
-        new_title: formData.title !== id ? formData.title : undefined,
+        new_title:
+          currentTodo && formData.title !== currentTodo.title
+            ? formData.title
+            : undefined,
         description: formData.description,
         priority: formData.priority,
         due_date: formData.due_date || undefined,

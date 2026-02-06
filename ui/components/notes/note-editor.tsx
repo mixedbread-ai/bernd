@@ -27,6 +27,11 @@ export function NoteEditor({ note }: NoteEditorProps) {
     if (!content) {
       textareaRef.current?.focus();
     }
+    return () => {
+      if (saveTimeoutRef.current) {
+        clearTimeout(saveTimeoutRef.current);
+      }
+    };
   }, []);
 
   const saveNote = useCallback(

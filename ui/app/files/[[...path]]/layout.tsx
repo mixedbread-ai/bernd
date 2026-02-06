@@ -12,7 +12,13 @@ interface FilesLayoutProps {
 
 export default function FilesLayout({ children }: FilesLayoutProps) {
   const params = useParams<{ path?: string[] }>();
-  const decodedPath = params.path?.map(decodeURIComponent);
+  const decodedPath = params.path?.map((s) => {
+    try {
+      return decodeURIComponent(s);
+    } catch {
+      return s;
+    }
+  });
   const currentPath = decodedPath
     ? `${PATHS.FILES}/${decodedPath.join("/")}`
     : PATHS.FILES;

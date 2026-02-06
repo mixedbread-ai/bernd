@@ -5,13 +5,7 @@ import { redirect } from "next/navigation";
 import { PATHS } from "@/lib/constants";
 import { getFS } from "@/lib/context";
 import { generateTimestamp } from "@/lib/utils";
-import {
-  isNoteMetadata,
-  type Note,
-  type NoteCreate,
-  type NoteMetadata,
-  type NoteUpdate,
-} from "@/types";
+import type { NoteCreate, NoteMetadata, NoteUpdate } from "@/types";
 
 function generateNoteId(): string {
   const ts = generateTimestamp();
@@ -54,25 +48,4 @@ export async function deleteNoteAction(id: string) {
   await fs.delete(`${PATHS.NOTES}/${id}.md`);
 
   revalidatePath("/notes");
-}
-
-export async function getNoteAction(id: string): Promise<Note | null> {
-  const fs = await getFS();
-
-  try {
-    const result = await fs.read(`${PATHS.NOTES}/${id}.md`);
-
-    const metadata = result.metadata;
-    if (!isNoteMetadata(metadata)) {
-      throw new Error(`Expected note metadata, got ${metadata.type}`);
-    }
-    return {
-      id,
-      title: metadata.title,
-      content: result.content,
-      updated_at: metadata.updated_at ?? undefined,
-    };
-  } catch {
-    return null;
-  }
 }

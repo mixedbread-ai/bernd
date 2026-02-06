@@ -174,6 +174,9 @@ export async function createFolderAction(path: string) {
 }
 
 export async function deleteFileAction(path: string) {
+  if (!path.startsWith(PATHS.FILES)) {
+    throw new Error("Can only delete files under /files/");
+  }
   const fs = await getFS();
 
   await fs.delete(path);
@@ -182,6 +185,9 @@ export async function deleteFileAction(path: string) {
 }
 
 export async function deleteFolderAction(path: string) {
+  if (!path.startsWith(PATHS.FILES)) {
+    throw new Error("Can only delete folders under /files/");
+  }
   const fs = await getFS();
 
   await fs.clearPrefix(path);

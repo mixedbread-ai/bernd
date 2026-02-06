@@ -62,40 +62,51 @@ export async function updateTodoAction(id: string, data: TodoUpdate) {
   const fs = await getFS();
   const gcal = await getGoogleCalendar();
 
-  // Get existing todo metadata and extract current title from content
+  // Read existing todo to preserve fields not included in the partial update
   let eventId: string | undefined;
   let currentTitle = id;
+  let existingDescription = "";
+  let existingMeta: Omit<
+    TodoMetadata,
+    "type" | "path" | "created_at" | "updated_at"
+  > = {};
   try {
     const existing = await fs.read(`${PATHS.TODOS}/${id}.md`);
-    eventId = isTodoMetadata(existing.metadata)
-      ? existing.metadata.calendar_event_id
-      : undefined;
+    if (isTodoMetadata(existing.metadata)) {
+      const { type, path, created_at, updated_at, ...rest } = existing.metadata;
+      existingMeta = rest;
+      eventId = existing.metadata.calendar_event_id;
+    }
     const titleMatch = existing.content.match(/^# (.+)$/m);
     if (titleMatch) {
       currentTitle = titleMatch[1];
     }
+    existingDescription = existing.content.replace(/^#.*\n\n?/, "");
   } catch {
     // Todo doesn't exist yet
   }
 
   const newTitle = data.new_title ?? currentTitle;
-  const content = `# ${newTitle}\n\n${data.description ?? ""}`;
+  const description = data.description ?? existingDescription;
+  const content = `# ${newTitle}\n\n${description}`;
 
   const metadata: Omit<TodoMetadata, "path" | "created_at" | "updated_at"> & {
     calendar_event_id?: string;
   } = {
+    ...existingMeta,
     type: "todo",
     title: newTitle,
-    due_date: data.due_date ?? "",
-    priority: data.priority ?? "medium",
-    status: data.status ?? "pending",
-    tags: data.tags ?? [],
+    ...(data.due_date !== undefined && { due_date: data.due_date }),
+    ...(data.priority !== undefined && { priority: data.priority }),
+    ...(data.status !== undefined && { status: data.status }),
+    ...(data.tags !== undefined && { tags: data.tags }),
   };
 
   // Handle calendar event
   if (gcal) {
     if (data.status === "completed" && eventId) {
       await gcal.deleteEvent(eventId);
+      delete metadata.calendar_event_id;
     } else if (eventId && data.due_date) {
       await gcal.updateEvent(eventId, {
         title: newTitle,
@@ -117,11 +128,11 @@ export async function updateTodoAction(id: string, data: TodoUpdate) {
     }
   }
 
-  // If title changed, create new file with new filename and delete old
+  // If title changed, write new file first, then delete old to avoid data loss
   if (newTitle !== currentTitle) {
-    await fs.delete(`${PATHS.TODOS}/${id}.md`);
     const newFilename = generateTodoFilename(newTitle);
     await fs.write(`${PATHS.TODOS}/${newFilename}`, content, metadata);
+    await fs.delete(`${PATHS.TODOS}/${id}.md`);
   } else {
     await fs.write(`${PATHS.TODOS}/${id}.md`, content, metadata);
   }
