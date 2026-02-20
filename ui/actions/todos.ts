@@ -110,7 +110,7 @@ export async function updateTodoAction(id: string, data: TodoUpdate) {
     } else if (eventId && data.due_date) {
       await gcal.updateEvent(eventId, {
         title: newTitle,
-        description: data.description ?? "",
+        description,
         startTime: data.due_date,
         durationMinutes: 30,
       });
@@ -118,7 +118,7 @@ export async function updateTodoAction(id: string, data: TodoUpdate) {
     } else if (!eventId && data.due_date && data.status !== "completed") {
       const calResult = await gcal.createEvent({
         title: newTitle,
-        description: data.description ?? "",
+        description,
         startTime: data.due_date,
         durationMinutes: 30,
       });
@@ -132,7 +132,11 @@ export async function updateTodoAction(id: string, data: TodoUpdate) {
   if (newTitle !== currentTitle) {
     const newFilename = generateTodoFilename(newTitle);
     await fs.write(`${PATHS.TODOS}/${newFilename}`, content, metadata);
-    await fs.delete(`${PATHS.TODOS}/${id}.md`);
+    try {
+      await fs.delete(`${PATHS.TODOS}/${id}.md`);
+    } catch {
+      // Old file may not exist (e.g. updating a non-existent todo with a new title)
+    }
   } else {
     await fs.write(`${PATHS.TODOS}/${id}.md`, content, metadata);
   }

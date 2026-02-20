@@ -129,9 +129,10 @@ export async function POST(req: Request) {
           ];
 
           const existingChat = await getChat(fs, chatId);
-          const title = existingChat
-            ? existingChat.title
-            : await generateChatTitle(storedMessages);
+          const title =
+            existingChat && existingChat.title !== "New Chat"
+              ? existingChat.title
+              : await generateChatTitle(storedMessages);
           await saveChat(fs, chatId, title, storedMessages);
         }
       } catch (e) {
