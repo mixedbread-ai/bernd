@@ -1,4 +1,5 @@
 import { PATHS } from "@/lib/constants";
+import { decrypt, encrypt } from "@/lib/crypto";
 import { getServerToken } from "@/lib/server-auth";
 import {
   GoogleCalendar,
@@ -41,7 +42,14 @@ async function loadGoogleTokens(
 ): Promise<StoredGoogleTokens | null> {
   try {
     const result = await fs.read(PATHS.GOOGLE_AUTH);
-    return JSON.parse(result.content) as StoredGoogleTokens;
+    const tokens = JSON.parse(result.content) as StoredGoogleTokens;
+    if (tokens.access_token) {
+      tokens.access_token = decrypt(tokens.access_token);
+    }
+    if (tokens.refresh_token) {
+      tokens.refresh_token = decrypt(tokens.refresh_token);
+    }
+    return tokens;
   } catch {
     return null;
   }
@@ -56,6 +64,13 @@ async function saveGoogleTokens(
     ...existing,
     ...tokens,
   };
+  // Encrypt tokens before saving
+  if (toSave.access_token) {
+    toSave.access_token = encrypt(toSave.access_token);
+  }
+  if (toSave.refresh_token) {
+    toSave.refresh_token = encrypt(toSave.refresh_token);
+  }
   await fs.write(PATHS.GOOGLE_AUTH, JSON.stringify(toSave, null, 2));
 }
 

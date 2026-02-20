@@ -45,37 +45,45 @@ export function createTools(
         status,
         tags,
       }) => {
-        const content = `# ${title}\n\n${description ?? ""}`;
-        const metadata: Record<string, unknown> = {
-          type: "todo",
-          due_date: due_date ?? "",
-          priority: priority ?? "medium",
-          status: status ?? "pending",
-          tags: tags ?? [],
-        };
+        try {
+          const content = `# ${title}\n\n${description ?? ""}`;
+          const metadata: Record<string, unknown> = {
+            type: "todo",
+            due_date: due_date ?? "",
+            priority: priority ?? "medium",
+            status: status ?? "pending",
+            tags: tags ?? [],
+          };
 
-        // Create calendar event if due_date is set and gcal is configured
-        const gcal = getGcal();
-        let calResult: unknown;
-        if (gcal && due_date) {
-          calResult = await gcal.createEvent({
-            title,
-            description: description ?? "",
-            startTime: due_date,
-            durationMinutes: 30,
-          });
-          const calObj = calResult as Record<string, unknown>;
-          if (calObj?.event_id) {
-            metadata.calendar_event_id = calObj.event_id;
+          // Create calendar event if due_date is set and gcal is configured
+          const gcal = getGcal();
+          let calResult: unknown;
+          if (gcal && due_date) {
+            try {
+              calResult = await gcal.createEvent({
+                title,
+                description: description ?? "",
+                startTime: due_date,
+                durationMinutes: 30,
+              });
+              const calObj = calResult as Record<string, unknown>;
+              if (calObj?.event_id) {
+                metadata.calendar_event_id = calObj.event_id;
+              }
+            } catch (calErr) {
+              calResult = { error: String(calErr) };
+            }
           }
-        }
 
-        const result = await fs.write(
-          `${PATHS.TODOS}/${title}.md`,
-          content,
-          metadata,
-        );
-        return calResult ? { ...result, calendar: calResult } : result;
+          const result = await fs.write(
+            `${PATHS.TODOS}/${title}.md`,
+            content,
+            metadata,
+          );
+          return calResult ? { ...result, calendar: calResult } : result;
+        } catch (e) {
+          return { error: String(e) };
+        }
       },
     }),
 
@@ -103,24 +111,32 @@ export function createTools(
       description: "Delete a todo permanently.",
       inputSchema: removeTodoSchema,
       execute: async ({ title }) => {
-        // Get existing todo to check for calendar event
-        let eventId: string | undefined;
         try {
-          const existing = await fs.read(`${PATHS.TODOS}/${title}.md`);
-          eventId = isTodoMetadata(existing.metadata)
-            ? existing.metadata.calendar_event_id
-            : undefined;
-        } catch {
-          // Todo doesn't exist yet
-        }
+          // Get existing todo to check for calendar event
+          let eventId: string | undefined;
+          try {
+            const existing = await fs.read(`${PATHS.TODOS}/${title}.md`);
+            eventId = isTodoMetadata(existing.metadata)
+              ? existing.metadata.calendar_event_id
+              : undefined;
+          } catch {
+            // Todo doesn't exist yet
+          }
 
-        // Delete calendar event if exists
-        const gcal = getGcal();
-        if (gcal && eventId) {
-          await gcal.deleteEvent(eventId);
-        }
+          // Delete calendar event if exists
+          const gcal = getGcal();
+          if (gcal && eventId) {
+            try {
+              await gcal.deleteEvent(eventId);
+            } catch {
+              // Calendar failure should not prevent todo deletion
+            }
+          }
 
-        return fs.delete(`${PATHS.TODOS}/${title}.md`);
+          return await fs.delete(`${PATHS.TODOS}/${title}.md`);
+        } catch (e) {
+          return { error: String(e) };
+        }
       },
     }),
 
@@ -137,66 +153,74 @@ export function createTools(
         status,
         tags,
       }) => {
-        const finalTitle = new_title ?? title;
-        const content = `# ${finalTitle}\n\n${description ?? ""}`;
-
-        // Get existing todo metadata
-        let eventId: string | undefined;
         try {
-          const existing = await fs.read(`${PATHS.TODOS}/${title}.md`);
-          eventId = isTodoMetadata(existing.metadata)
-            ? existing.metadata.calendar_event_id
-            : undefined;
-        } catch {
-          // Todo doesn't exist yet
-        }
+          const finalTitle = new_title ?? title;
+          const content = `# ${finalTitle}\n\n${description ?? ""}`;
 
-        const metadata: Record<string, unknown> = {
-          type: "todo",
-          due_date: due_date ?? "",
-          priority: priority ?? "medium",
-          status: status ?? "pending",
-          tags: tags ?? [],
-        };
+          // Get existing todo metadata
+          let eventId: string | undefined;
+          try {
+            const existing = await fs.read(`${PATHS.TODOS}/${title}.md`);
+            eventId = isTodoMetadata(existing.metadata)
+              ? existing.metadata.calendar_event_id
+              : undefined;
+          } catch {
+            // Todo doesn't exist yet
+          }
 
-        // Handle calendar event
-        const gcal = getGcal();
-        let calResult: unknown;
-        if (gcal) {
-          if (status === "completed" && eventId) {
-            calResult = await gcal.deleteEvent(eventId);
-          } else if (eventId && due_date) {
-            calResult = await gcal.updateEvent(eventId, {
-              title: finalTitle,
-              description: description ?? "",
-              startTime: due_date,
-              durationMinutes: 30,
-            });
-            metadata.calendar_event_id = eventId;
-          } else if (!eventId && due_date && status !== "completed") {
-            calResult = await gcal.createEvent({
-              title: finalTitle,
-              description: description ?? "",
-              startTime: due_date,
-              durationMinutes: 30,
-            });
-            const calObj = calResult as Record<string, unknown>;
-            if (calObj?.event_id) {
-              metadata.calendar_event_id = calObj.event_id;
+          const metadata: Record<string, unknown> = {
+            type: "todo",
+            due_date: due_date ?? "",
+            priority: priority ?? "medium",
+            status: status ?? "pending",
+            tags: tags ?? [],
+          };
+
+          // Handle calendar event
+          const gcal = getGcal();
+          let calResult: unknown;
+          if (gcal) {
+            try {
+              if (status === "completed" && eventId) {
+                calResult = await gcal.deleteEvent(eventId);
+              } else if (eventId && due_date) {
+                calResult = await gcal.updateEvent(eventId, {
+                  title: finalTitle,
+                  description: description ?? "",
+                  startTime: due_date,
+                  durationMinutes: 30,
+                });
+                metadata.calendar_event_id = eventId;
+              } else if (!eventId && due_date && status !== "completed") {
+                calResult = await gcal.createEvent({
+                  title: finalTitle,
+                  description: description ?? "",
+                  startTime: due_date,
+                  durationMinutes: 30,
+                });
+                const calObj = calResult as Record<string, unknown>;
+                if (calObj?.event_id) {
+                  metadata.calendar_event_id = calObj.event_id;
+                }
+              }
+            } catch (calErr) {
+              calResult = { error: String(calErr) };
             }
           }
-        }
 
-        if (finalTitle !== title) {
-          await fs.delete(`${PATHS.TODOS}/${title}.md`);
-        }
+          if (finalTitle !== title) {
+            await fs.delete(`${PATHS.TODOS}/${title}.md`);
+          }
 
-        const result = await fs.write(
-          `${PATHS.TODOS}/${finalTitle}.md`,
-          content,
-          metadata,
-        );
-        return calResult ? { ...result, calendar: calResult } : result;
+          const result = await fs.write(
+            `${PATHS.TODOS}/${finalTitle}.md`,
+            content,
+            metadata,
+          );
+          return calResult ? { ...result, calendar: calResult } : result;
+        } catch (e) {
+          return { error: String(e) };
+        }
       },
     }),
 
@@ -219,56 +243,64 @@ Commands:
         new_str,
         insert_line,
       }) => {
-        const targetPath = path ?? PATHS.MEMORIES;
+        try {
+          const targetPath = path ?? PATHS.MEMORIES;
 
-        switch (command) {
-          case "view":
-            if (targetPath === PATHS.MEMORIES || targetPath.endsWith("/")) {
-              return { files: await fs.list(targetPath) };
-            }
-            return fs.read(targetPath);
+          switch (command) {
+            case "view":
+              if (targetPath === PATHS.MEMORIES || targetPath.endsWith("/")) {
+                return { files: await fs.list(targetPath) };
+              }
+              return await fs.read(targetPath);
 
-          case "create":
-            return fs.write(targetPath, content ?? "", {
-              type: "memory",
-            });
+            case "create":
+              return await fs.write(targetPath, content ?? "", {
+                type: "memory",
+              });
 
-          case "delete":
-            return fs.delete(targetPath);
+            case "delete":
+              return await fs.delete(targetPath);
 
-          case "search":
-            return fs.search(query ?? "", PATHS.MEMORIES, 10);
+            case "search":
+              return await fs.search(query ?? "", PATHS.MEMORIES, 10);
 
-          case "str_replace": {
-            const result = await fs.read(targetPath);
-            const newContent = result.content.replace(
-              old_str ?? "",
-              new_str ?? "",
-            );
-            return fs.write(targetPath, newContent, result.metadata);
-          }
-
-          case "insert": {
-            let existingContent = "";
-            let existingMetadata: Partial<FileMetadata> = { type: "memory" };
-            try {
+            case "str_replace": {
               const result = await fs.read(targetPath);
-              existingContent = result.content;
-              existingMetadata = result.metadata;
-            } catch {
-              // File doesn't exist, use defaults
+              const newContent = result.content.replace(
+                old_str ?? "",
+                new_str ?? "",
+              );
+              return await fs.write(targetPath, newContent, result.metadata);
             }
-            const lines = existingContent.split("\n");
-            const idx = Math.max(
-              0,
-              Math.min((insert_line ?? 1) - 1, lines.length),
-            );
-            lines.splice(idx, 0, new_str ?? "");
-            return fs.write(targetPath, lines.join("\n"), existingMetadata);
-          }
 
-          default:
-            return { error: `Unknown command: ${command}` };
+            case "insert": {
+              let existingContent = "";
+              let existingMetadata: Partial<FileMetadata> = { type: "memory" };
+              try {
+                const result = await fs.read(targetPath);
+                existingContent = result.content;
+                existingMetadata = result.metadata;
+              } catch {
+                // File doesn't exist, use defaults
+              }
+              const lines = existingContent.split("\n");
+              const idx = Math.max(
+                0,
+                Math.min((insert_line ?? 1) - 1, lines.length),
+              );
+              lines.splice(idx, 0, new_str ?? "");
+              return await fs.write(
+                targetPath,
+                lines.join("\n"),
+                existingMetadata,
+              );
+            }
+
+            default:
+              return { error: `Unknown command: ${command}` };
+          }
+        } catch (e) {
+          return { error: String(e) };
         }
       },
     }),
@@ -385,35 +417,39 @@ Commands:
         limit,
         top_k,
       }) => {
-        const targetPath = path ?? "/";
+        try {
+          const targetPath = path ?? "/";
 
-        switch (command) {
-          case "read":
-            return fs.read(targetPath);
+          switch (command) {
+            case "read":
+              return await fs.read(targetPath);
 
-          case "write":
-            return fs.write(targetPath, content ?? "", metadata);
+            case "write":
+              return await fs.write(targetPath, content ?? "", metadata);
 
-          case "delete":
-            return fs.delete(targetPath);
+            case "delete":
+              return await fs.delete(targetPath);
 
-          case "list":
-            return { files: await fs.list(targetPath, limit ?? 100) };
+            case "list":
+              return { files: await fs.list(targetPath, limit ?? 100) };
 
-          case "search":
-            return fs.search(query ?? "", targetPath, top_k ?? 10);
+            case "search":
+              return await fs.search(query ?? "", targetPath, top_k ?? 10);
 
-          case "update": {
-            const result = await fs.read(targetPath);
-            const newContent = result.content.replace(
-              old_str ?? "",
-              new_str ?? "",
-            );
-            return fs.write(targetPath, newContent, result.metadata);
+            case "update": {
+              const result = await fs.read(targetPath);
+              const newContent = result.content.replace(
+                old_str ?? "",
+                new_str ?? "",
+              );
+              return await fs.write(targetPath, newContent, result.metadata);
+            }
+
+            default:
+              return { error: `Unknown command: ${command}` };
           }
-
-          default:
-            return { error: `Unknown command: ${command}` };
+        } catch (e) {
+          return { error: String(e) };
         }
       },
     }),

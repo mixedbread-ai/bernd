@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { PATHS } from "@/lib/constants";
 import { getFS } from "@/lib/context";
+import { encrypt } from "@/lib/crypto";
 
 export async function getGoogleStatusAction(): Promise<{
   connected: boolean;
@@ -37,7 +38,13 @@ export async function saveGoogleTokensAction(tokens: {
 }) {
   const fs = await getFS();
 
-  await fs.write(PATHS.GOOGLE_AUTH, JSON.stringify(tokens, null, 2), {
+  const encryptedTokens = {
+    ...tokens,
+    access_token: encrypt(tokens.access_token),
+    refresh_token: encrypt(tokens.refresh_token),
+  };
+
+  await fs.write(PATHS.GOOGLE_AUTH, JSON.stringify(encryptedTokens, null, 2), {
     type: "auth",
   });
 
