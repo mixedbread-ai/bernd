@@ -8,7 +8,10 @@ import { getFS } from "@/lib/context";
 export async function deleteChatAction(id: string, isActive?: boolean) {
   const fs = await getFS();
 
-  await fs.delete(`${PATHS.CHATS}/${id}.json`);
+  await Promise.all([
+    fs.delete(`${PATHS.CHATS}/${id}.json`),
+    fs.clearPrefix(`${PATHS.CHAT_ASSETS}/${id}/`),
+  ]);
 
   revalidatePath("/chat");
 

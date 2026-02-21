@@ -10,7 +10,7 @@ import {
 import { getSystemPrompt } from "@/lib/agent/prompts";
 import { createTools } from "@/lib/agent/tools";
 import { getApiKey, getFS, getGoogleCalendar } from "@/lib/context";
-import { getChat, saveChat } from "@/lib/data/chats";
+import { getChat, processImagesForSave, saveChat } from "@/lib/data/chats";
 import type { ImageAttachment, Message } from "@/types";
 
 export const maxDuration = 60;
@@ -33,7 +33,10 @@ async function generateChatTitle(messages: Message[]): Promise<string> {
       temperature: 0.7,
     });
 
-    const title = text.trim().replace(/^["']|["']$/g, "").replace(/\.$/, "");
+    const title = text
+      .trim()
+      .replace(/^["']|["']$/g, "")
+      .replace(/\.$/, "");
     return title.slice(0, 50);
   } catch {
     // Fallback to first user message
@@ -129,11 +132,16 @@ export async function POST(req: Request) {
           ];
 
           const existingChat = await getChat(fs, chatId);
+          const processedMessages = await processImagesForSave(
+            fs,
+            chatId,
+            storedMessages,
+          );
           const title =
             existingChat && existingChat.title !== "New Chat"
               ? existingChat.title
               : await generateChatTitle(storedMessages);
-          await saveChat(fs, chatId, title, storedMessages);
+          await saveChat(fs, chatId, title, processedMessages);
         }
       } catch (e) {
         console.error("[chat] Failed to save chat:", e);

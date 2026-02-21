@@ -103,7 +103,9 @@ export class SemanticFS {
     const blob = new Blob([fileContent], { type: mimeType });
     const file = new File([blob], filename, { type: mimeType });
 
-    await this.client.stores.files.upload(this.storeName, file, {
+    const fileObject = await this.client.files.create({ file });
+    this.client.stores.files.create(this.storeName, {
+      file_id: fileObject.id,
       external_id: fileId,
       overwrite: true,
       metadata: {
@@ -259,7 +261,9 @@ export class SemanticFS {
     const blob = new Blob([data], { type: mimeType });
     const file = new File([blob], filename, { type: mimeType });
 
-    await this.client.stores.files.upload(this.storeName, file, {
+    const fileObject = await this.client.files.create({ file });
+    this.client.stores.files.create(this.storeName, {
+      file_id: fileObject.id,
       external_id: fileId,
       overwrite: true,
       metadata: {

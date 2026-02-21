@@ -1,5 +1,6 @@
 "use client";
 
+import { ChatImage } from "@/components/chat/chat-image";
 import type { ImageAttachment } from "@/types";
 
 interface MessageImagesProps {
@@ -21,12 +22,12 @@ export function MessageImages({
   return (
     <div className="flex gap-2 mb-2 flex-wrap">
       {images.map((img, i) => (
-        <img
+        <ChatImage
           key={img.data.slice(0, 100)}
           src={img.data}
           alt={`Image ${i + 1}`}
           onClick={() => onImageClick?.(img.data)}
-          className={`${heightClass} max-w-full rounded-lg cursor-pointer hover:opacity-90 transition-opacity border border-border`}
+          className={`${heightClass} max-w-full hover:opacity-90 transition-opacity border border-border`}
         />
       ))}
     </div>

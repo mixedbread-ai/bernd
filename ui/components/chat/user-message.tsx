@@ -5,6 +5,7 @@ import {
   type UIMessage,
 } from "ai";
 import ReactMarkdown from "react-markdown";
+import { ChatImage } from "@/components/chat/chat-image";
 import { markdownComponents } from "@/components/chat/markdown";
 import { cn } from "@/lib/utils/ui";
 
@@ -41,22 +42,15 @@ export function UserMessage({
       {imageParts.length > 0 && (
         <div className="flex flex-wrap gap-2 mb-2">
           {imageParts.map((part) => (
-            <button
+            <ChatImage
               key={part.url}
-              type="button"
+              src={part.url}
               onClick={() => onImageClick?.(part.url)}
-              className="cursor-pointer rounded-lg"
-            >
-              <img
-                src={part.url}
-                alt=""
-                className={cn(
-                  "rounded-lg",
-                  isCompact ? "max-h-24" : "max-h-32",
-                )}
-              />
-              <span className="sr-only">View attachment</span>
-            </button>
+              className={cn(
+                "rounded-lg",
+                isCompact ? "max-h-24" : "max-h-32",
+              )}
+            />
           ))}
         </div>
       )}
