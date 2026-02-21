@@ -8,12 +8,12 @@ import { ImagePreview } from "@/components/chat/image-preview";
 import { useChatHistory } from "@/context/chat-history-context";
 import { useAutoFocus } from "@/hooks/use-auto-focus";
 import { useImageAttachments } from "@/hooks/use-image-attachments";
+import { generateTimestamp } from "@/lib/utils";
 import { handleChatKeyDown } from "@/lib/utils/chat";
 
 function generateChatId(): string {
-  const now = new Date();
-  const pad = (n: number) => n.toString().padStart(2, "0");
-  return `${now.getFullYear()}${pad(now.getMonth() + 1)}${pad(now.getDate())}_${pad(now.getHours())}${pad(now.getMinutes())}${pad(now.getSeconds())}`;
+  const ts = generateTimestamp();
+  return `${ts.slice(0, 8)}_${ts.slice(8)}`;
 }
 
 export default function NewChatPage() {

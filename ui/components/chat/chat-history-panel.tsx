@@ -47,14 +47,18 @@ export function ChatHistoryPanel() {
   }
 
   function deleteChat(id: string) {
+    const isActiveChat = activeChatId === id;
     startTransition(async () => {
       setOptimisticChats({ type: "delete", id });
       try {
-        await deleteChatAction(id, activeChatId === id);
+        await deleteChatAction(id);
       } catch {
         alert("Failed to delete chat.");
       }
     });
+    if (isActiveChat) {
+      router.push("/chat");
+    }
   }
 
   return (

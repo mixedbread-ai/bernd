@@ -10,7 +10,12 @@ interface ChatImageProps {
   className?: string;
 }
 
-export function ChatImage({ src, alt = "", onClick, className }: ChatImageProps) {
+export function ChatImage({
+  src,
+  alt = "",
+  onClick,
+  className,
+}: ChatImageProps) {
   const [loaded, setLoaded] = useState(false);
 
   return (
@@ -22,7 +27,7 @@ export function ChatImage({ src, alt = "", onClick, className }: ChatImageProps)
       {!loaded && (
         <div
           className={cn(
-            "bg-muted animate-pulse rounded-lg w-32 h-24",
+            "bg-muted/50 animate-pulse rounded-lg w-32 h-24",
             className,
           )}
         />

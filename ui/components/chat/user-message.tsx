@@ -46,10 +46,7 @@ export function UserMessage({
               key={part.url}
               src={part.url}
               onClick={() => onImageClick?.(part.url)}
-              className={cn(
-                "rounded-lg",
-                isCompact ? "max-h-24" : "max-h-32",
-              )}
+              className={cn("rounded-lg", isCompact ? "max-h-24" : "max-h-32")}
             />
           ))}
         </div>
