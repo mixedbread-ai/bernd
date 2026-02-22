@@ -29,9 +29,9 @@ export default function NewChatPage() {
     if (!input.trim() && images.length === 0) return;
 
     const chatId = generateChatId();
-    setPendingMessage({ text: input.trim(), images });
     startTransition(async () => {
       await createChat(chatId);
+      setPendingMessage({ text: input.trim(), images });
       router.push(`/chat/${chatId}`);
     });
   }
@@ -47,7 +47,8 @@ export default function NewChatPage() {
         <button
           type="button"
           onClick={() => setIsHistoryOpen(true)}
-          className="flex items-center gap-2 text-sm transition-colors hover:opacity-70 text-muted rounded"
+          disabled={isPending}
+          className="flex items-center gap-2 text-sm transition-colors hover:opacity-70 text-muted rounded disabled:opacity-50"
         >
           <ClockIcon size={16} aria-hidden="true" />
           <span>History</span>
@@ -123,7 +124,8 @@ export default function NewChatPage() {
                     type="button"
                     key={chat.id}
                     onClick={() => router.push(`/chat/${chat.id}`)}
-                    className="text-xs px-3 py-1.5 rounded-full transition-colors truncate max-w-[200px] hover:opacity-80 bg-surface border border-border text-muted"
+                    disabled={isPending}
+                    className="text-xs px-3 py-1.5 rounded-full transition-colors truncate max-w-[200px] hover:opacity-80 bg-surface border border-border text-muted disabled:opacity-50"
                   >
                     {chat.title}
                   </button>
@@ -132,7 +134,8 @@ export default function NewChatPage() {
                   <button
                     type="button"
                     onClick={() => setIsHistoryOpen(true)}
-                    className="text-xs px-3 py-1.5 rounded-full transition-colors hover:opacity-80 bg-surface border border-border text-muted"
+                    disabled={isPending}
+                    className="text-xs px-3 py-1.5 rounded-full transition-colors hover:opacity-80 bg-surface border border-border text-muted disabled:opacity-50"
                   >
                     +{chats.length - 3} more
                   </button>
