@@ -1,0 +1,27 @@
+{
+  "biome.lsp.bin": "./ui/node_modules/@biomejs/biome/bin/biome",
+  "biome.configurationPath": "./ui/biome.json",
+  "[javascript]": {
+    "editor.defaultFormatter": "biomejs.biome"
+  },
+  "[json]": {
+    "editor.defaultFormatter": "biomejs.biome"
+  },
+  "[jsonc]": {
+    "editor.defaultFormatter": "biomejs.biome"
+  },
+  "[typescript]": {
+    "editor.defaultFormatter": "biomejs.biome"
+  },
+  "[typescriptreact]": {
+    "editor.defaultFormatter": "biomejs.biome"
+  },
+  "editor.codeActionsOnSave": {
+    "source.fixAll.biome": "explicit"
+  },
+  "editor.defaultFormatter": "biomejs.biome",
+  "editor.formatOnPaste": true,
+  "editor.formatOnSave": true,
+  "typescript.tsdk": "ui/node_modules/typescript/lib",
+  "prettier.enable": false
+}

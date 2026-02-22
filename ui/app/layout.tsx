@@ -2,11 +2,12 @@ import type { Metadata } from "next";
 import { Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { ThemeProvider } from "next-themes";
-import { AuthProvider } from "./context/AuthContext";
-import { AuthGate } from "./components/AuthGate";
-import { OrgGate } from "./components/OrgGate";
-import { OrgSwitchProvider } from "./context/OrgSwitchContext";
-import { AuthenticatedLayout } from "./components/AuthenticatedLayout";
+import { NuqsAdapter } from "nuqs/adapters/next/app";
+import { AuthGate } from "@/components/auth-gate";
+import { AuthenticatedLayout } from "@/components/authenticated-layout";
+import { OrgGate } from "@/components/org-gate";
+import { AuthProvider } from "@/context/auth-context";
+import { OrgSwitchProvider } from "@/context/org-switch-context";
 
 const geistMono = Geist_Mono({
   variable: "--font-geist-mono",
@@ -26,17 +27,19 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <body className={`${geistMono.variable} font-mono antialiased`}>
-        <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
-          <AuthProvider>
-            <AuthGate>
-              <OrgSwitchProvider>
-                <OrgGate>
-                  <AuthenticatedLayout>{children}</AuthenticatedLayout>
-                </OrgGate>
-              </OrgSwitchProvider>
-            </AuthGate>
-          </AuthProvider>
-        </ThemeProvider>
+        <NuqsAdapter>
+          <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
+            <AuthProvider>
+              <AuthGate>
+                <OrgSwitchProvider>
+                  <OrgGate>
+                    <AuthenticatedLayout>{children}</AuthenticatedLayout>
+                  </OrgGate>
+                </OrgSwitchProvider>
+              </AuthGate>
+            </AuthProvider>
+          </ThemeProvider>
+        </NuqsAdapter>
       </body>
     </html>
   );

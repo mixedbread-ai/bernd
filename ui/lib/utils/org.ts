@@ -1,4 +1,4 @@
-import { authClient } from "@/app/lib/auth";
+import { authClient } from "@/lib/auth";
 
 /**
  * Simple slugify function
@@ -20,7 +20,7 @@ function getDefaultOrgName(email: string, userName?: string): string {
     return `${userName.trim()}'s Workspace`;
   }
 
-  const username = email.split("@")[0]!;
+  const username = email.split("@")[0] ?? email;
   const cleanUsername = username
     .split(/[._-]/)
     .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
@@ -32,9 +32,7 @@ function getDefaultOrgName(email: string, userName?: string): string {
 /**
  * Generate a unique slug by appending numbers if the base slug exists
  */
-async function generateUniqueSlug(
-  baseSlug: string,
-): Promise<string> {
+async function generateUniqueSlug(baseSlug: string): Promise<string> {
   let slug = baseSlug;
   let counter = 1;
 

@@ -1,42 +1,34 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { CalendarIcon, MoonIcon, SunIcon } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { CalendarIcon, SunIcon, MoonIcon } from "lucide-react";
-import { API_ENDPOINTS } from "../config";
-import { api } from "../lib/api";
-import { useAuth } from "../context/AuthContext";
-import { useTheme } from "../context/ThemeContext";
+import { useTheme } from "next-themes";
+import { useCallback, useEffect, useState } from "react";
+import {
+  disconnectGoogleAction,
+  getGoogleStatusAction,
+} from "@/actions/google-auth";
+import { useAuth } from "@/context/auth-context";
+import { formatFullDate } from "@/lib/utils/format";
 
 interface GoogleAuthStatus {
   connected: boolean;
   connected_at?: string;
 }
 
-function formatDate(iso: string): string {
-  if (!iso) return "";
-  const d = new Date(iso);
-  return d.toLocaleDateString("en-US", {
-    month: "short",
-    day: "numeric",
-    year: "numeric",
-    hour: "numeric",
-    minute: "2-digit",
-  });
-}
-
 export default function SettingsPage() {
   const router = useRouter();
   const { user, logout } = useAuth();
-  const { theme, toggleTheme } = useTheme();
-  const [googleStatus, setGoogleStatus] = useState<GoogleAuthStatus | null>(null);
+  const { theme, setTheme } = useTheme();
+  const [googleStatus, setGoogleStatus] = useState<GoogleAuthStatus | null>(
+    null,
+  );
   const [loading, setLoading] = useState(true);
   const [disconnecting, setDisconnecting] = useState(false);
 
   const checkGoogleStatus = useCallback(async () => {
     try {
-      const res = await api.get(API_ENDPOINTS.googleAuthStatus);
-      const data = await res.json();
+      const data = await getGoogleStatusAction();
       setGoogleStatus(data);
     } catch {
       setGoogleStatus({ connected: false });
@@ -60,10 +52,10 @@ export default function SettingsPage() {
 
   const connectGoogle = async () => {
     try {
-      const res = await api.get(API_ENDPOINTS.googleAuth);
+      const res = await fetch("/api/auth/google/callback", { method: "POST" });
       const data = await res.json();
-      if (data.auth_url) {
-        window.open(data.auth_url, "google-auth", "width=500,height=600");
+      if (data.authUrl) {
+        window.open(data.authUrl, "google-auth", "width=500,height=600");
       } else if (data.error) {
         alert(data.error);
       }
@@ -78,7 +70,7 @@ export default function SettingsPage() {
     }
     setDisconnecting(true);
     try {
-      await api.delete(API_ENDPOINTS.googleAuth);
+      await disconnectGoogleAction();
       setGoogleStatus({ connected: false });
     } catch (e) {
       console.error("Failed to disconnect Google", e);
@@ -97,9 +89,7 @@ export default function SettingsPage() {
   return (
     <div className="min-h-screen p-4 md:p-12 bg-background">
       <div className="mx-auto max-w-xl">
-        <h1 className="text-lg font-medium mb-8 text-foreground">
-          Settings
-        </h1>
+        <h1 className="text-lg font-medium mb-8 text-foreground">Settings</h1>
 
         {/* Integrations section */}
         <section className="mb-8">
@@ -112,7 +102,11 @@ export default function SettingsPage() {
             <div className="flex items-start justify-between">
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 rounded-lg flex items-center justify-center bg-background">
-                  <CalendarIcon size={20} className="text-foreground" />
+                  <CalendarIcon
+                    size={20}
+                    className="text-foreground"
+                    aria-hidden="true"
+                  />
                 </div>
                 <div>
                   <div className="text-sm font-medium text-foreground">
@@ -120,12 +114,15 @@ export default function SettingsPage() {
                   </div>
                   <div className="text-xs mt-0.5 text-muted">
                     {loading ? (
-                      "Checking..."
+                      "Checking…"
                     ) : googleStatus?.connected ? (
                       <>
                         <span className="text-accent">Connected</span>
                         {googleStatus.connected_at && (
-                          <span> since {formatDate(googleStatus.connected_at)}</span>
+                          <span>
+                            {" "}
+                            since {formatFullDate(googleStatus.connected_at)}
+                          </span>
                         )}
                       </>
                     ) : (
@@ -138,14 +135,16 @@ export default function SettingsPage() {
               <div>
                 {loading ? null : googleStatus?.connected ? (
                   <button
+                    type="button"
                     onClick={disconnectGoogle}
                     disabled={disconnecting}
                     className="text-xs px-3 py-1.5 rounded-lg transition-colors hover:opacity-80 disabled:opacity-50 bg-background border border-border text-muted"
                   >
-                    {disconnecting ? "Disconnecting..." : "Disconnect"}
+                    {disconnecting ? "Disconnecting…" : "Disconnect"}
                   </button>
                 ) : (
                   <button
+                    type="button"
                     onClick={connectGoogle}
                     className="text-xs px-3 py-1.5 rounded-lg transition-colors hover:opacity-80 bg-accent text-white"
                   >
@@ -157,7 +156,8 @@ export default function SettingsPage() {
 
             {googleStatus?.connected && (
               <div className="mt-3 pt-3 text-xs border-t border-border text-muted">
-                Bernd can create, update, and manage calendar events for your todos.
+                Bernd can create, update, and manage calendar events for your
+                todos.
               </div>
             )}
           </div>
@@ -174,9 +174,17 @@ export default function SettingsPage() {
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 rounded-lg flex items-center justify-center bg-background">
                   {theme === "light" ? (
-                    <SunIcon size={20} className="text-foreground" />
+                    <SunIcon
+                      size={20}
+                      className="text-foreground"
+                      aria-hidden="true"
+                    />
                   ) : (
-                    <MoonIcon size={20} className="text-foreground" />
+                    <MoonIcon
+                      size={20}
+                      className="text-foreground"
+                      aria-hidden="true"
+                    />
                   )}
                 </div>
                 <div>
@@ -190,7 +198,8 @@ export default function SettingsPage() {
               </div>
 
               <button
-                onClick={toggleTheme}
+                type="button"
+                onClick={() => setTheme(theme === "light" ? "dark" : "light")}
                 className="text-xs px-3 py-1.5 rounded-lg transition-colors hover:opacity-80 bg-accent text-white"
               >
                 {theme === "light" ? "Switch to dark" : "Switch to light"}
@@ -201,9 +210,7 @@ export default function SettingsPage() {
 
         {/* Account section */}
         <section>
-          <h2 className="text-sm font-medium mb-4 text-foreground">
-            Account
-          </h2>
+          <h2 className="text-sm font-medium mb-4 text-foreground">Account</h2>
 
           <div className="p-4 rounded-lg bg-surface border border-border">
             <div className="flex items-center justify-between">
@@ -216,6 +223,7 @@ export default function SettingsPage() {
                 </div>
               </div>
               <button
+                type="button"
                 onClick={handleLogout}
                 className="text-xs px-3 py-1.5 rounded-lg transition-colors hover:opacity-80 bg-background border border-border text-muted"
               >
