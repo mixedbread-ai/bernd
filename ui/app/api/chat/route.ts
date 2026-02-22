@@ -11,6 +11,7 @@ import { getSystemPrompt } from "@/lib/agent/prompts";
 import { createTools } from "@/lib/agent/tools";
 import { getApiKey, getFS, getGoogleCalendar } from "@/lib/context";
 import { getChat, processImagesForSave, saveChat } from "@/lib/data/chats";
+import type { SemanticFS } from "@/lib/services/semantic-fs";
 import type { ImageAttachment, Message } from "@/types";
 
 export const maxDuration = 60;
@@ -50,6 +51,50 @@ async function generateChatTitle(messages: Message[]): Promise<string> {
   }
 }
 
+/**
+ * Resolve storage-path images in UIMessages to base64 data URLs so the model
+ * can process them. The original messages (with storage paths) are kept for saving.
+ */
+async function resolveImagesForModel(
+  fs: SemanticFS,
+  messages: UIMessage[],
+): Promise<UIMessage[]> {
+  return Promise.all(
+    messages.map(async (msg) => {
+      const hasStorageImages = msg.parts.some(
+        (part) =>
+          part.type === "file" &&
+          part.url &&
+          !part.url.startsWith("data:") &&
+          !part.url.startsWith("http"),
+      );
+      if (!hasStorageImages) return msg;
+
+      const parts = await Promise.all(
+        msg.parts.map(async (part) => {
+          if (
+            part.type !== "file" ||
+            !part.url ||
+            part.url.startsWith("data:") ||
+            part.url.startsWith("http")
+          ) {
+            return part;
+          }
+          try {
+            const result = await fs.readBinary(part.url);
+            const base64 = Buffer.from(result.data).toString("base64");
+            return { ...part, url: `data:${part.mediaType};base64,${base64}` };
+          } catch {
+            return part;
+          }
+        }),
+      );
+
+      return { ...msg, parts };
+    }),
+  );
+}
+
 export async function POST(req: Request) {
   const body = await req.json();
   const { messages }: { messages: UIMessage[] } = body;
@@ -66,10 +111,14 @@ export async function POST(req: Request) {
     getSystemPrompt(fs),
   ]);
 
+  // Resolve storage-path images to base64 for the model while keeping
+  // the original `messages` (with storage paths) for saving in onFinish.
+  const modelMessages = await resolveImagesForModel(fs, messages);
+
   const result = streamText({
     model: openai("gpt-5.2"),
     system: systemPrompt,
-    messages: await convertToModelMessages(messages),
+    messages: await convertToModelMessages(modelMessages),
     tools,
     providerOptions: {
       openai: { reasoningEffort: "medium" },

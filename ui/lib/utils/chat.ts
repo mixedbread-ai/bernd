@@ -83,6 +83,21 @@ export function imagesToFileParts(images: ImageAttachment[]): FileUIPart[] {
   }));
 }
 
+/**
+ * Resolve an image source for display. Storage paths are converted to API URLs;
+ * data URLs and existing API/HTTP URLs pass through unchanged.
+ */
+export function resolveImageSrc(src: string): string {
+  if (
+    src.startsWith("data:") ||
+    src.startsWith("http") ||
+    src.startsWith("/api/")
+  ) {
+    return src;
+  }
+  return `/api/images?path=${encodeURIComponent(src)}`;
+}
+
 export function storedMessagesToUIMessages(messages: Message[]): UIMessage[] {
   return messages.map((message, index) => {
     const parts: UIMessage["parts"] = [];

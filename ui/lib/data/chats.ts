@@ -72,31 +72,6 @@ export async function processImagesForSave(
   );
 }
 
-export function processImagesForLoad(messages: Message[]): Message[] {
-  return messages.map((msg) => {
-    if (!msg.images?.length) return msg;
-
-    const images = msg.images.map((img) => {
-      // Already a data URL — pass through
-      if (img.data?.startsWith("data:")) return img;
-
-      // Path reference stored in data field (new TS format) or path field (Python format)
-      const imagePath =
-        img.data || (img as unknown as Record<string, unknown>).path;
-      if (imagePath && typeof imagePath === "string") {
-        return {
-          ...img,
-          data: `/api/images?path=${encodeURIComponent(imagePath)}`,
-        };
-      }
-
-      return img;
-    });
-
-    return { ...msg, images };
-  });
-}
-
 function fileToChatSummary(file: FileListItem): ChatSummary {
   const metadata = file.metadata;
   if (isChatMetadata(metadata)) {
@@ -128,11 +103,10 @@ export async function getChat(
     const result = await fs.read(`${PATHS.CHATS}/${id}.json`);
 
     // Messages stored as array, title in metadata (Python backend format)
-    const rawMessages = JSON.parse(result.content);
+    const messages: Message[] = JSON.parse(result.content);
     const title = isChatMetadata(result.metadata)
       ? result.metadata.title
       : "Untitled Chat";
-    const messages = processImagesForLoad(rawMessages);
 
     return {
       id,

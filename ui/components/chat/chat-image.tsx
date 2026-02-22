@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { resolveImageSrc } from "@/lib/utils/chat";
 import { cn } from "@/lib/utils/ui";
 
 interface ChatImageProps {
@@ -17,6 +18,7 @@ export function ChatImage({
   className,
 }: ChatImageProps) {
   const [loaded, setLoaded] = useState(false);
+  const resolvedSrc = resolveImageSrc(src);
 
   return (
     <button
@@ -33,7 +35,7 @@ export function ChatImage({
         />
       )}
       <img
-        src={src}
+        src={resolvedSrc}
         alt={alt}
         onLoad={() => setLoaded(true)}
         className={cn(className, !loaded && "hidden")}

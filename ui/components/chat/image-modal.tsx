@@ -2,6 +2,7 @@
 
 import { XIcon } from "lucide-react";
 import { useEffect } from "react";
+import { resolveImageSrc } from "@/lib/utils/chat";
 
 interface ImageModalProps {
   src: string;
@@ -34,7 +35,7 @@ export function ImageModal({ src, onClose }: ImageModalProps) {
         <span className="sr-only">Close image</span>
       </button>
       <img
-        src={src}
+        src={resolveImageSrc(src)}
         alt="Expanded view"
         className="max-h-[90vh] max-w-[90vw] object-contain rounded-lg"
         onClick={(e) => e.stopPropagation()}
