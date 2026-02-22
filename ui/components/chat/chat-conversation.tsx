@@ -75,10 +75,20 @@ export function ChatConversation({
       setPendingMessage(null);
 
       const fileParts = imagesToFileParts(pendingImages);
-      sendMessage({
-        role: "user",
-        parts: [...fileParts, { type: "text" as const, text: text.trim() }],
-      });
+
+      if (fileParts.length > 0) {
+        sendMessage({
+          role: "user",
+          parts: [
+            ...fileParts,
+            ...(text.trim()
+              ? [{ type: "text" as const, text: text.trim() }]
+              : []),
+          ],
+        });
+      } else {
+        sendMessage({ text: text.trim() });
+      }
     }
   }, [pendingMessage, setPendingMessage, sendMessage]);
 
