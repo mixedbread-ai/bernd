@@ -11,8 +11,8 @@ const MIME_MAP: Record<string, string> = {
 
 export async function GET(req: NextRequest) {
   const path = req.nextUrl.searchParams.get("path");
-  if (!path) {
-    return NextResponse.json({ error: "Missing path" }, { status: 400 });
+  if (!path || !path.startsWith("/chat_assets/")) {
+    return NextResponse.json({ error: "Invalid path" }, { status: 400 });
   }
 
   try {

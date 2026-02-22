@@ -31,11 +31,22 @@ export async function createNoteAction(data: NoteCreate) {
 export async function updateNoteAction(id: string, data: NoteUpdate) {
   const fs = await getFS();
 
-  const content = data.content || " ";
+  // Read existing note to preserve fields not included in the partial update
+  let existingTitle = "";
+  let existingContent = " ";
+  try {
+    const existing = await fs.read(`${PATHS.NOTES}/${id}.md`);
+    existingTitle = (existing.metadata?.title as string) ?? "";
+    existingContent = existing.content || " ";
+  } catch {
+    // Note doesn't exist yet
+  }
+
+  const content = data.content ?? existingContent;
 
   const metadata: Omit<NoteMetadata, "path" | "created_at" | "updated_at"> = {
     type: "note",
-    title: data.title ?? "",
+    title: data.title ?? existingTitle,
   };
   await fs.write(`${PATHS.NOTES}/${id}.md`, content, metadata);
 

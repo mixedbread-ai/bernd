@@ -61,6 +61,9 @@ export async function listFilesAction(path: string): Promise<FileItem[]> {
 export async function downloadFileAction(
   path: string,
 ): Promise<{ content: string; mimeType: string }> {
+  if (!path.startsWith(PATHS.FILES)) {
+    throw new Error("Can only download files under /files/");
+  }
   const fs = await getFS();
   const result = await fs.read(path);
 
@@ -74,6 +77,9 @@ export async function downloadFileAction(
 export async function downloadBinaryFileAction(
   path: string,
 ): Promise<{ data: number[]; mimeType: string }> {
+  if (!path.startsWith(PATHS.FILES)) {
+    throw new Error("Can only download files under /files/");
+  }
   const fs = await getFS();
   const result = await fs.readBinary(path);
 
@@ -190,7 +196,8 @@ export async function deleteFolderAction(path: string) {
   }
   const fs = await getFS();
 
-  await fs.clearPrefix(path);
+  const prefix = path.endsWith("/") ? path : `${path}/`;
+  await fs.clearPrefix(prefix);
 
   revalidatePath("/files");
 }

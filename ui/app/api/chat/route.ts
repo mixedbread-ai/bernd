@@ -140,12 +140,14 @@ export async function POST(req: Request) {
             assistantMessages[assistantMessages.length - 1];
 
           let assistantText = "";
-          if (typeof lastAssistantMessage.content === "string") {
-            assistantText = lastAssistantMessage.content;
-          } else if (Array.isArray(lastAssistantMessage.content)) {
-            for (const part of lastAssistantMessage.content) {
-              if (part.type === "text" && part.text) {
-                assistantText += part.text;
+          if (lastAssistantMessage) {
+            if (typeof lastAssistantMessage.content === "string") {
+              assistantText = lastAssistantMessage.content;
+            } else if (Array.isArray(lastAssistantMessage.content)) {
+              for (const part of lastAssistantMessage.content) {
+                if (part.type === "text" && part.text) {
+                  assistantText += part.text;
+                }
               }
             }
           }
