@@ -152,46 +152,49 @@ export async function POST(req: Request) {
             }
           }
 
-          // Build simplified message history for storage
-          const storedMessages: Message[] = [
-            ...messages.map((msg) => {
-              let content = "";
-              const images: ImageAttachment[] = [];
-              for (const part of msg.parts) {
-                if (part.type === "text" && part.text) {
-                  content += part.text;
-                } else if (
-                  part.type === "file" &&
-                  part.mediaType?.startsWith("image/") &&
-                  part.url
-                ) {
-                  images.push({
-                    type: "image",
-                    data: part.url,
-                    mimeType: part.mediaType,
-                  });
-                }
-              }
-              return {
-                role: msg.role as "user" | "assistant",
-                content,
-                ...(images.length > 0 ? { images } : {}),
-              };
-            }),
-            { role: "assistant", content: assistantText },
-          ];
-
           const existingChat = await getChat(fs, chatId);
-          const processedMessages = await processImagesForSave(
+          const existingMessages = existingChat?.messages ?? [];
+
+          // Only convert new messages from the request; existing ones
+          // already have storage paths for images and don't need
+          // re-processing (which would create duplicate files).
+          const newUIMessages = messages.slice(existingMessages.length);
+          const newStoredMessages: Message[] = newUIMessages.map((msg) => {
+            let content = "";
+            const images: ImageAttachment[] = [];
+            for (const part of msg.parts) {
+              if (part.type === "text" && part.text) {
+                content += part.text;
+              } else if (
+                part.type === "file" &&
+                part.mediaType?.startsWith("image/") &&
+                part.url
+              ) {
+                images.push({
+                  type: "image",
+                  data: part.url,
+                  mimeType: part.mediaType,
+                });
+              }
+            }
+            return {
+              role: msg.role as "user" | "assistant",
+              content,
+              ...(images.length > 0 ? { images } : {}),
+            };
+          });
+
+          const processedNew = await processImagesForSave(
             fs,
             chatId,
-            storedMessages,
+            [...newStoredMessages, { role: "assistant", content: assistantText }],
           );
+          const allMessages = [...existingMessages, ...processedNew];
           const title =
             existingChat && existingChat.title !== "New Chat"
               ? existingChat.title
-              : await generateChatTitle(storedMessages);
-          await saveChat(fs, chatId, title, processedMessages);
+              : await generateChatTitle(allMessages);
+          await saveChat(fs, chatId, title, allMessages);
         }
       } catch (e) {
         console.error("[chat] Failed to save chat:", e);
