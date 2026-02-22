@@ -59,6 +59,9 @@ export function ChatConversation({
       body: { chatId },
     }),
     messages: initialMessages,
+    onFinish: () => {
+      router.refresh();
+    },
   });
 
   const isStreaming = status === "streaming" || status === "submitted";
